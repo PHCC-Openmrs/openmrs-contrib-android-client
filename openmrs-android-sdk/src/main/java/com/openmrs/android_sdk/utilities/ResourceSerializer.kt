@@ -24,34 +24,45 @@ class ResourceSerializer : JsonSerializer<Resource> {
     override fun serialize(src: Resource, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
         val myGson = gson
         val srcJson = JsonObject()
-        val declaredFields = src.javaClass.declaredFields
-        for (field in declaredFields) {
+        
+        // Get all fields including those from superclasses (like 'uuid' in Resource)
+        val allFields = mutableListOf<java.lang.reflect.Field>()
+        var currentClass: Class<*>? = src.javaClass
+        while (currentClass != null && currentClass != Object::class.java) {
+            allFields.addAll(currentClass.declaredFields)
+            currentClass = currentClass.superclass
+        }
+
+        for (field in allFields) {
             if (field.getAnnotation(Expose::class.java) != null) {
                 field.isAccessible = true
+                val fieldName = field.name
+                val fieldVal = field[src]
+                
                 if (Resource::class.java.isAssignableFrom(field.type)) {
                     try {
-                        if (field[src] != null) {
-                            srcJson.add(field.name, serializeField(field[src] as Resource, context))
+                        if (fieldVal != null) {
+                            srcJson.add(fieldName, serializeField(fieldVal as Resource, context))
                         }
                     } catch (e: IllegalAccessException) {
                         Log.e(RESOURCE_SERIALIZER, EXCEPTION, e)
                     }
                 } else if (MutableCollection::class.java.isAssignableFrom(field.type)) {
                     try {
-                        val collection = field[src] as? Collection<*>
+                        val collection = fieldVal as? Collection<*>
                         if (collection != null && !collection.isEmpty()) {
                             if (isResourceCollection(collection)) {
                                 val jsonArray = JsonArray()
                                 for (resource in collection) {
                                     jsonArray.add(serializeField(resource as Resource, context))
                                 }
-                                srcJson.add(field.name, jsonArray)
+                                srcJson.add(fieldName, jsonArray)
                             } else {
                                 val jsonArray = JsonArray()
                                 for (`object` in collection) {
                                     jsonArray.add(myGson.toJsonTree(`object`))
                                 }
-                                srcJson.add(field.name, jsonArray)
+                                srcJson.add(fieldName, jsonArray)
                             }
                         }
                     } catch (e: IllegalAccessException) {
@@ -59,7 +70,9 @@ class ResourceSerializer : JsonSerializer<Resource> {
                     }
                 } else {
                     try {
-                        srcJson.add(field.name, myGson.toJsonTree(field[src]))
+                        if (fieldVal != null) {
+                            srcJson.add(fieldName, myGson.toJsonTree(fieldVal))
+                        }
                     } catch (e: IllegalAccessException) {
                         Log.e(RESOURCE_SERIALIZER, EXCEPTION, e)
                     }

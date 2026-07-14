@@ -105,7 +105,9 @@ class PatientDetailsFragment : BaseFragment() {
                 patientPhoto.setImageBitmap(photo)
                 patientPhoto.setOnClickListener { showPatientPhoto(requireContext(), photo, patientName) }
             }
-            patientDetailsName.text = patient.name.nameString
+            val fullName = patient.name?.nameString ?: patient.display ?: ""
+            com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger().i("[UI-Display] Details Name: '$fullName'")
+            patientDetailsName.text = fullName
             val longTime = convertTime(patient.birthdate)
             if (longTime != null) {
                 patientDetailsBirthDate.text = convertTime(longTime)
@@ -146,7 +148,7 @@ class PatientDetailsFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(patientId: String): PatientDetailsFragment {
+        fun newInstance(patientId: Long): PatientDetailsFragment {
             val fragment = PatientDetailsFragment()
             fragment.arguments = bundleOf(Pair(PATIENT_ID_BUNDLE, patientId))
             return fragment

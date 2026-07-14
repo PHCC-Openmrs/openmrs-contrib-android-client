@@ -30,7 +30,7 @@ open class Resource : Serializable {
     @SerializedName("uuid")
     @ColumnInfo(name = "uuid")
     @Expose
-    open var uuid: String? = ""
+    open var uuid: String? = null
 
 
     @ColumnInfo(name = "display")

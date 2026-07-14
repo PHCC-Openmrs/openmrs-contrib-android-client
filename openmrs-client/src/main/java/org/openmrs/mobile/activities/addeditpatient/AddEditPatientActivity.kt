@@ -38,7 +38,7 @@ class AddEditPatientActivity : ACBaseActivity() {
 
         // Get and send patient id to the fragment (in case of updating a patient)
         val patientBundle = savedInstanceState ?: intent.extras
-        val patientID = patientBundle?.getString(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE)
+        val patientID = patientBundle?.get(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE) as Long?
 
         val countries = resources.getStringArray(R.array.countries_array).asList()
 

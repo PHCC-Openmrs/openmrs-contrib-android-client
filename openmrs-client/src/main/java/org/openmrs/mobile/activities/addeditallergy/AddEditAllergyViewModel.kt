@@ -55,7 +55,7 @@ class AddEditAllergyViewModel @Inject constructor(
     val selectedReactions: LinkedHashMap<String, AllergyReactionCreate> = linkedMapOf()
     var comment: String? = null
 
-    private val patientId: String = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
+    private val patientId: Long = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
     private val allergyUuid: String? = savedStateHandle.get(ALLERGY_UUID)
     var isUpdateAllergy = allergyUuid != null
         private set

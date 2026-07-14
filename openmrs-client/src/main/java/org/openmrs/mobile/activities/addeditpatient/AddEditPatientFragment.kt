@@ -173,9 +173,15 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                     showLoading()
                     hideSoftKeys()
                 }
-                is Result.Success -> if (result.operationType == PatientRegistering) {
-                    startPatientDashboardActivity()
-                    finishActivity()
+                is Result.Success -> {
+                    val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
+                    logger.i("Result.Success received. Operation: ${result.operationType}")
+                    if (result.operationType == PatientRegistering) {
+                        val openmrsId = viewModel.patient.identifier?.identifier ?: "None"
+                        logger.i("Registration/Sync successful. Navigating to dashboard. Local ID: ${viewModel.patient.id}, OpenMRS ID: $openmrsId")
+                        startPatientDashboardActivity()
+                        finishActivity()
+                    }
                 }
                 is Result.Error -> {
                     hideLoading()
@@ -211,6 +217,12 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         } else {
             ToastUtil.error(getString(R.string.invalid_inputs))
         }
+    }
+
+    fun registerPatientWithoutValidation() {
+        val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
+        logger.i("registerPatientWithoutValidation called")
+        viewModel.confirmPatient()
     }
 
     private fun updatePatient() {
@@ -361,12 +373,19 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             textInputLayoutSurname.isErrorEnabled = false
         }
 
-        viewModel.patient.names = listOf(PersonName().apply {
-            givenName = getInput(firstName)
-            middleName = getInput(middlename)
-            familyName = getInput(surname)
+        val midName = getInput(middlename)
+        val gName = getInput(firstName)
+        val fName = getInput(surname)
+        logger.i("[UI-Input] Raw Given: '$gName', Raw Middle: '$midName', Raw Family: '$fName'")
+
+        val personName = PersonName().apply {
+            givenName = gName
+            middleName = midName
+            familyName = fName
             preferred = true
-        })
+        }
+        logger.i("[UI-Input] PersonName object created. NameString: '${personName.nameString}', Middle property: '${personName.middleName}'")
+        viewModel.patient.names = listOf(personName)
 
         /* Gender */
         val genderChoices = arrayOf(StringValue.MALE, StringValue.FEMALE)
@@ -912,7 +931,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     companion object {
-        fun newInstance(patientID: String?, countries: List<String>) = AddEditPatientFragment().apply {
+        fun newInstance(patientID: Long?, countries: List<String>) = AddEditPatientFragment().apply {
             arguments = bundleOf(
                     Pair(PATIENT_ID_BUNDLE, patientID),
                     Pair(COUNTRIES_BUNDLE, countries)

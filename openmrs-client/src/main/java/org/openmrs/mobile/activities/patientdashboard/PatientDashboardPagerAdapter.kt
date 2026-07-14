@@ -36,7 +36,7 @@ import org.openmrs.mobile.activities.patientdashboard.vitals.PatientVitalsFragme
 
 class PatientDashboardPagerAdapter(private val fm: FragmentManager,
                                    private val context: Context,
-                                   private val mPatientId: String
+                                   private val mPatientId: Long
 ) : FragmentPagerAdapter(fm) {
 
     private val registeredFragments = SparseArray<Fragment>()

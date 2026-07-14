@@ -24,13 +24,13 @@ class PatientDashboardVisitsViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<List<Visit>>() {
 
-    private val patientId: String = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
+    private val patientId: Long = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
 
     fun getPatient(): Patient = patientDAO.findPatientByID(patientId)
 
     fun fetchVisitsData() {
         setLoading(PatientVisitsFetching)
-        addSubscription(visitDAO.getVisitsByPatientID(patientId.toLong())
+        addSubscription(visitDAO.getVisitsByPatientID(patientId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { visits: List<Visit> -> setContent(visits, PatientVisitsFetching) },
@@ -40,7 +40,7 @@ class PatientDashboardVisitsViewModel @Inject constructor(
 
     fun hasActiveVisit(): LiveData<Boolean> {
         val liveData = MutableLiveData<Boolean>()
-        addSubscription(visitDAO.getActiveVisitByPatientId(patientId.toLong())
+        addSubscription(visitDAO.getActiveVisitByPatientId(patientId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { visit: Visit? -> liveData.value = visit != null })
         return liveData

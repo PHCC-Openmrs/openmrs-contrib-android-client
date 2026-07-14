@@ -50,6 +50,7 @@ public class PatientDAO {
      */
     public Observable<Long> savePatient(Patient patient) {
         PatientEntity entity = AppDatabaseHelper.convert(patient);
+        OpenmrsAndroid.getOpenMRSLogger().i("[DB-Save] Saving patient: " + entity.getGivenName() + " " + entity.getMiddleName() + " " + entity.getFamilyName());
         return AppDatabaseHelper.createObservableIO(() -> patientRoomDAO.addPatient(entity));
     }
 
@@ -63,6 +64,7 @@ public class PatientDAO {
     public boolean updatePatient(long patientID, Patient patient) {
         PatientEntity entity = AppDatabaseHelper.convert(patient);
         entity.setId(patientID);
+        OpenmrsAndroid.getOpenMRSLogger().i("[DB-Save] Updating patient ID " + patientID + ": " + entity.getGivenName() + " " + entity.getMiddleName() + " " + entity.getFamilyName());
         return patientRoomDAO.updatePatient(entity) > 0;
     }
 
@@ -161,8 +163,8 @@ public class PatientDAO {
      * @param id the id
      * @return the patient
      */
-    public Patient findPatientByID(String id) {
-        if (id == null || id.isEmpty()) return null;
+    public Patient findPatientByID(Long id) {
+        if (id == null) return null;
         try {
             PatientEntity patientEntity = patientRoomDAO.findPatientByID(id).blockingGet();
             return AppDatabaseHelper.convert(patientEntity);

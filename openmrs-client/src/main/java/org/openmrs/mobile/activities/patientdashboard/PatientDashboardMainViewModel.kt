@@ -28,16 +28,15 @@ class PatientDashboardMainViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<Unit>() {
 
-    val patientId: String = savedStateHandle.get<Long>(PATIENT_ID_BUNDLE)?.toString()!!
-    private val patient: Patient = patientDAO.findPatientByID(patientId)
-    private val patientUuid: String = patient.uuid!!
+    val patientId: Long = savedStateHandle.get<Long>(PATIENT_ID_BUNDLE)!!
+    private var patient: Patient = patientDAO.findPatientByID(patientId)
 
     private var runningSyncs = 0
 
     fun deletePatient() {
         setLoading(PatientDeleting)
-        patientDAO.deletePatient(patientId.toLong())
-        addSubscription(visitDAO.deleteVisitsByPatientId(patientId.toLong())
+        patientDAO.deletePatient(patientId)
+        addSubscription(visitDAO.deleteVisitsByPatientId(patientId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { setContent(Unit, PatientDeleting) },
@@ -48,15 +47,39 @@ class PatientDashboardMainViewModel @Inject constructor(
 
     fun syncPatientData() {
         setLoading(PatientSynchronizing)
-        syncDetails()
-        syncVisits()
-        syncAllergies()
-        syncVitals()
+        if (patient.uuid.isNullOrEmpty()) {
+            syncUnsyncedPatient()
+        } else {
+            syncAllData(patient)
+        }
     }
 
-    private fun syncDetails() {
+    private fun syncUnsyncedPatient() {
         runningSyncs++
-        addSubscription(patientRepository.downloadPatientByUuid(patientUuid)
+        addSubscription(patientRepository.syncPatient(patient)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        { syncedPatient ->
+                            runningSyncs--
+                            // Update our local reference with the newly synced patient (it now has a UUID)
+                            patient = syncedPatient
+                            syncAllData(syncedPatient)
+                        },
+                        { setError(it, PatientSynchronizing) }
+                )
+        )
+    }
+
+    private fun syncAllData(patientToSync: Patient) {
+        syncDetails(patientToSync.uuid!!)
+        syncVisits(patientToSync)
+        syncAllergies(patientToSync)
+        syncVitals(patientToSync.uuid!!)
+    }
+
+    private fun syncDetails(uuid: String) {
+        runningSyncs++
+        addSubscription(patientRepository.downloadPatientByUuid(uuid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { setContent(Unit, PatientSynchronizing) },
@@ -65,9 +88,9 @@ class PatientDashboardMainViewModel @Inject constructor(
         )
     }
 
-    private fun syncVisits() {
+    private fun syncVisits(patientToSync: Patient) {
         runningSyncs++
-        addSubscription(visitRepository.syncVisitsData(patient)
+        addSubscription(visitRepository.syncVisitsData(patientToSync)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { setContent(Unit, PatientSynchronizing) },
@@ -75,9 +98,9 @@ class PatientDashboardMainViewModel @Inject constructor(
                 ))
     }
 
-    private fun syncAllergies() {
+    private fun syncAllergies(patientToSync: Patient) {
         runningSyncs++
-        addSubscription(allergyRepository.syncAllergies(patient)
+        addSubscription(allergyRepository.syncAllergies(patientToSync)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { setContent(Unit, PatientSynchronizing) },
@@ -86,9 +109,9 @@ class PatientDashboardMainViewModel @Inject constructor(
         )
     }
 
-    private fun syncVitals() {
+    private fun syncVitals(uuid: String) {
         runningSyncs++
-        addSubscription(visitRepository.syncLastVitals(patient.uuid)
+        addSubscription(visitRepository.syncLastVitals(uuid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { setContent(Unit, PatientSynchronizing) },

@@ -44,7 +44,7 @@ class PatientDashboardActivity : ACBaseActivity() {
 
     private val viewModel: PatientDashboardMainViewModel by viewModels()
 
-    private lateinit var patientId: String
+    private var patientId: Long = 0
     var isActionFABOpen = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,7 +153,7 @@ class PatientDashboardActivity : ACBaseActivity() {
                 }
             }
             activityDashboardDeleteFab.setOnClickListener { showDeletePatientDialog() }
-            activityDashboardUpdateFab.setOnClickListener { startPatientUpdateActivity(patientId.toLong()) }
+            activityDashboardUpdateFab.setOnClickListener { startPatientUpdateActivity(patientId) }
         }
     }
 
@@ -199,7 +199,7 @@ class PatientDashboardActivity : ACBaseActivity() {
 
     private fun startPatientUpdateActivity(patientId: Long) {
         Intent(this, AddEditPatientActivity::class.java)
-                .putExtra(PATIENT_ID_BUNDLE, patientId.toString())
+                .putExtra(PATIENT_ID_BUNDLE, patientId)
                 .apply { startActivity(this) }
     }
 

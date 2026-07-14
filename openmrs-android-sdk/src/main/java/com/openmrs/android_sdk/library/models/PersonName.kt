@@ -45,8 +45,11 @@ class PersonName : Serializable {
 
 
     val nameString: String
-        get() = if (middleName == null || middleName == "null")
-            "$givenName $familyName"
-        else
-            "$givenName $middleName $familyName"
+        get() {
+            val full = StringBuilder()
+            if (!givenName.isNullOrBlank()) full.append(givenName).append(" ")
+            if (!middleName.isNullOrBlank() && middleName != "null") full.append(middleName).append(" ")
+            if (!familyName.isNullOrBlank()) full.append(familyName)
+            return full.toString().trim()
+        }
 }

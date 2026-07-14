@@ -32,10 +32,10 @@ class AddEditAllergyActivity : ACBaseActivity() {
             setDisplayHomeAsUpEnabled(true)
         }
 
-        var patientID: String? = null
+        var patientID: Long? = null
         var allergyUuid: String? = null
         intent.extras?.let {
-            patientID = it.getString(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE)
+            patientID = it.getLong(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE)
             allergyUuid = it.getString(ApplicationConstants.BundleKeys.ALLERGY_UUID)
         }
         var addEditAllergyFragment = supportFragmentManager.findFragmentById(R.id.allergyFrame) as AddEditAllergyFragment?

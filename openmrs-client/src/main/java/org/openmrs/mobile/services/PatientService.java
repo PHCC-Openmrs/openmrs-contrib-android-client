@@ -50,6 +50,8 @@ public class PatientService extends IntentService {
     PatientRepository patientRepository;
     @Inject
     RestApi restApi;
+    @Inject
+    PatientDAO patientDAO;
 
     public PatientService() {
         super("Register Patients");
@@ -57,74 +59,97 @@ public class PatientService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (NetworkUtils.isOnline()) {
-            PatientAndMatchesWrapper patientAndMatchesWrapper = new PatientAndMatchesWrapper();
-            List<Patient> patientList = new PatientDAO().getUnSyncedPatients();
-            final ListIterator<Patient> it = patientList.listIterator();
-            while (it.hasNext()) {
-                final Patient patient = it.next();
-                fetchSimilarPatients(patient, patientAndMatchesWrapper);
-            }
-            if (!patientAndMatchesWrapper.getMatchingPatients().isEmpty()) {
-                Intent intent1 = new Intent(getApplicationContext(), MatchingPatientsActivity.class);
-                intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent1.putExtra(ApplicationConstants.BundleKeys.CALCULATED_LOCALLY, calculatedLocally);
-                intent1.putExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES, patientAndMatchesWrapper);
-                startActivity(intent1);
-            }
-        } else {
-            ToastUtil.error(getString(R.string.activity_no_internet_connection) +
-                getString(R.string.activity_sync_after_connection));
+        Log.i(PATIENT_SERVICE_TAG, "PatientService started");
+        if (!NetworkUtils.isOnline()) {
+            Log.w(PATIENT_SERVICE_TAG, "No internet connection, sync postponed");
+            return;
         }
-    }
 
-    private void fetchSimilarPatients(final Patient patient, final PatientAndMatchesWrapper patientAndMatchesWrapper) {
-        Call<Results<Module>> moduleCall = restApi.getModules(ApplicationConstants.API.FULL);
+        List<Patient> patientList = patientDAO.getUnSyncedPatients();
+        if (patientList.isEmpty()) {
+            Log.i(PATIENT_SERVICE_TAG, "No unsynced patients found");
+            return;
+        }
+
+        Log.i(PATIENT_SERVICE_TAG, "Found " + patientList.size() + " unsynced patients. Checking server capabilities...");
+        
+        boolean isRegistrationCorePresent = false;
         try {
-            Response<Results<Module>> moduleResp = moduleCall.execute();
-            if (moduleResp.isSuccessful()) {
-                if (ModuleUtils.isRegistrationCore1_7orAbove(moduleResp.body().getResults())) {
-                    fetchSimilarPatientsFromServer(patient, patientAndMatchesWrapper);
-                } else {
-                    fetchPatientsAndCalculateLocally(patient, patientAndMatchesWrapper);
-                }
-            } else {
-                fetchPatientsAndCalculateLocally(patient, patientAndMatchesWrapper);
+            Response<Results<Module>> moduleResp = restApi.getModules(ApplicationConstants.API.FULL).execute();
+            if (moduleResp.isSuccessful() && moduleResp.body() != null) {
+                isRegistrationCorePresent = ModuleUtils.isRegistrationCore1_7orAbove(moduleResp.body().getResults());
             }
         } catch (IOException e) {
-            Log.e(PATIENT_SERVICE_TAG, e.getMessage());
+            Log.e(PATIENT_SERVICE_TAG, "Error fetching modules, defaulting to local similarity check", e);
+        }
+
+        PatientAndMatchesWrapper patientAndMatchesWrapper = new PatientAndMatchesWrapper();
+        for (Patient patient : patientList) {
+            String patientName = (patient.getName() != null) ? patient.getName().getNameString() : "ID " + patient.getId();
+            Log.i(PATIENT_SERVICE_TAG, "Processing patient: " + patientName);
+
+            try {
+                if (isRegistrationCorePresent) {
+                    syncPatientWithServerSimilarityCheck(patient, patientAndMatchesWrapper);
+                } else {
+                    syncPatientWithLocalSimilarityCheck(patient, patientAndMatchesWrapper);
+                }
+            } catch (Exception e) {
+                Log.e(PATIENT_SERVICE_TAG, "Failed to sync patient " + patientName, e);
+            }
+        }
+
+        if (!patientAndMatchesWrapper.getMatchingPatients().isEmpty()) {
+            Log.i(PATIENT_SERVICE_TAG, "Found potential duplicates on server, showing MatchingPatientsActivity");
+            Intent intent1 = new Intent(getApplicationContext(), MatchingPatientsActivity.class);
+            intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent1.putExtra(ApplicationConstants.BundleKeys.CALCULATED_LOCALLY, calculatedLocally);
+            intent1.putExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES, patientAndMatchesWrapper);
+            startActivity(intent1);
         }
     }
 
-    private void fetchPatientsAndCalculateLocally(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws IOException {
+    private void syncPatientWithLocalSimilarityCheck(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws Exception {
         calculatedLocally = true;
-        Call<Results<PatientDto>> patientCall = restApi.getPatientsDto(patient.getName().getGivenName(), ApplicationConstants.API.FULL);
-        Response<Results<PatientDto>> resp = patientCall.execute();
-        if (resp.isSuccessful()) {
+        String givenName = (patient.getName() != null) ? patient.getName().getGivenName() : null;
+        
+        if (givenName == null || givenName.isEmpty()) {
+            Log.i(PATIENT_SERVICE_TAG, "No given name, skipping similarity check and syncing directly");
+            patientRepository.syncPatient(patient).single().toBlocking().first();
+            return;
+        }
+
+        Response<Results<PatientDto>> resp = restApi.getPatientsDto(givenName, ApplicationConstants.API.FULL).execute();
+        if (resp.isSuccessful() && resp.body() != null) {
             List<Patient> patientList = new ArrayList<>();
-            for(PatientDto p : resp.body().getResults()){
+            for (PatientDto p : resp.body().getResults()) {
                 patientList.add(p.getPatient());
             }
-            List<Patient> similarPatient = new PatientComparator().findSimilarPatient(patientList, patient);
-            if (!similarPatient.isEmpty()) {
-                patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatient));
+            List<Patient> similarPatients = new PatientComparator().findSimilarPatient(patientList, patient);
+            if (!similarPatients.isEmpty()) {
+                patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatients));
             } else {
-                patientRepository.syncPatient(patient);
+                patientRepository.syncPatient(patient).single().toBlocking().first();
             }
+        } else {
+            Log.e(PATIENT_SERVICE_TAG, "Search failed: " + resp.message() + ". Syncing directly.");
+            patientRepository.syncPatient(patient).single().toBlocking().first();
         }
     }
 
-    private void fetchSimilarPatientsFromServer(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws IOException {
+    private void syncPatientWithServerSimilarityCheck(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws Exception {
         calculatedLocally = false;
-        Call<Results<Patient>> patientCall = restApi.getSimilarPatients(patient.toMap());
-        Response<Results<Patient>> patientsResp = patientCall.execute();
-        if (patientsResp.isSuccessful()) {
-            List<Patient> patientList = patientsResp.body().getResults();
-            if (!patientList.isEmpty()) {
-                patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, patientList));
+        Response<Results<Patient>> resp = restApi.getSimilarPatients(patient.toMap()).execute();
+        if (resp.isSuccessful() && resp.body() != null) {
+            List<Patient> similarPatients = resp.body().getResults();
+            if (!similarPatients.isEmpty()) {
+                patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatients));
             } else {
-                patientRepository.syncPatient(patient);
+                patientRepository.syncPatient(patient).single().toBlocking().first();
             }
+        } else {
+            Log.e(PATIENT_SERVICE_TAG, "Server similarity check failed: " + resp.message() + ". Falling back to local check.");
+            syncPatientWithLocalSimilarityCheck(patient, patientAndMatchesWrapper);
         }
     }
 }

@@ -104,6 +104,9 @@ public class VisitRepository extends BaseRepository {
      * @param patient the patient
      */
     public Observable<List<Visit>> syncVisitsData(@NonNull final Patient patient) {
+        if (patient.getUuid() == null || patient.getUuid().isEmpty()) {
+            return Observable.error(new IllegalArgumentException("Patient UUID cannot be null or empty"));
+        }
         return AppDatabaseHelper.createObservableIO(() -> {
             Call<Results<Visit>> call = restApi.findVisitsByPatientUUID(patient.getUuid(), representation);
             return fetchVisitsAndSave(call, patient);
@@ -116,6 +119,9 @@ public class VisitRepository extends BaseRepository {
      * @param visitUuid the UUID of the visit.
      */
     public Observable<Visit> getVisit(String visitUuid){
+        if (visitUuid == null || visitUuid.isEmpty()) {
+            return Observable.error(new IllegalArgumentException("Visit UUID cannot be null or empty"));
+        }
         return AppDatabaseHelper.createObservableIO(() -> {
             Call<Visit> call = restApi.getVisitFromUuid(visitUuid);
             Response<Visit> response = call.execute();
@@ -129,6 +135,7 @@ public class VisitRepository extends BaseRepository {
         });
     }
 
+
     /**
      * This method is used for fetching VisitType asynchronously.
      *
@@ -138,7 +145,7 @@ public class VisitRepository extends BaseRepository {
     public Observable<VisitType> getVisitType() {
         return AppDatabaseHelper.createObservableIO(() -> {
             Response<Results<VisitType>> response = restApi.getVisitType().execute();
-            if (response.isSuccessful()) return response.body().getResults().get(0);
+            if (response.isSuccessful() && response.body() != null && !response.body().getResults().isEmpty()) return response.body().getResults().get(0);
             else return null;
         });
     }
@@ -151,11 +158,14 @@ public class VisitRepository extends BaseRepository {
      * @return Encounter observable containing last vitals
      */
     public Observable<Encounter> syncLastVitals(final String patientUuid) {
+        if (patientUuid == null || patientUuid.isEmpty()) {
+            return Observable.error(new IllegalArgumentException("Patient UUID cannot be null or empty"));
+        }
         return AppDatabaseHelper.createObservableIO(() -> {
             Call<Results<Encounter>> call = restApi.getLastVitals(patientUuid, ApplicationConstants.EncounterTypes.VITALS, "full", 1, "desc");
             Response<Results<Encounter>> response = call.execute();
 
-            if (response.isSuccessful()) {
+            if (response.isSuccessful() && response.body() != null) {
                 if (!response.body().getResults().isEmpty()) {
                     Encounter encounter = response.body().getResults().get(0);
                     encounterDAO.saveLastVitalsEncounter(encounter, patientUuid);

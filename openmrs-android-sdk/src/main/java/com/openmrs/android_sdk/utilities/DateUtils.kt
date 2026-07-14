@@ -64,6 +64,8 @@ object DateUtils {
     fun convertTime(dateAsString: String?): Long? {
         return if (isValidFormat(DEFAULT_DATE_FORMAT, dateAsString)) {
             convertTime(dateAsString, DEFAULT_DATE_FORMAT)
+        } else if (isValidFormat(OPEN_MRS_REQUEST_PATIENT_FORMAT, dateAsString)) {
+            convertTime(dateAsString, OPEN_MRS_REQUEST_PATIENT_FORMAT)
         } else {
             convertTime(dateAsString, OPEN_MRS_RESPONSE_FORMAT)
         }
@@ -163,7 +165,8 @@ object DateUtils {
      * @return the date as a DateTime
      */
     fun getDateTimeFromDifference(yearDiff: Int, monthDiff: Int): DateTime {
-        return LocalDate().toDateTimeAtStartOfDay().minusYears(yearDiff).minusMonths(monthDiff)
+        // Subtract 1 hour buffer to avoid "future date" errors due to timezone/clock drift
+        return LocalDate().toDateTimeAtStartOfDay().minusYears(yearDiff).minusMonths(monthDiff).minusHours(1)
     }
 
     /**
