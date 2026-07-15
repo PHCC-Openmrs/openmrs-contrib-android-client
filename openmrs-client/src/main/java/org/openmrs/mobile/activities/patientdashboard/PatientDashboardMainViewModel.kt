@@ -82,7 +82,11 @@ class PatientDashboardMainViewModel @Inject constructor(
         addSubscription(patientRepository.downloadPatientByUuid(uuid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        { setContent(Unit, PatientSynchronizing) },
+                        { downloadedPatient ->
+                            downloadedPatient.id = patientId
+                            patientDAO.updatePatient(patientId, downloadedPatient)
+                            setContent(Unit, PatientSynchronizing)
+                        },
                         { setError(it, PatientSynchronizing) }
                 )
         )

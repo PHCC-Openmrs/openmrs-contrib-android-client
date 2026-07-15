@@ -320,6 +320,20 @@ object AppDatabaseHelper {
         }
         
         patientEntity.uuid = patient.uuid
+        
+        val identifiers = patient.identifiers
+        if (identifiers != null && !identifiers.isEmpty()) {
+            // Try to find the primary/preferred identifier or just the first one that has a string
+            val idObj = identifiers.find { it.preferred == true && it.identifier != null } 
+                       ?: identifiers.find { it.identifier != null }
+                       ?: identifiers[0]
+            
+            patientEntity.identifier = idObj.identifier
+            logger.i("[DB-Save] Patient Identifier list size: ${identifiers.size}, Selected: '${patientEntity.identifier}'")
+        } else {
+            logger.w("[DB-Save] Patient has NO identifiers!")
+        }
+
         patientEntity.gender = patient.gender
         patientEntity.birthDate = patient.birthdate
         patientEntity.deathDate = null

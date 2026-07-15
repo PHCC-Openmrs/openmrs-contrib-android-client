@@ -97,11 +97,17 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
 
         final Patient patient = mItems.get(position);
 
-        if (null != patient.getIdentifier()) {
-            String patientIdentifier = String.format(mContext.getResources().getString(R.string.patient_identifier),
-                    patient.getIdentifier().getIdentifier());
-            holder.mIdentifier.setText(patientIdentifier);
+        String displayId = "";
+        if (patient.getIdentifier() != null && patient.getIdentifier().getIdentifier() != null) {
+            displayId = patient.getIdentifier().getIdentifier();
         }
+        if (displayId.isEmpty() || displayId.equalsIgnoreCase("null")) {
+            if (patient.getId() != null) {
+                displayId = patient.getId().toString();
+            }
+        }
+        holder.mIdentifier.setText("# " + displayId);
+
         if (null != patient.getName()) {
             String name = patient.getName().getNameString();
             com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger().i("[UI-Display] Synced List Name: '" + name + "'");

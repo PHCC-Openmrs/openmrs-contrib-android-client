@@ -160,6 +160,11 @@ public class PatientRepository extends BaseRepository {
                     logger.i("Server registration successful. UUID: " + returnedPatientDto.getUuid());
 
                     patient.setUuid(returnedPatientDto.getUuid());
+                    if (returnedPatientDto.getIdentifiers() != null && !returnedPatientDto.getIdentifiers().isEmpty()) {
+                        patient.setIdentifiers(returnedPatientDto.getIdentifiers());
+                        logger.i("Updated patient identifiers from server: " + patient.getIdentifier().getIdentifier());
+                    }
+
                     if (patient.getPhoto() != null) {
                         uploadPatientPhoto(patient);
                     }
@@ -192,6 +197,9 @@ public class PatientRepository extends BaseRepository {
                             if (serverGiven.equalsIgnoreCase(localGiven) && serverFamily.equalsIgnoreCase(localFamily)) {
                                 logger.i("Names match. Linking local patient to existing server record (UUID: " + serverPatient.getUuid() + ")");
                                 patient.setUuid(serverPatient.getUuid());
+                                if (serverPatient.getIdentifiers() != null && !serverPatient.getIdentifiers().isEmpty()) {
+                                    patient.setIdentifiers(serverPatient.getIdentifiers());
+                                }
                                 patientDAO.updatePatient(patient.getId(), patient);
                                 return patient;
                             } else {
@@ -337,6 +345,12 @@ else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
             Response<PatientDto> response = call.execute();
             if (response.isSuccessful() && response.body() != null) {
                 final PatientDto newPatientDto = response.body();
+                if (newPatientDto.getIdentifiers() != null) {
+                    logger.i("Downloaded patient identifiers. Count: " + newPatientDto.getIdentifiers().size());
+                    for (PatientIdentifier id : newPatientDto.getIdentifiers()) {
+                        logger.i(" > ID: '" + id.getIdentifier() + "', Type: " + (id.getIdentifierType() != null ? id.getIdentifierType().getDisplay() : "null"));
+                    }
+                }
 
                 Bitmap photo = null;
                 try {
