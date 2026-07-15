@@ -86,6 +86,7 @@ class VisitDAO @Inject constructor() {
     private fun updateVisit(visit: Visit, visitID: Long, patientID: Long): Boolean {
         val encounterDAO = EncounterDAO()
         val observationDAO = ObservationDAO()
+        visit.id = visitID
         visit.patient = PatientDAO().findPatientByID(patientID.toString())
         if (visit.encounters != null) {
             for (encounter in visit.encounters) {
