@@ -14,9 +14,9 @@ abstract class BaseViewModel<T> : ViewModel() {
     protected val _result: MutableLiveData<Result<T>> = MutableLiveData()
     val result: LiveData<Result<T>> get() = _result
 
-    protected val mSubscription: CompositeSubscription = CompositeSubscription()
+    val mSubscription: CompositeSubscription = CompositeSubscription()
 
-    protected fun addSubscription(subscription: Subscription) {
+    fun addSubscription(subscription: Subscription) {
         mSubscription.add(subscription)
     }
 

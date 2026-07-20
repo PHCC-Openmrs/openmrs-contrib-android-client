@@ -70,7 +70,11 @@ class FormListFragment : BaseFragment() {
                 if (encounterName == EncounterType.ADMISSION) {
                     startAdmissionFormActivity(formName!!, patientId, encounterType!!)
                 } else {
-                    startFormDisplayActivity(formName!!, patientId, formFieldsJson!!, encounterType!!)
+                    if (formFieldsJson != null) {
+                        startFormDisplayActivity(formName!!, encounterName!!, patientId, formFieldsJson!!, encounterType!!)
+                    } else {
+                        ToastUtil.error(getString(R.string.failed_to_open_vitals_form))
+                    }
                 }
             }
         }
@@ -110,9 +114,10 @@ class FormListFragment : BaseFragment() {
         }
     }
 
-    private fun startFormDisplayActivity(formName: String, patientId: Long, valueRefString: String, encounterType: String) {
+    private fun startFormDisplayActivity(formName: String, encounterName: String, patientId: Long, valueRefString: String, encounterType: String) {
         Intent(context, FormDisplayActivity::class.java).apply {
             putExtra(FORM_NAME, formName)
+            putExtra(ApplicationConstants.BundleKeys.ENCOUNTERTYPE_NAME, encounterName)
             putExtra(PATIENT_ID_BUNDLE, patientId)
             putExtra(VALUEREFERENCE, valueRefString)
             putExtra(ENCOUNTERTYPE, encounterType)

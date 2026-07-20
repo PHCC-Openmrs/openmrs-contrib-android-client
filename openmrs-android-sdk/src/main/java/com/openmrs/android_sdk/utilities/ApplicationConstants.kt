@@ -111,6 +111,7 @@ object ApplicationConstants {
         const val VISIT_ID = "visitID"
         const val ENCOUNTER_UUID = "encounterUuid"
         const val ENCOUNTERTYPE = "encounterType"
+        const val ENCOUNTERTYPE_NAME = "encounterTypeName"
         const val VALUEREFERENCE = "valueReference"
         const val FORM_NAME = "formName"
         const val CALCULATED_LOCALLY = "CALCULATED_LOCALLY"
@@ -148,7 +149,33 @@ object ApplicationConstants {
         const val VITALS = "67a71486-1a54-468f-ac3e-7091a9a79584"
 
         @JvmField
-        var ENCOUNTER_TYPES_DISPLAYS = arrayOf(EncounterType.VITALS, EncounterType.ADMISSION, EncounterType.DISCHARGE, EncounterType.VISIT_NOTE)
+        var ENCOUNTER_TYPES_DISPLAYS = arrayOf(
+            EncounterType.VITALS,
+            EncounterType.ADMISSION,
+            EncounterType.DISCHARGE,
+            EncounterType.VISIT_NOTE,
+            EncounterType.WARD_ADMISSION,
+            EncounterType.WARD_DISCHARGE,
+            EncounterType.TRANSFER_REQUEST,
+            EncounterType.ADULT_VISIT,
+            EncounterType.BED_ASSIGNMENT,
+            EncounterType.CHECK_IN,
+            EncounterType.CHECK_OUT,
+            EncounterType.CONSULTATION,
+            EncounterType.IMMUNIZATIONS,
+            EncounterType.INPATIENT_NOTE,
+            EncounterType.INTRA_HOSPITAL_TRANSFER,
+            EncounterType.LAB_RESULTS,
+            EncounterType.MENTAL_HEALTH_ASSESSMENT,
+            EncounterType.ORDER,
+            EncounterType.TRANSFER,
+            EncounterType.SURGICAL_OPERATION,
+            EncounterType.REFERRAL,
+            EncounterType.COVID_19,
+            EncounterType.OUTPATIENT_DEPT,
+            EncounterType.SOAP_NOTE,
+            EncounterType.NCD_PATIENT_CARD
+        )
     }
 
     object RequestCodes {

@@ -12,6 +12,7 @@ import com.openmrs.android_sdk.library.models.Encountercreate
 import com.openmrs.android_sdk.library.models.Visit
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.library.models.Encounter
+import com.openmrs.android_sdk.library.models.Observation
 import com.openmrs.android_sdk.library.models.EncounterType
 import com.openmrs.android_sdk.library.models.ConceptClass
 import com.openmrs.android_sdk.library.models.Resource
@@ -50,6 +51,9 @@ class EncounterRepository @Inject constructor(
             }
 
             encounterCreate.visit = activeVisit.uuid
+            if (encounterCreate.location == null) {
+                encounterCreate.location = OpenmrsAndroid.getLocation()
+            }
             val encId = encounterCreate.id
             if (encId == null || getEncounterCreateFromDB(encId).execute() == null) {
                 encounterCreate.id = saveEncounterCreateToDB(encounterCreate).execute()
@@ -59,18 +63,73 @@ class EncounterRepository @Inject constructor(
                 restApi.createEncounter(encounterCreate).execute().run {
                     if (isSuccessful) {
                         val encounter: Encounter = body()!!
-                        encounter.encounterType = EncounterType(encounterCreate.formname)
-                        for (i in encounterCreate.observations.indices) {
-                            encounter.observations[i].displayValue = encounterCreate.observations[i].value
-                            encounter.observations[i].concept = ConceptClass().apply {
-                                uuid = encounterCreate.observations[i].concept!!
+                        
+                        // Enrich encounter from submitted data if response is thin
+                        if (encounter.patient == null) encounter.patient = patient
+                        
+                        // Fix encounter type if missing or thin
+                        val typeDisplay = if (encounter.encounterType?.display != null) {
+                            encounter.encounterType!!.display
+                        } else if (!encounterCreate.formname.isNullOrBlank()) {
+                            encounterCreate.formname
+                        } else {
+                            EncounterType.VITALS
+                        }
+                        
+                        if (encounter.encounterType == null) {
+                            encounter.encounterType = EncounterType(typeDisplay)
+                        } else {
+                            encounter.encounterType!!.display = typeDisplay
+                        }
+
+                        // If observations are missing in the response, try to populate them from the submitted values
+                        if (encounter.observations.isEmpty() && encounterCreate.observations.isNotEmpty()) {
+                            val observations = mutableListOf<Observation>()
+                            for (submittedObs in encounterCreate.observations) {
+                                val obs = Observation()
+                                obs.concept = ConceptClass().apply { uuid = submittedObs.concept }
+                                obs.value = submittedObs.value
+                                
+                                val label = getLabelForConcept(submittedObs.concept)
+                                val valueString = submittedObs.value ?: ""
+                                obs.display = "$label: $valueString"
+                                observations.add(obs)
+                            }
+                            encounter.observations = observations
+                        }
+
+                        // Ensure all observations have correct display mapping for local DB
+                        for (i in encounter.observations.indices) {
+                            val obs = encounter.observations[i]
+                            if (obs.person == null) obs.person = patient
+                            
+                            // Try to enrich thin observation with submitted data
+                            if (i < encounterCreate.observations.size) {
+                                val submittedObs = encounterCreate.observations[i]
+                                if (obs.concept == null || obs.concept?.uuid == null) {
+                                    obs.concept = ConceptClass().apply { uuid = submittedObs.concept }
+                                }
+                                if (obs.value == null) {
+                                    obs.value = submittedObs.value
+                                }
+                            }
+                            
+                            // If display is missing, construct it
+                            if (obs.display == null && obs.concept?.uuid != null) {
+                                val label = getLabelForConcept(obs.concept?.uuid)
+                                val valueString = obs.value ?: ""
+                                obs.display = "$label: $valueString"
                             }
                         }
+
+                        // Save the returned encounter locally so it shows up in dashboard tabs instantly
+                        encounterDAO.saveEncounter(encounter, activeVisit.id)
 
                         updateEncounterCreate(encounterCreate.apply { synced = true }).execute()
 
                         return@Callable ResultType.EncounterSubmissionSuccess
-                    } else {
+                    }
+else {
                         throw Exception("syncEncounter error: ${message()}")
                     }
                 }
@@ -367,5 +426,20 @@ class EncounterRepository @Inject constructor(
         return AppDatabaseHelper.createObservableIO(Callable {
             return@Callable db.encounterCreateRoomDAO().updateExistingEncounter(encounterCreate)
         })
+    }
+
+    private fun getLabelForConcept(conceptUuid: String?): String {
+        return when (conceptUuid?.uppercase()) {
+            "5089AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Weight (kg)"
+            "5090AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Height (cm)"
+            "1342AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Body Mass Index"
+            "5085AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Systolic blood pressure"
+            "5086AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Diastolic blood pressure"
+            "5087AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Pulse"
+            "5088AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Temperature (c)"
+            "5092AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Blood Oxygen Saturation"
+            "5242AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" -> "Respiratory Rate"
+            else -> conceptUuid ?: "Observation"
+        }
     }
 }

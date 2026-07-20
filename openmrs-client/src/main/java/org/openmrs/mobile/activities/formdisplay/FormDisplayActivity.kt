@@ -26,8 +26,11 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FI
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NAME
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VALUEREFERENCE
 import com.openmrs.android_sdk.utilities.FormUtils.getForm
+import com.openmrs.android_sdk.utilities.DateField
 import com.openmrs.android_sdk.utilities.InputField
+import com.openmrs.android_sdk.utilities.SelectMultipleField
 import com.openmrs.android_sdk.utilities.SelectOneField
+import com.openmrs.android_sdk.utilities.TextField
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -121,18 +124,24 @@ class FormDisplayActivity : ACBaseActivity() {
     private fun submitForm() {
         val inputFields = mutableListOf<InputField>()
         val radioGroupFields = mutableListOf<SelectOneField>()
+        val checkboxFields = mutableListOf<SelectMultipleField>()
+        val dateFields = mutableListOf<DateField>()
+        val textFields = mutableListOf<TextField>()
 
         (binding.viewPager.adapter as FormPageAdapter).registeredFragments.forEach { pos, frag ->
             val formPageFragment = frag as FormDisplayPageFragment
 
             if (!formPageFragment.checkInputFields()) return
 
-            inputFields += formPageFragment.getInputFields()
-            radioGroupFields += formPageFragment.getSelectOneFields()
+            inputFields.addAll(formPageFragment.getInputFields())
+            radioGroupFields.addAll(formPageFragment.getSelectOneFields())
+            checkboxFields.addAll(formPageFragment.getSelectMultipleFields())
+            dateFields.addAll(formPageFragment.getDateFields())
+            textFields.addAll(formPageFragment.getTextFields())
         }
 
         enableSubmitButton(false)
-        viewModel.submitForm(inputFields, radioGroupFields).observeOnce(this, Observer { result ->
+        viewModel.submitForm(inputFields, radioGroupFields, checkboxFields, dateFields, textFields).observeOnce(this, Observer { result ->
             when (result) {
                 ResultType.EncounterSubmissionSuccess -> {
                     ToastUtil.success(getString(R.string.form_submitted_successfully))
@@ -142,7 +151,9 @@ class FormDisplayActivity : ACBaseActivity() {
                     ToastUtil.notify(getString(R.string.form_data_sync_is_off_message))
                     finish()
                 }
-                else -> ToastUtil.error(getString(R.string.form_data_submit_error))
+                else -> {
+                    ToastUtil.error(getString(R.string.form_data_submit_error))
+                }
             }
             enableSubmitButton(true)
         })

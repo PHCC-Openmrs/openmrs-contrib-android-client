@@ -188,7 +188,7 @@ interface EncounterRoomDAO {
      * @param encounterEntity the encounter entity
      * @return the long
      */
-    @Insert
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     fun addEncounter(encounterEntity: EncounterEntity): Long
 
     /**

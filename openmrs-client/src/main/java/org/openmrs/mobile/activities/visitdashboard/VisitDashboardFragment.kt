@@ -31,7 +31,6 @@ import com.openmrs.android_sdk.library.models.Encounter
 import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VISIT_ID
-import com.openmrs.android_sdk.utilities.ApplicationConstants.EncounterTypes.ENCOUNTER_TYPES_DISPLAYS
 import com.openmrs.android_sdk.utilities.NetworkUtils
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
@@ -93,13 +92,10 @@ class VisitDashboardFragment : BaseFragment() {
     }
 
     private fun updateEncountersList(visitEncounters: List<Encounter>) = with(binding) {
-        val possibleEncounterTypes = ENCOUNTER_TYPES_DISPLAYS.toHashSet()
-        val displayableEncounters = visitEncounters.filter { possibleEncounterTypes.contains(it.encounterType?.display) }
-
         (visitDashboardExpList.expandableListAdapter as VisitExpandableListAdapter)
-                .updateList(displayableEncounters)
+                .updateList(visitEncounters)
 
-        if (displayableEncounters.isEmpty()) {
+        if (visitEncounters.isEmpty()) {
             visitDashboardEmpty.makeVisible()
             showEmptyEncountersSnackBar()
         }

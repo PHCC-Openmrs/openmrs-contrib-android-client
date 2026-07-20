@@ -73,11 +73,7 @@ class VisitDAO @Inject constructor() {
         val visitID = visitRoomDAO.addVisit(visitEntity)
         if (visit.encounters != null) {
             for (encounter in visit.encounters) {
-                val encounterID = encounterDAO.saveEncounter(encounter, visitID)
-                for (obs in encounter.observations) {
-                    val observationEntity = convert(obs, encounterID)
-                    observationRoomDAO.addObservation(observationEntity)
-                }
+                encounterDAO.saveEncounter(encounter, visitID)
             }
         }
         return visitID
@@ -101,9 +97,11 @@ class VisitDAO @Inject constructor() {
                     val observationEntity = convert(obs, encounterID)
                     observationRoomDAO.deleteObservation(observationEntity)
                 }
-                for (obs in encounter.observations) {
-                    val observationEntity = convert(obs, encounterID)
-                    observationRoomDAO.addObservation(observationEntity)
+                if (encounter.observations != null) {
+                    for (obs in encounter.observations) {
+                        val observationEntity = convert(obs, encounterID)
+                        observationRoomDAO.addObservation(observationEntity)
+                    }
                 }
             }
         }
@@ -159,8 +157,8 @@ class VisitDAO @Inject constructor() {
      * @param patientId the patient id
      * @return the active visit by patient id
      */
-    fun getActiveVisitByPatientId(patientId: Long): Observable<Visit> {
-        return createObservableIO<Visit>(Callable<Visit> {
+    fun getActiveVisitByPatientId(patientId: Long): Observable<Visit?> {
+        return createObservableIO<Visit?>(Callable<Visit?> {
             try {
                 val visitEntity = visitRoomDAO.getActiveVisitByPatientId(patientId)!!.blockingGet()
                 return@Callable convert(visitEntity)

@@ -55,7 +55,11 @@ class EncounterDAO @Inject constructor() {
      */
     fun saveEncounter(encounter: Encounter, visitID: Long?): Long {
         val encounterEntity: EncounterEntity = convert(encounter, visitID)
-        return encounterRoomDAO.addEncounter(encounterEntity)
+        val encounterID = encounterRoomDAO.addEncounter(encounterEntity)
+        for (obs in encounter.observations) {
+            observationRoomDAO.addObservation(convert(obs, encounterID))
+        }
+        return encounterID
     }
 
     /**
@@ -131,9 +135,6 @@ class EncounterDAO @Inject constructor() {
                 encounterRoomDAO.deleteEncounterByID(oldLastVitalsEncounterID)
             }
             val encounterID = saveEncounter(encounter, null)
-            for (obs in encounter.observations) {
-                observationDAO?.saveObservation(obs, encounterID)
-            }
         }
     }
 
@@ -145,8 +146,12 @@ class EncounterDAO @Inject constructor() {
      */
     fun getLastVitalsEncounter(patientUUID: String?): Observable<Encounter> {
         return createObservableIO(Callable {
-            val encounterEntity = encounterRoomDAO.getLastVitalsEncounter(patientUUID!!, EncounterType.VITALS).blockingGet()
-            convert(encounterEntity)
+            try {
+                val encounterEntity = encounterRoomDAO.getLastVitalsEncounter(patientUUID!!, EncounterType.VITALS).blockingGet()
+                convert(encounterEntity)
+            } catch (e: Exception) {
+                Encounter()
+            }
         })
     }
 

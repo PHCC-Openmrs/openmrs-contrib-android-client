@@ -16,6 +16,7 @@ package com.openmrs.android_sdk.library.databases.entities;
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.TypeConverters
 import com.openmrs.android_sdk.library.models.Resource
 import com.openmrs.android_sdk.library.models.typeConverters.FormResourceConverter
@@ -45,4 +46,12 @@ class FormResourceEntity : Resource() {
     @SerializedName("valueReference")
     @Expose
     var valueReference: String? = null
+
+    @ColumnInfo(name = "encounter_type")
+    var encounterTypeUuid: String? = null
+
+    @Ignore
+    @SerializedName("encounterType")
+    @Expose
+    var encounterTypeResource: Resource? = null
 }

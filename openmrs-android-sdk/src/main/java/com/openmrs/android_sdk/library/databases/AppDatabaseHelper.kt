@@ -87,6 +87,8 @@ object AppDatabaseHelper {
         observationEntity.diagnosisCertainty = obs.diagnosisCertainty
         observationEntity.diagnosisNote = obs.diagnosisNote
         observationEntity.conceptuuid = obs.concept?.uuid
+        observationEntity.patientUuid = obs.person?.uuid
+        observationEntity.obsDateTime = obs.obsDatetime
         return observationEntity
     }
 
@@ -109,6 +111,7 @@ object AppDatabaseHelper {
 
         observation.person = person
         observation.value = obs.displayValue
+        observation.displayValue = obs.displayValue
         observation.concept = concept
         observation.uuid = obs.uuid
         observation.display = obs.display
@@ -153,9 +156,19 @@ object AppDatabaseHelper {
         if (visitID != null) {
             encounterEntity.visitKeyId = visitID.toString()
         }
-        encounterEntity.encounterDateTime = encounter.encounterDatetime.toString()
-        encounterEntity.encounterType = encounter.encounterType!!.display
-        encounterEntity.patientUuid = encounter.patient?.uuid
+        encounterEntity.visitUuid = encounter.visit?.uuid ?: encounter.visitID?.toString()
+        
+        // Prefer the raw date string from the server to avoid local parsing errors
+        encounterEntity.encounterDateTime = if (!encounter.encounterDate.isNullOrBlank()) {
+            encounter.encounterDate!!
+        } else if (encounter.encounterDatetime != null) {
+            DateUtils.convertTime(encounter.encounterDatetime!!, DateUtils.OPEN_MRS_REQUEST_FORMAT)
+        } else {
+            DateUtils.getCurrentDateTime()
+        }
+        
+        encounterEntity.encounterType = encounter.encounterType?.display ?: ""
+        encounterEntity.patientUuid = encounter.patient?.uuid ?: encounter.patientUUID
         encounterEntity.formUuid = encounter.formUuid
         if (null == encounter.location) {
             encounterEntity.locationUuid = null
@@ -198,8 +211,12 @@ object AppDatabaseHelper {
         }
         encounter.uuid = entity.uuid
         encounter.display = entity.display
-        val dateTime = entity.encounterDateTime.toLong()
-        encounter.setEncounterDatetime(convertTime(dateTime, DateUtils.OPEN_MRS_REQUEST_FORMAT))
+        encounter.setEncounterDatetime(entity.encounterDateTime)
+        if (entity.visitUuid != null) {
+            val visit = Visit()
+            visit.uuid = entity.visitUuid
+            encounter.visit = visit
+        }
         encounter.observations = ObservationDAO().findObservationByEncounterID(entity.id!!)
         encounter.patient = PatientDAO().findPatientByUUID(entity.patientUuid)
         val location: LocationEntity? = try {
@@ -216,7 +233,9 @@ object AppDatabaseHelper {
                 OpenmrsAndroid.getInstance()!!.applicationContext,
                 RepositoryEntryPoint::class.java
         ).provideFormRepository()
-        encounter.form = formRepository.fetchFormByUuid(entity.formUuid).execute()
+        if (entity.formUuid != null) {
+            encounter.form = formRepository.fetchFormByUuid(entity.formUuid!!).execute()
+        }
         return encounter
     }
 

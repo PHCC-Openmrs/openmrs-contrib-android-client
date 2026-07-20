@@ -75,7 +75,7 @@ public interface RestApi {
      *
      * @return the forms
      */
-    @GET("form?v=custom:(uuid,name,resources)")
+    @GET("form?v=custom:(uuid,name,encounterType:(uuid,display),resources:(uuid,name,valueReference))")
     Call<Results<FormResourceEntity>> getForms();
 
     /**
@@ -305,7 +305,7 @@ public interface RestApi {
      * @param encountercreate the encountercreate
      * @return the call
      */
-    @POST("encounter")
+    @POST("encounter?v=full")
     Call<Encounter> createEncounter(@Body Encountercreate encountercreate);
 
     /**
@@ -315,7 +315,7 @@ public interface RestApi {
      * @param encountercreate the encountercreate containing the updates
      * @return the call
      */
-    @POST("encounter/{uuid}")
+    @POST("encounter/{uuid}?v=full")
     Call<Encounter> updateEncounter(@Path("uuid") String uuid, @Body Encountercreate encountercreate);
 
     /**
@@ -333,7 +333,7 @@ public interface RestApi {
      * @param encounterUuid the UUID of the patient
      * @return the encounter
      */
-    @GET("encounter/{encounterUuid}")
+    @GET("encounter/{encounterUuid}?v=full")
     Call<Encounter> getEncounterByUuid(@Path("encounterUuid") String encounterUuid);
 
     /**

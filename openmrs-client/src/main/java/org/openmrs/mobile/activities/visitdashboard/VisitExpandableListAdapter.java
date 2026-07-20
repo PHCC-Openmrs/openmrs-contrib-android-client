@@ -68,7 +68,17 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
             switch (encounter.getEncounterType().getDisplay()) {
                 case EncounterType.VITALS:
                     for (Observation obs : encounter.getObservations()) {
-                        convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(), obs.getDisplayValue());
+                        String display = obs.getDisplay();
+                        if (display == null) continue;
+                        String value = obs.getDisplayValue();
+                        if (value == null || value.trim().isEmpty()) {
+                            value = obs.getValue();
+                        }
+                        if (value == null || value.trim().isEmpty()) {
+                            convertView = openMRSInflater.addSingleStringView(contentLayout, display);
+                        } else {
+                            convertView = openMRSInflater.addKeyValueStringView(contentLayout, display, value);
+                        }
                     }
                     layouts.add(convertView);
                     break;
@@ -94,8 +104,15 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
                                     mContext.getString(R.string.hiv_unknown));
                             } else {
                                 //miscellaneous, for all other cases that have a Display - Value pair
-                                convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(), obs.getDisplayValue());
+                                String value = obs.getDisplayValue();
+                                if (value == null || value.trim().isEmpty()) {
+                                    value = obs.getValue();
+                                }
+                                convertView = openMRSInflater.addKeyValueStringView(contentLayout, obs.getDisplay(), value);
                             }
+                        } else if (obs.getDisplay() != null) {
+                            // Fallback if only display is available
+                            convertView = openMRSInflater.addSingleStringView(contentLayout, obs.getDisplay());
                         }
                     }
                     layouts.add(convertView);
@@ -109,6 +126,16 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
                     layouts.add(convertView);
                     break;
                 default:
+                    for (Observation obs : encounter.getObservations()) {
+                        String display = obs.getDisplay();
+                        if (display == null) continue;
+                        String value = obs.getDisplayValue();
+                        if (value == null || value.trim().isEmpty()) {
+                            value = obs.getValue();
+                        }
+                        convertView = openMRSInflater.addKeyValueStringView(contentLayout, display, value);
+                    }
+                    layouts.add(convertView);
                     break;
             }
         }
@@ -158,28 +185,13 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
         final TextView detailsSelector = rowView.findViewById(R.id.listVisitGroupDetailsSelector);
         final Encounter encounter = mEncounters.get(groupPosition);
         encounterName.setText(encounter.getEncounterType().getDisplay());
+        encounterName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
         if (isExpanded) {
             detailsSelector.setText(mContext.getString(R.string.list_visit_selector_hide));
             bindDrawableResources(R.drawable.exp_list_hide_details, detailsSelector, RIGHT);
         } else {
             detailsSelector.setText(mContext.getString(R.string.list_visit_selector_show));
             bindDrawableResources(R.drawable.exp_list_show_details, detailsSelector, RIGHT);
-        }
-        switch (encounter.getEncounterType().getDisplay()) {
-            case EncounterType.VITALS:
-                bindDrawableResources(R.drawable.ico_vitals_small, encounterName, LEFT);
-                break;
-            case EncounterType.VISIT_NOTE:
-                bindDrawableResources(R.drawable.visit_note, encounterName, LEFT);
-                break;
-            case EncounterType.DISCHARGE:
-                bindDrawableResources(R.drawable.discharge, encounterName, LEFT);
-                break;
-            case EncounterType.ADMISSION:
-                bindDrawableResources(R.drawable.admission, encounterName, LEFT);
-                break;
-            default:
-                break;
         }
         return rowView;
     }

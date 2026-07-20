@@ -13,16 +13,13 @@
  */
 package com.openmrs.android_sdk.utilities
 
-import android.annotation.SuppressLint
 import com.openmrs.android_sdk.library.OpenmrsAndroid
-import com.openmrs.android_sdk.utilities.StringUtils.notEmpty
 import com.openmrs.android_sdk.utilities.StringUtils.notNull
 import org.joda.time.DateTime
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import java.text.DateFormat
-import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
@@ -32,6 +29,7 @@ object DateUtils {
     const val DEFAULT_DATE_FORMAT = "dd/MM/yyyy"
     const val DATE_WITH_TIME_FORMAT = "dd/MM/yyyy HH:mm"
     private const val OPEN_MRS_RESPONSE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+    private const val OPEN_MRS_RESPONSE_FORMAT_ISO = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"
     const val OPEN_MRS_REQUEST_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
     const val OPEN_MRS_REQUEST_PATIENT_FORMAT = "yyyy-MM-dd"
     const val ZERO = 0L
@@ -39,8 +37,8 @@ object DateUtils {
 
     @JvmStatic
     fun convertTime(time: Long, dateFormat: String?, timeZone: TimeZone): String {
-        val date:Date = Date(time)
-        @SuppressLint("SimpleDateFormat") val format = SimpleDateFormat(dateFormat)
+        val date = Date(time)
+        val format = SimpleDateFormat(dateFormat)
         format.timeZone = timeZone
         return format.format(date)
     }
@@ -62,44 +60,43 @@ object DateUtils {
 
     @JvmStatic
     fun convertTime(dateAsString: String?): Long? {
-        return if (isValidFormat(DEFAULT_DATE_FORMAT, dateAsString)) {
-            convertTime(dateAsString, DEFAULT_DATE_FORMAT)
-        } else {
-            convertTime(dateAsString, OPEN_MRS_RESPONSE_FORMAT)
+        if (dateAsString == null) return null
+        
+        val formats = arrayOf(
+            DEFAULT_DATE_FORMAT,
+            DATE_WITH_TIME_FORMAT,
+            OPEN_MRS_RESPONSE_FORMAT,
+            OPEN_MRS_RESPONSE_FORMAT_ISO,
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            OPEN_MRS_REQUEST_PATIENT_FORMAT,
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS+0000"
+        )
+
+        for (format in formats) {
+            try {
+                val sdf = SimpleDateFormat(format)
+                val date = sdf.parse(dateAsString)
+                if (date != null) return date.time
+            } catch (e: Exception) {
+            }
         }
+        
+        openMRSLogger.w("Failed to parse date :$dateAsString")
+        return null
     }
 
     @JvmStatic
     fun convertTime(dateAsString: String?, dateFormat: String?): Long? {
-        var time: Long? = null
-        if (notNull(dateAsString)) {
-            val format: DateFormat = SimpleDateFormat(dateFormat)
-            var formattedDate: Date?
-            try {
-                formattedDate = parseString(dateAsString, format)
-                time = formattedDate!!.time
-            } catch (e: ParseException) {
-                try {
-                    formattedDate = parseString(dateAsString, SimpleDateFormat(OPEN_MRS_REQUEST_PATIENT_FORMAT))
-                    time = formattedDate!!.time
-                } catch (e1: ParseException) {
-                    openMRSLogger.w("Failed to parse date :$dateAsString caused by $e")
-                }
-            }
-        }
-        return time
-    }
-
-    @JvmStatic
-    @Throws(ParseException::class)
-    private fun parseString(dateAsString: String?, format: DateFormat): Date? {
-        var formattedDate: Date? = null
+        if (dateAsString == null) return null
         try {
-            formattedDate = format.parse(dateAsString!!)
-        } catch (e: NullPointerException) {
-            openMRSLogger.w("Failed to parse date :$dateAsString caused by $e")
+            val format: DateFormat = SimpleDateFormat(dateFormat)
+            val formattedDate = format.parse(dateAsString)
+            return formattedDate?.time
+        } catch (e: Exception) {
+            return convertTime(dateAsString)
         }
-        return formattedDate
     }
 
     @JvmStatic
@@ -119,8 +116,9 @@ object DateUtils {
 
     @JvmStatic
     fun convertTime1(dateAsString: String, dateFormat: String?): String {
-        return if (notNull(dateAsString) && notEmpty(dateAsString)) {
-            convertTime(convertTime(dateAsString)!!, dateFormat, TimeZone.getDefault())
+        val time = convertTime(dateAsString)
+        return if (time != null) {
+            convertTime(time, dateFormat, TimeZone.getDefault())
         } else dateAsString
     }
 
@@ -131,20 +129,8 @@ object DateUtils {
 
     @JvmStatic
     fun getDateFromString(dateAsString: String?, dateFormat: String?): Date? {
-        var formattedDate: Date? = null
-        if (notNull(dateAsString)) {
-            val format: DateFormat = SimpleDateFormat(dateFormat)
-            try {
-                formattedDate = parseString(dateAsString, format)
-            } catch (e: ParseException) {
-                try {
-                    formattedDate = parseString(dateAsString, SimpleDateFormat(OPEN_MRS_REQUEST_PATIENT_FORMAT))
-                } catch (e1: ParseException) {
-                    openMRSLogger.w("Failed to parse date :$dateAsString caused by $e")
-                }
-            }
-        }
-        return formattedDate
+        val time = convertTime(dateAsString, dateFormat)
+        return if (time != null) Date(time) else null
     }
 
     @JvmStatic
@@ -154,27 +140,9 @@ object DateUtils {
         return dateFormat.format(date)
     }
 
-
-    /**
-     * Converts difference in years and months into DateTime
-     *
-     * @param yearDiff difference in years
-     * @param monthDiff difference in months
-     * @return the date as a DateTime
-     */
     fun getDateTimeFromDifference(yearDiff: Int, monthDiff: Int): DateTime {
         return LocalDate().toDateTimeAtStartOfDay().minusYears(yearDiff).minusMonths(monthDiff)
     }
-
-    /**
-     * Validate a date and make sure it is between the minimum and maximum date
-     * Date format is dd/MM/yyyy
-     *
-     * @param dateString the date to check
-     * @param minDate    minimum date allowed
-     * @param maxDate    maximum date limit
-     * @return true if date is appropriate
-     */
 
     @JvmStatic
     fun validateDate(dateString: String, minDate: DateTime, maxDate: DateTime): Boolean {
@@ -182,11 +150,9 @@ object DateUtils {
             return false
         }
         val s = dateString.trim { it <= ' ' }
-        // length must be min d/M/yyyy and max dd/MM/yyyy
         if (s.isEmpty() || s.length < 8 || s.length > 10) {
             return false
         }
-        // number of slashes must be 2
         if (!s.contains("/")) {
             return false
         }
@@ -198,61 +164,41 @@ object DateUtils {
         }
         return if (numberOfDashes != 2) {
             false
-        } else { // check day, month and year
-            val bundledDate = s.split("/").toTypedArray()
-            val day = bundledDate[0].toInt()
-            val month = bundledDate[1].toInt()
-            val year = bundledDate[2].toInt()
-            val maxDays: Int
-            // Leap year on February -> 29 days
-            // Non leap year on February -> 28 days
-            // April, June, September, November -> 30 days
-            // January, March, May, July, August, October, December -> 31 days
-            maxDays = if (month == 2) {
-                if (year % 4 == 0) {
-                    29
+        } else {
+            try {
+                val bundledDate = s.split("/").toTypedArray()
+                val day = bundledDate[0].toInt()
+                val month = bundledDate[1].toInt()
+                val year = bundledDate[2].toInt()
+                val maxDays: Int = if (month == 2) {
+                    if (year % 4 == 0) 29 else 28
+                } else if (day == 31 && (month == 4 || month == 6 || month == 9 || month == 11)) {
+                    30
                 } else {
-                    28
+                    31
                 }
-            } else if (day == 31 && month == 4 || month == 6 || month == 9 || month == 11) {
-                30
-            } else {
-                31
-            }
-            val maxMonths = 12
-            if (day <= 0 || day > maxDays || month <= 0 || month > maxMonths || year <= minDate.year || year > maxDate.year) {
+                if (day <= 0 || day > maxDays || month <= 0 || month > 12 || year <= minDate.year || year > maxDate.year) {
+                    false
+                } else {
+                    val formatter = DateTimeFormat.forPattern(DEFAULT_DATE_FORMAT)
+                    val dob = formatter.parseDateTime(s)
+                    dob.isAfter(minDate) && dob.isBefore(maxDate)
+                }
+            } catch (e: Exception) {
                 false
-            } else { // Now we are able to convert the string into a DateTime variable
-                val formatter = DateTimeFormat.forPattern(DEFAULT_DATE_FORMAT)
-                val dob = formatter.parseDateTime(s)
-                // Final check to ensure dob is between the minimum and maximum date (up to the second)
-                dob.isAfter(minDate) && dob.isBefore(maxDate)
             }
         }
     }
 
-    /**
-     * Validates a date against a given format
-     *
-     * @param format the format to check against
-     * @param dateAsString the value of raw date
-     * @return true if the given date matches the given format
-     */
     @JvmStatic
     fun isValidFormat(format: String?, dateAsString: String?): Boolean {
-        var date: Date? = null
-        if (dateAsString != null) {
-            try {
-                val simpleDateFormat = SimpleDateFormat(format)
-                date = simpleDateFormat.parse(dateAsString)
-                if (dateAsString != simpleDateFormat.format(date!!)) {
-                    date = null
-                }
-            } catch (exception: ParseException) {
-                openMRSLogger.w("Failed to validate date format :$dateAsString caused by $exception")
-            }
+        if (dateAsString == null || format == null) return false
+        try {
+            val simpleDateFormat = SimpleDateFormat(format)
+            val date = simpleDateFormat.parse(dateAsString)
             return date != null
+        } catch (exception: Exception) {
+            return false
         }
-        return false
     }
 }

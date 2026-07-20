@@ -1,9 +1,11 @@
+
 package org.openmrs.mobile.activities.formlist
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.repository.FormRepository
 import com.openmrs.android_sdk.library.dao.EncounterDAO
 import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity
+import com.openmrs.android_sdk.library.models.EncounterType
 import com.openmrs.android_sdk.library.models.FormData
 import com.openmrs.android_sdk.utilities.execute
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +16,7 @@ import rx.android.schedulers.AndroidSchedulers
 import javax.inject.Inject
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import kotlin.math.abs
 
 @HiltViewModel
 class FormListViewModel @Inject constructor(
@@ -31,28 +34,72 @@ class FormListViewModel @Inject constructor(
         setLoading()
         addSubscription(formRepository.fetchFormResourceList()
                 .map {
+                    val currentForms = mutableListOf<FormResourceEntity>()
                     for (formResource in it) {
                         var valueRefString: String? = null
                         for (resource in formResource.resources) {
-                            if (resource.name == "json") valueRefString = resource.valueReference
+                            if (resource.name == "json" || resource.name == "JSON schema") {
+                                val value = resource.valueReference
+                                if (!value.isNullOrBlank() && value.trim().startsWith("{") && value.trim().endsWith("}")) {
+                                    valueRefString = value
+                                }
+                            }
                         }
                         if (!valueRefString.isNullOrBlank()) {
-                            formResourceList.add(formResource)
+                            currentForms.add(formResource)
                         } else {
-                            // If no form fields provided, upload this form from local asset file
-                            val formData = createFormDataFromAsset(formResource.name!!.toLowerCase())
-                            formData?.let { formRepository.createForm(formResource.uuid!!, formData).execute() }
+                            val formData = createFormDataFromAsset(formResource.name?.toLowerCase() ?: "")
+                            formData?.let { data ->
+                                formRepository.createForm(formResource.uuid!!, data).execute()
+                                val resource = FormResourceEntity()
+                                resource.name = "json"
+                                resource.valueReference = data.valueReference
+                                formResource.resources = listOf(resource)
+                                currentForms.add(formResource)
+                            }
                         }
                     }
-                    val size = formResourceList.size
-                    val forms = ArrayList<String>(size)
-                    for (i in 0 until size) forms += formResourceList[i].name!!
+
+                    // Inject Virtual Forms for O3 compatibility
+                    injectVirtualForm(currentForms, EncounterType.VITALS, "vitals1.json")
+                    injectVirtualForm(currentForms, EncounterType.VISIT_NOTE, "visit_note.json")
+
+                    formResourceList.clear()
+                    formResourceList.addAll(currentForms)
+
+                    val forms = ArrayList<String>(formResourceList.size)
+                    for (form in formResourceList) forms += form.name!!
 
                     return@map forms.toTypedArray()
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ setContent(it) }, { setError(it) })
         )
+    }
+
+    private fun injectVirtualForm(list: MutableList<FormResourceEntity>, formName: String, assetName: String) {
+        val alreadyExists = list.any { it.name?.contains(formName, ignoreCase = true) == true }
+        if (!alreadyExists) {
+            val formData = parseFormDataFromAsset(assetName)
+            formData?.let {
+                val virtualForm = FormResourceEntity()
+                virtualForm.name = formName
+                virtualForm.uuid = "virtual-" + abs(formName.hashCode()).toString()
+                val resource = FormResourceEntity()
+                resource.name = "json"
+                resource.valueReference = it.valueReference
+                virtualForm.resources = listOf(resource)
+                
+                val encounterType = try { encounterDAO.getEncounterTypeByFormName(formName) } catch(e: Exception) { null }
+                virtualForm.encounterTypeUuid = encounterType?.uuid ?: when(formName) {
+                    EncounterType.VITALS -> "67a71486-1a54-468f-ac3e-7091a9a79584"
+                    EncounterType.VISIT_NOTE -> "d7151f82-c1f3-4152-a605-2f9ea7414a79"
+                    else -> null
+                }
+                
+                list.add(virtualForm)
+            }
+        }
     }
 
     private fun createFormDataFromAsset(formName: String): FormData? {
@@ -109,11 +156,40 @@ class FormListViewModel @Inject constructor(
         }
 
         private fun click() {
-            formName = formResourceList[position].name
-            encounterName = formName!!.split("\\(".toRegex()).toTypedArray()[0].trim { it <= ' ' }
-            encounterType = encounterDAO.getEncounterTypeByFormName(encounterName!!)?.uuid
-            formResourceList[position].resources.forEach {
-                if (it.name == "json") formFieldsJson = it.valueReference
+            val formResource = formResourceList[position]
+            formName = formResource.name
+            if (formName.isNullOrBlank()) {
+                encounterName = ""
+                encounterType = null
+                return
+            }
+
+            formResource.resources.forEach {
+                if (it.name == "json" || it.name == "JSON schema") {
+                    val value = it.valueReference
+                    if (!value.isNullOrBlank() && value.trim().startsWith("{") && value.trim().endsWith("}")) {
+                        formFieldsJson = value
+                    }
+                }
+            }
+
+            // Try to extract encounter type from JSON schema first
+            if (!formFieldsJson.isNullOrBlank()) {
+                try {
+                    val json = JSONObject(formFieldsJson)
+                    if (json.has("encounter")) {
+                        encounterName = json.getString("encounter")
+                    }
+                } catch (e: Exception) {}
+            }
+
+            if (encounterName.isNullOrBlank()) {
+                encounterName = formName!!.split("\\(".toRegex()).toTypedArray()[0].trim { it <= ' ' }
+            }
+
+            encounterType = formResource.encounterTypeUuid
+            if (encounterType.isNullOrBlank()) {
+                encounterType = try { encounterDAO.getEncounterTypeByFormName(encounterName!!)?.uuid } catch(e: Exception) { null }
             }
         }
     }

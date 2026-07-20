@@ -13,38 +13,13 @@ package com.openmrs.android_sdk.library.models
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import java.io.Serializable
-import java.util.*
 
-
-/**
- * Question
- *
- * @constructor Create empty Question
- */
-class Question : Serializable {
-
-    @SerializedName("type")
+class DataSource : Serializable {
+    @SerializedName("name")
     @Expose
-    var type: String? = null
+    var name: String? = null
 
-    @SerializedName("id")
+    @SerializedName("config")
     @Expose
-    var id: String? = null
-
-    @SerializedName("label")
-    @Expose
-    var label: String? = null
-
-    @SerializedName("required")
-    @Expose
-    var isRequired: Boolean = false
-
-    @SerializedName("questionOptions")
-    @Expose
-    var questionOptions: QuestionOptions? = null
-
-    @SerializedName("questions")
-    @Expose
-    var questions: List<Question> = ArrayList()
-
+    var config: DataSourceConfig? = null
 }

@@ -47,14 +47,24 @@ public class FormListService extends IntentService {
         Response<Results<FormResourceEntity>> response = null;
         try {
             response = apiService.getForms().execute();
-            if (!response.isSuccessful()) ToastUtil.error(response.message());
-            formResourceDAO.deleteAllForms();
-            List<FormResourceEntity> formResourceList = response.body().getResults();
-            for (FormResourceEntity formResourceEntity : formResourceList) {
-                formResourceDAO.addFormResource(formResourceEntity);
+            if (response.isSuccessful() && response.body() != null) {
+                formResourceDAO.deleteAllForms();
+                List<FormResourceEntity> formResourceList = response.body().getResults();
+                for (FormResourceEntity formResourceEntity : formResourceList) {
+                    if (formResourceEntity.getName() == null) {
+                        formResourceEntity.setName("Unnamed Form");
+                    }
+                    if (formResourceEntity.getEncounterTypeResource() != null && formResourceEntity.getEncounterTypeResource().getUuid() != null) {
+                        formResourceEntity.setEncounterTypeUuid(formResourceEntity.getEncounterTypeResource().getUuid());
+                    }
+                    formResourceDAO.addFormResource(formResourceEntity);
+                }
+                ToastUtil.notify("Synced " + formResourceList.size() + " forms");
+            } else {
+                ToastUtil.error(response != null ? response.message() : "Error fetching forms");
             }
         } catch (Exception e) {
-            ToastUtil.error(response.message());
+            ToastUtil.error("Error with forms sync: " + e.getMessage());
         }
         // Refresh encounter types
         EncounterTypeRoomDAO encounterTypeRoomDAO = appDatabase.encounterTypeRoomDAO();

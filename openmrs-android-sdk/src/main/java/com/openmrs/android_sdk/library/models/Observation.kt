@@ -101,10 +101,23 @@ class Observation : Resource(), Serializable {
     var encounterID: Long? = null
     var displayValue: String? = null
         get() {
-            if (field == null && display?.contains(":") == true) {
-                displayValue = display!!.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()[1]
+            val currentField = field
+            if (currentField == null || currentField.isBlank() || currentField.equals("null", ignoreCase = true)) {
+                val valPart = if (value != null && !value.equals("null", ignoreCase = true) && value!!.isNotBlank()) {
+                    value
+                } else if (display?.contains(":") == true) {
+                    val split = display!!.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                    if (split.size > 1) {
+                        val splitValue = split[1].trim()
+                        if (!splitValue.equals("null", ignoreCase = true) && splitValue.isNotBlank()) {
+                            splitValue
+                        } else null
+                    } else null
+                } else null
+                
+                return valPart ?: ""
             }
-            return field
+            return currentField
         }
 
     var diagnosisList: String? = null

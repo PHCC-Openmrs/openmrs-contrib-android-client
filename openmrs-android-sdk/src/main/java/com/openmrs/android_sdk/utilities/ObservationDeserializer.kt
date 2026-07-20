@@ -19,6 +19,7 @@ import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
 import com.google.gson.JsonParseException
 import com.openmrs.android_sdk.library.models.ConceptClass
+import com.openmrs.android_sdk.library.models.Person
 import java.lang.reflect.Type
 
 class ObservationDeserializer : JsonDeserializer<Observation> {
@@ -28,6 +29,52 @@ class ObservationDeserializer : JsonDeserializer<Observation> {
         val observation = Observation()
         observation.uuid = jsonObject[UUID_KEY].asString
         observation.display = jsonObject[DISPLAY_KEY].asString
+
+        if (jsonObject.has(VALUE_KEY)) {
+            val valueElement = jsonObject[VALUE_KEY]
+            if (valueElement.isJsonPrimitive) {
+                val valueStr = valueElement.asString
+                if (!valueStr.equals("null", ignoreCase = true)) {
+                    observation.value = valueStr
+                }
+            } else if (valueElement.isJsonObject) {
+                // Handle coded concepts as values
+                val valueObj = valueElement.asJsonObject
+                if (valueObj.has(DISPLAY_KEY)) {
+                    val valueStr = valueObj[DISPLAY_KEY]?.asString
+                    if (valueStr != null && !valueStr.equals("null", ignoreCase = true)) {
+                        observation.value = valueStr
+                    }
+                } else if (valueObj.has(UUID_KEY)) {
+                     observation.value = valueObj[UUID_KEY].asString
+                }
+            }
+        }
+
+        if (jsonObject.has("obsDatetime")) {
+            observation.obsDatetime = jsonObject["obsDatetime"].asString
+        }
+
+        if (jsonObject.has("person")) {
+            val personJson = jsonObject["person"].asJsonObject
+            val person = Person()
+            person.uuid = personJson[UUID_KEY].asString
+            observation.person = person
+        }
+
+        if (jsonObject.has("status")) {
+            observation.status = jsonObject["status"].asString
+        }
+
+        if (jsonObject.has("interpretation")) {
+            val interpretationElement = jsonObject["interpretation"]
+            if (interpretationElement.isJsonPrimitive) {
+                observation.interpretation = interpretationElement.asString
+            } else if (interpretationElement.isJsonObject) {
+                observation.interpretation = interpretationElement.asJsonObject[DISPLAY_KEY]?.asString
+            }
+        }
+
         val conceptJson = jsonObject["concept"]
         if (conceptJson != null && "Visit Diagnoses" == conceptJson.asJsonObject[DISPLAY_KEY].asString) {
             val diagnosisDetailJSONArray = jsonObject["groupMembers"].asJsonArray
