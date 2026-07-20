@@ -424,15 +424,34 @@ public class CustomFragmentDialog extends DialogFragment {
                     dismiss();
                     break;
                 case REGISTER_PATIENT:
-                    Fragment parentFragment = getParentFragment();
-                    if (parentFragment instanceof AddEditPatientFragment) {
-                        ((AddEditPatientFragment) parentFragment).registerPatient();
-                    } else {
-                        Fragment fragment = getParentFragmentManager().findFragmentById(R.id.patientInfoContentFrame);
-                        if (fragment instanceof AddEditPatientFragment) {
-                            ((AddEditPatientFragment) fragment).registerPatient();
+                    OpenmrsAndroid.getOpenMRSLogger().i("[Dialog] REGISTER_PATIENT action triggered");
+                    boolean fragmentFound = false;
+                    
+                    // Try to find the fragment in the Activity's fragment manager
+                    List<Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
+                    for (Fragment f : fragments) {
+                        if (f instanceof AddEditPatientFragment) {
+                            OpenmrsAndroid.getOpenMRSLogger().i("[Dialog] Found AddEditPatientFragment, calling registerPatientWithoutValidation()");
+                            ((AddEditPatientFragment) f).registerPatientWithoutValidation();
+                            fragmentFound = true;
+                            break;
                         }
                     }
+                    
+                    if (!fragmentFound) {
+                        // Fallback to searching by ID if the list didn't work
+                        Fragment f = getActivity().getSupportFragmentManager().findFragmentById(R.id.patientInfoContentFrame);
+                        if (f instanceof AddEditPatientFragment) {
+                            OpenmrsAndroid.getOpenMRSLogger().i("[Dialog] Found AddEditPatientFragment by ID, calling registerPatientWithoutValidation()");
+                            ((AddEditPatientFragment) f).registerPatientWithoutValidation();
+                            fragmentFound = true;
+                        }
+                    }
+                    
+                    if (!fragmentFound) {
+                        OpenmrsAndroid.getOpenMRSLogger().e("[Dialog] Could not find AddEditPatientFragment to register the patient");
+                    }
+
                     dismiss();
                     break;
                 case CANCEL_REGISTERING:

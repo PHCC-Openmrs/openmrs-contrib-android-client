@@ -44,7 +44,7 @@ class FormAdmissionViewModel @Inject constructor(
     private val formName: String = savedStateHandle.get(FORM_NAME)!!
     private val currentLocation: String = savedStateHandle.get(LOCATION)!!
 
-    val patient: Patient = patientDAO.findPatientByID(patientId.toString())
+    val patient: Patient = patientDAO.findPatientByID(patientId)
 
     /* Lists of form fields */
     var providers: LinkedHashMap<String, Provider> = linkedMapOf()

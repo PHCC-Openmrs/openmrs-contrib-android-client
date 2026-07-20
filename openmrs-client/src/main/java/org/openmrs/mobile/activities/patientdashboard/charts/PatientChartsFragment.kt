@@ -129,7 +129,7 @@ class PatientChartsFragment : BaseFragment(), PatientChartsRecyclerViewAdapter.O
     }
 
     companion object {
-        fun newInstance(patientId: String): PatientChartsFragment {
+        fun newInstance(patientId: Long): PatientChartsFragment {
             val fragment = PatientChartsFragment()
             fragment.arguments = bundleOf(Pair(PATIENT_ID_BUNDLE, patientId))
             return fragment

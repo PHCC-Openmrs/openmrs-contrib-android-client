@@ -83,5 +83,5 @@ interface PatientRoomDAO {
      * @return the single
      */
     @Query("SELECT * FROM patients WHERE _id = :id")
-    fun findPatientByID(id: String): Single<PatientEntity>
+    fun findPatientByID(id: Long): Single<PatientEntity>
 }

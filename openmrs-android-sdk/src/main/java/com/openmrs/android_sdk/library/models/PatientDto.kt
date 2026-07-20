@@ -27,7 +27,7 @@ open class PatientDto {
 
     @SerializedName("identifiers")
     @Expose
-    private var identifiers: List<PatientIdentifier> = ArrayList()
+    var identifiers: List<PatientIdentifier> = ArrayList()
 
     @SerializedName("person")
     @Expose
@@ -49,9 +49,4 @@ open class PatientDto {
 
             return patient
         }
-
-
-    fun setIdentifiers(identifiers: List<PatientIdentifier>) {
-        this.identifiers = identifiers
-    }
 }

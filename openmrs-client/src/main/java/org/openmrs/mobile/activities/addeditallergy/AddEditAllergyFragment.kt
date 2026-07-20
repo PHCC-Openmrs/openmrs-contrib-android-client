@@ -248,7 +248,7 @@ class AddEditAllergyFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(patientId: String, allergyUuid: String?) = AddEditAllergyFragment().apply {
+        fun newInstance(patientId: Long, allergyUuid: String?) = AddEditAllergyFragment().apply {
             arguments = bundleOf(PATIENT_ID_BUNDLE to patientId, ALLERGY_UUID to allergyUuid)
         }
     }

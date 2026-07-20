@@ -42,6 +42,7 @@ import androidx.work.OneTimeWorkRequest;
 
 import com.openmrs.android_sdk.R;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.api.RestApi;
 import com.openmrs.android_sdk.library.api.RestServiceBuilder;
 import com.openmrs.android_sdk.library.api.workers.UpdatePatientWorker;
@@ -75,16 +76,20 @@ public class PatientRepository extends BaseRepository {
     private final PatientDAO patientDAO;
     private final LocationRepository locationRepository;
     private final EncounterRepository encounterRepository;
+    private final RestApi restApi;
+    private final OpenMRSLogger logger;
 
     /**
      * Instantiates a new Patient repository.
      */
     @Inject
     public PatientRepository(PatientDAO patientDAO, LocationRepository locationRepository,
-                             EncounterRepository encounterRepository) {
+                             EncounterRepository encounterRepository, RestApi restApi, OpenMRSLogger logger) {
         this.patientDAO = patientDAO;
         this.locationRepository = locationRepository;
         this.encounterRepository = encounterRepository;
+        this.restApi = restApi;
+        this.logger = logger;
     }
 
     /**
@@ -95,27 +100,43 @@ public class PatientRepository extends BaseRepository {
     public Observable<Patient> syncPatient(final Patient patient) {
         return AppDatabaseHelper.createObservableIO(() -> {
             try {
-                final List<PatientIdentifier> identifiers = new ArrayList<>();
-                final PatientIdentifier identifier = new PatientIdentifier();
+                PatientIdentifier identifier = patient.getIdentifier();
+                if (identifier == null || identifier.getIdentifier() == null || identifier.getIdentifier().isEmpty()) {
+                    logger.i("Generating new identifier for patient...");
+                    final List<PatientIdentifier> identifiers = new ArrayList<>();
+                    identifier = new PatientIdentifier();
 
-                LocationEntity location = locationRepository.getLocation();
-                if (location == null) {
-                    logger.w("Location is null, using fallback or default if available");
+                    LocationEntity location = locationRepository.getLocation();
+                    if (location == null || location.getUuid() == null || location.getUuid().isEmpty()) {
+                        throw new IOException("Location UUID is required for registration. Please check your login location.");
+                    }
+                    identifier.setLocation(location);
+
+                    String generatedId = getIdGenPatientIdentifier();
+                    if (generatedId == null || generatedId.isEmpty()) {
+                        throw new IOException("Failed to generate identifier from server");
+                    }
+                    identifier.setIdentifier(generatedId);
+                    identifier.setIdentifierType(getPatientIdentifierType());
+                    identifier.setPreferred(true);
+                    identifiers.add(identifier);
+
+                    patient.setIdentifiers(identifiers);
+                    logger.i("Generated ID: " + generatedId);
+                } else {
+                    // Ensure existing identifier has type and location (required for server sync)
+                    logger.i("Existing identifier found: " + identifier.getIdentifier() + ". Ensuring type and location are set.");
+                    if (identifier.getIdentifierType() == null) {
+                        identifier.setIdentifierType(getPatientIdentifierType());
+                    }
+                    if (identifier.getLocation() == null) {
+                        LocationEntity location = locationRepository.getLocation();
+                        if (location != null) identifier.setLocation(location);
+                    }
+                    identifier.setPreferred(true);
                 }
-                identifier.setLocation(location);
 
-                String generatedId = getIdGenPatientIdentifier();
-                if (generatedId == null || generatedId.isEmpty()) {
-                    logger.e("Failed to generate identifier");
-                    throw new IOException("Failed to generate identifier");
-                }
-                identifier.setIdentifier(generatedId);
-
-                identifier.setIdentifierType(getPatientIdentifierType());
-                identifier.setPreferred(true);
-                identifiers.add(identifier);
-
-                patient.setIdentifiers(identifiers);
+                logger.i("Using Birthdate: " + patient.getBirthdate());
 
                 PatientDto patientDto = patient.getPatientDto();
                 if (patient.getUuid() != null && !patient.getUuid().isEmpty()) {
@@ -125,29 +146,77 @@ public class PatientRepository extends BaseRepository {
                     }
                 }
 
-                logger.i("Sending registration request for patient: " + patient.getName().getNameString());
+                try {
+                    String payload = new Gson().toJson(patientDto);
+                    logger.i("Full Registration Payload: " + payload);
+                } catch (Exception e) {
+                    logger.w("Failed to log payload JSON: " + e.getMessage());
+                }
+
+                logger.i("Sending registration request for patient: " + (patient.getName() != null ? patient.getName().getNameString() : "ID " + patient.getId()));
                 Response<PatientDto> response = restApi.createPatient(patientDto).execute();
                 if (response.isSuccessful()) {
                     PatientDto returnedPatientDto = response.body();
+                    logger.i("Server registration successful. UUID: " + returnedPatientDto.getUuid());
 
                     patient.setUuid(returnedPatientDto.getUuid());
+                    if (returnedPatientDto.getIdentifiers() != null && !returnedPatientDto.getIdentifiers().isEmpty()) {
+                        patient.setIdentifiers(returnedPatientDto.getIdentifiers());
+                        logger.i("Updated patient identifiers from server: " + patient.getIdentifier().getIdentifier());
+                    }
+
                     if (patient.getPhoto() != null) {
                         uploadPatientPhoto(patient);
                     }
 
-                    patientDAO.updatePatient(patient.getId(), patient);
-                    if (!patient.getEncounters().equals("")) {
+                    boolean updated = patientDAO.updatePatient(patient.getId(), patient);
+                    logger.i("Local DB update successful: " + updated);
+                    
+                    if (patient.getEncounters() != null && !patient.getEncounters().isEmpty()) {
                         addEncounters(patient);
                     }
 
                     return patient;
                 } else {
                     String errorMsg = response.errorBody() != null ? response.errorBody().string() : response.message();
-                    logger.e("syncPatient error: " + errorMsg);
-                    throw new Exception("syncPatient error: " + errorMsg);
+                    logger.e("syncPatient server error: " + errorMsg);
+                    
+                    if (errorMsg.contains("PatientIdentifier.error.duplicateIdentifier")) {
+                        logger.i("Duplicate identifier detected. Verifying server record...");
+                        String patientIdentifierStr = patient.getIdentifier().getIdentifier();
+                        Response<Results<Patient>> searchResponse = restApi.getPatients(patientIdentifierStr, "full").execute();
+                        if (searchResponse.isSuccessful() && searchResponse.body() != null && !searchResponse.body().getResults().isEmpty()) {
+                            Patient serverPatient = searchResponse.body().getResults().get(0);
+                            
+                            // Only link if names match to prevent incorrect merging due to server-side ID reuse
+                            String serverGiven = (serverPatient.getName() != null && serverPatient.getName().getGivenName() != null) ? serverPatient.getName().getGivenName() : "";
+                            String serverFamily = (serverPatient.getName() != null && serverPatient.getName().getFamilyName() != null) ? serverPatient.getName().getFamilyName() : "";
+                            String localGiven = (patient.getName() != null && patient.getName().getGivenName() != null) ? patient.getName().getGivenName() : "";
+                            String localFamily = (patient.getName() != null && patient.getName().getFamilyName() != null) ? patient.getName().getFamilyName() : "";
+
+                            if (serverGiven.equalsIgnoreCase(localGiven) && serverFamily.equalsIgnoreCase(localFamily)) {
+                                logger.i("Names match. Linking local patient to existing server record (UUID: " + serverPatient.getUuid() + ")");
+                                patient.setUuid(serverPatient.getUuid());
+                                if (serverPatient.getIdentifiers() != null && !serverPatient.getIdentifiers().isEmpty()) {
+                                    patient.setIdentifiers(serverPatient.getIdentifiers());
+                                }
+                                patientDAO.updatePatient(patient.getId(), patient);
+                                return patient;
+                            } else {
+                                logger.e("Duplicate ID found on server, but NAMES DO NOT MATCH. Server: " + serverPatient.getName().getNameString() + ", Local: " + patient.getName().getNameString());
+                                throw new Exception("Sync failed: The ID " + identifier + " is already assigned to a different patient on the server (" + serverPatient.getName().getNameString() + "). Please check your server's ID generator.");
+                            }
+                        }
+                    }
+else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
+                        logger.e("Sync failed: The logged-in user does not have permission to assign identifiers. Please check OpenMRS user privileges (Add Patient Identifier).");
+                        throw new Exception("Sync failed: Insufficient privileges to register patient. Please contact your administrator.");
+                    }
+                    throw new Exception("syncPatient server error: " + errorMsg);
                 }
             } catch (Exception e) {
-                logger.e("Error during syncPatient", e);
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                logger.e("Error during syncPatient: " + cause.getClass().getSimpleName() + " - " + cause.getMessage(), cause);
                 throw e;
             }
         });
@@ -190,7 +259,13 @@ public class PatientRepository extends BaseRepository {
             try {
                 Long id = patientDAO.savePatient(patient).single().toBlocking().first();
                 patient.setId(id);
-                if (NetworkUtils.isOnline()) syncPatient(patient).single().toBlocking().first();
+                if (NetworkUtils.isOnline()) {
+                    try {
+                        syncPatient(patient).single().toBlocking().first();
+                    } catch (Exception e) {
+                        logger.w("Initial sync failed, but patient is saved locally: " + e.getMessage());
+                    }
+                }
                 return patient;
             } catch (Exception e) {
                 logger.e("Error in registerPatient", e);
@@ -262,18 +337,33 @@ public class PatientRepository extends BaseRepository {
      * @return Patient observable
      */
     public Observable<Patient> downloadPatientByUuid(@NonNull final String uuid) {
+        if (uuid == null || uuid.isEmpty()) {
+            return Observable.error(new IllegalArgumentException("UUID cannot be null or empty"));
+        }
         return AppDatabaseHelper.createObservableIO(() -> {
             Call<PatientDto> call = restApi.getPatientByUUID(uuid, "full");
             Response<PatientDto> response = call.execute();
-            if (response.isSuccessful()) {
+            if (response.isSuccessful() && response.body() != null) {
                 final PatientDto newPatientDto = response.body();
+                if (newPatientDto.getIdentifiers() != null) {
+                    logger.i("Downloaded patient identifiers. Count: " + newPatientDto.getIdentifiers().size());
+                    for (PatientIdentifier id : newPatientDto.getIdentifiers()) {
+                        logger.i(" > ID: '" + id.getIdentifier() + "', Type: " + (id.getIdentifierType() != null ? id.getIdentifierType().getDisplay() : "null"));
+                    }
+                }
 
-                Bitmap photo = downloadPatientPhotoByUuid(newPatientDto.getUuid()).toBlocking().first();
+                Bitmap photo = null;
+                try {
+                    photo = downloadPatientPhotoByUuid(newPatientDto.getUuid()).toBlocking().first();
+                } catch (Exception e) {
+                    logger.w("Failed to download patient photo: " + e.getMessage());
+                }
                 if (photo != null) newPatientDto.getPerson().setPhoto(photo);
 
                 return newPatientDto.getPatient();
             } else {
-                throw new IOException("Error with downloading patient: " + response.message());
+                String errorMsg = response.errorBody() != null ? response.errorBody().string() : response.message();
+                throw new IOException("Error with downloading patient: " + errorMsg);
             }
         });
     }
@@ -429,22 +519,30 @@ public class PatientRepository extends BaseRepository {
      */
     public Observable<List<Patient>> fetchSimilarPatients(final Patient patient) {
         return AppDatabaseHelper.createObservableIO(() -> {
-            if (!NetworkUtils.isOnline()) {
-                List<Patient> localPatients = patientDAO.getAllPatients().toBlocking().first();
-                return new PatientComparator().findSimilarPatient(localPatients, patient);
-            }
+            try {
+                if (!NetworkUtils.isOnline()) {
+                    List<Patient> localPatients = patientDAO.getAllPatients().toBlocking().first();
+                    return new PatientComparator().findSimilarPatient(localPatients, patient);
+                }
 
-            Call<Results<Module>> moduleCall = restApi.getModules(ApplicationConstants.API.FULL);
-            Response<Results<Module>> response = moduleCall.execute();
+                Call<Results<Module>> moduleCall = restApi.getModules(ApplicationConstants.API.FULL);
+                Response<Results<Module>> response = moduleCall.execute();
 
-            if (!response.isSuccessful()) return fetchSimilarPatientsAndCalculateLocally(patient);
+                if (!response.isSuccessful()) return fetchSimilarPatientsAndCalculateLocally(patient);
 
-            if (ModuleUtils.isRegistrationCore1_7orAbove(response.body().getResults())) {
-                //return fetchSimilarPatientsFromServer(patient); //Uncomment this line when server API is fixed
-                return fetchSimilarPatientsAndCalculateLocally(patient); //Remove this line when server API is fixed
-            } else {
-                ToastUtil.notifyLong(context.getString(R.string.registration_core_info));
-                return fetchSimilarPatientsAndCalculateLocally(patient);
+                if (ModuleUtils.isRegistrationCore1_7orAbove(response.body().getResults())) {
+                    return fetchSimilarPatientsFromServer(patient);
+                } else {
+                    return fetchSimilarPatientsAndCalculateLocally(patient);
+                }
+            } catch (Exception e) {
+                logger.e("Error fetching similar patients: " + e.getMessage());
+                try {
+                    return fetchSimilarPatientsAndCalculateLocally(patient);
+                } catch (Exception ex) {
+                    logger.e("Fallback similarity check failed: " + ex.getMessage());
+                    return new ArrayList<>();
+                }
             }
         });
     }
@@ -456,10 +554,14 @@ public class PatientRepository extends BaseRepository {
      * @return list of similar patients
      */
     private List<Patient> fetchSimilarPatientsFromServer(final Patient patient) throws Exception {
-        Call<Results<Patient>> call = restApi.getSimilarPatients(patient.toMap());
+        Map<String, String> queryMap = patient.toMap();
+        if (queryMap.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Call<Results<Patient>> call = restApi.getSimilarPatients(queryMap);
         Response<Results<Patient>> response = call.execute();
-        if (response.isSuccessful()) return response.body().getResults();
-        else throw new Exception("fetchSimilarPatientsFromServer error: " + response.message());
+        if (response.isSuccessful() && response.body() != null) return response.body().getResults();
+        else return fetchSimilarPatientsAndCalculateLocally(patient);
     }
 
     /**
@@ -469,9 +571,13 @@ public class PatientRepository extends BaseRepository {
      * @return list of similar patients
      */
     private List<Patient> fetchSimilarPatientsAndCalculateLocally(final Patient patient) throws Exception {
-        Call<Results<PatientDto>> call = restApi.getPatientsDto(patient.getName().getGivenName(), ApplicationConstants.API.FULL);
+        String givenName = (patient.getName() != null) ? patient.getName().getGivenName() : null;
+        if (givenName == null || givenName.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Call<Results<PatientDto>> call = restApi.getPatientsDto(givenName, ApplicationConstants.API.FULL);
         Response<Results<PatientDto>> response = call.execute();
-        if (response.isSuccessful()) {
+        if (response.isSuccessful() && response.body() != null) {
             List<Patient> patientList = new ArrayList<>();
             for (PatientDto p : response.body().getResults()) patientList.add(p.getPatient());
             return new PatientComparator().findSimilarPatient(patientList, patient);

@@ -21,11 +21,11 @@ class PatientDashboardChartsViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<JSONObject>() {
 
-    private val patientId: String = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
+    private val patientId: Long = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
 
     fun fetchChartsData() {
         setLoading()
-        addSubscription(visitDAO.getVisitsByPatientID(patientId.toLong())
+        addSubscription(visitDAO.getVisitsByPatientID(patientId)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { visits: List<Visit> -> setContent(getObservationListFromVisits(visits), PatientVisitsFetching) },

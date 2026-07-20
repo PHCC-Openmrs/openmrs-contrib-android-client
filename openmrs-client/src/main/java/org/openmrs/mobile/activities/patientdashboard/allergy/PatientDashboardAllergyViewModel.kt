@@ -22,13 +22,13 @@ class PatientDashboardAllergyViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<List<Allergy>>() {
 
-    private val patientId: String = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
+    private val patientId: Long = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
 
     fun getPatient(): Patient = patientDAO.findPatientByID(patientId)
 
     fun fetchAllergies() {
         setLoading(PatientAllergyFetching)
-        addSubscription(allergyRepository.getAllergyFromDatabase(patientId)
+        addSubscription(allergyRepository.getAllergyFromDatabase(patientId.toString())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { allergies: List<Allergy> -> setContent(allergies, PatientAllergyFetching) },

@@ -44,7 +44,7 @@ class EncounterRepository @Inject constructor(
      */
     fun saveEncounter(encounterCreate: Encountercreate): Observable<ResultType> {
         return AppDatabaseHelper.createObservableIO(Callable {
-            val patient = PatientDAO().findPatientByID(encounterCreate.patientId.toString())
+            val patient = PatientDAO().findPatientByID(encounterCreate.patientId)
             val activeVisit = VisitDAO().getActiveVisitByPatientId(encounterCreate.patientId!!).execute()
             if (patient == null || activeVisit == null || encounterCreate.synced) {
                 return@Callable ResultType.EncounterSubmissionError
@@ -157,7 +157,7 @@ else {
             restApi.updateEncounter(uuid, encounterCreate).execute().run {
                 if (isSuccessful) {
                     // Update the visit linked to this encounter
-                    val patient = PatientDAO().findPatientByID(encounterCreate.patientId.toString())
+                    val patient = PatientDAO().findPatientByID(encounterCreate.patientId)
                     visitRepository.syncVisitsData(patient).execute()
 
                     return@Callable

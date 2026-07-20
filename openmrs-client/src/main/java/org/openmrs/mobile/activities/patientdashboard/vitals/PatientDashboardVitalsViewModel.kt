@@ -21,7 +21,7 @@ class PatientDashboardVitalsViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<Encounter>() {
 
-    private val patientId: String = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
+    private val patientId: Long = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
 
     fun fetchLastVitals() {
         setLoading(PatientVitalsFetching)

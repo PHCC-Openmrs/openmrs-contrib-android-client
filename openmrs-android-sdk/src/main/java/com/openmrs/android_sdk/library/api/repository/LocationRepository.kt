@@ -14,6 +14,7 @@
 package com.openmrs.android_sdk.library.api.repository
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid
+import com.openmrs.android_sdk.library.dao.LocationDAO
 import com.openmrs.android_sdk.library.databases.AppDatabaseHelper.createObservableIO
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
 import com.openmrs.android_sdk.utilities.ApplicationConstants
@@ -26,7 +27,8 @@ import java.util.concurrent.Callable
  * The type Location repository.
  */
 @Singleton
-class LocationRepository @Inject constructor() : BaseRepository() {
+class LocationRepository @Inject constructor(private val locationDAO: LocationDAO) : BaseRepository() {
+
     /**
      * Gets location (only has uuid).
      *
@@ -34,13 +36,31 @@ class LocationRepository @Inject constructor() : BaseRepository() {
      */
     val location: LocationEntity?
         get() {
-            val response = restApi.getLocations(null).execute()
-            if (response.isSuccessful) {
-                for (result in response.body()!!.results) {
-                    if (result.display?.trim().equals(OpenmrsAndroid.getLocation().trim(), ignoreCase = true)) {
-                        return result
+            val locationName = OpenmrsAndroid.getLocation()
+            if (locationName.isNotBlank()) {
+                try {
+                    val localLocation = locationDAO.findLocationByName(locationName)
+                    if (localLocation != null && localLocation.uuid != null && localLocation.uuid!!.isNotBlank()) {
+                        return localLocation
+                    }
+                } catch (e: Exception) {
+                    logger.w("Failed to fetch location from local DAO: ${e.message}")
+                }
+            }
+
+            try {
+                // Use static service builder to avoid lateinit initialization issues in background services
+                val service = com.openmrs.android_sdk.library.api.RestServiceBuilder.createService(com.openmrs.android_sdk.library.api.RestApi::class.java)
+                val response = service.getLocations(null).execute()
+                if (response.isSuccessful && response.body() != null) {
+                    for (result in response.body()!!.results) {
+                        if (result.display?.trim().equals(locationName.trim(), ignoreCase = true)) {
+                            return result
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                logger.e("Error fetching location from server", e)
             }
             return null
         }

@@ -18,11 +18,11 @@ class PatientDashboardDiagnosisViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<List<String>>() {
 
-    private val patientId: String = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
+    private val patientId: Long = savedStateHandle.get(PATIENT_ID_BUNDLE)!!
 
     fun fetchDiagnoses() {
         setLoading()
-        addSubscription(encounterDAO.getAllEncountersByType(patientId.toLong(), EncounterType(VISIT_NOTE))
+        addSubscription(encounterDAO.getAllEncountersByType(patientId, EncounterType(VISIT_NOTE))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { encounters: List<Encounter> ->
                     val diagnosis = loadDiagnosesFromEncounters(encounters)

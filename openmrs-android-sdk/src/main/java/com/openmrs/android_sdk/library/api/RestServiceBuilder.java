@@ -10,6 +10,7 @@
 
 package com.openmrs.android_sdk.library.api;
 
+import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 
 import okhttp3.OkHttpClient;
@@ -34,7 +35,10 @@ import com.openmrs.android_sdk.utilities.ResourceSerializer;
 @Singleton
 public class RestServiceBuilder {
     private static String API_BASE_URL = OpenmrsAndroid.getServerUrl() + ApplicationConstants.API.REST_ENDPOINT;
-    private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+    private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder()
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS);
     private static Retrofit.Builder builder;
 
     static {

@@ -55,7 +55,7 @@ class AddEditPatientViewModel @Inject constructor(
 
     init {
         // Initialize patient state
-        val patientId: String? = savedStateHandle.get(PATIENT_ID_BUNDLE)
+        val patientId: Long? = savedStateHandle.get(PATIENT_ID_BUNDLE)
         val foundPatient = patientDAO.findPatientByID(patientId)
         if (foundPatient != null) {
             isUpdatePatient = true

@@ -198,7 +198,7 @@ class PatientVisitsFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(patientId: String): PatientVisitsFragment {
+        fun newInstance(patientId: Long): PatientVisitsFragment {
             val fragment = PatientVisitsFragment()
             fragment.arguments = bundleOf(Pair(PATIENT_ID_BUNDLE, patientId))
             return fragment

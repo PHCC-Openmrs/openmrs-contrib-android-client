@@ -53,7 +53,10 @@ public class UpdatePatientWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        String patientIdTobeUpdated = getInputData().getString(ApplicationConstants.PRIMARY_KEY_ID);
+        String patientIdTobeUpdatedStr = getInputData().getString(ApplicationConstants.PRIMARY_KEY_ID);
+        if (patientIdTobeUpdatedStr == null) return Result.failure();
+        
+        Long patientIdTobeUpdated = Long.valueOf(patientIdTobeUpdatedStr);
         Patient patientTobeUpdated = patientDAO.findPatientByID(patientIdTobeUpdated);
 
         boolean result = updatePatient(patientTobeUpdated);

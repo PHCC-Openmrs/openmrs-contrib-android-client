@@ -178,7 +178,7 @@ class PatientAllergyFragment : BaseFragment(), OnLongPressListener, onInputSelec
     }
 
     companion object {
-        fun newInstance(patientId: String): PatientAllergyFragment {
+        fun newInstance(patientId: Long): PatientAllergyFragment {
             val fragment = PatientAllergyFragment()
             fragment.arguments = bundleOf(Pair(PATIENT_ID_BUNDLE, patientId))
             return fragment

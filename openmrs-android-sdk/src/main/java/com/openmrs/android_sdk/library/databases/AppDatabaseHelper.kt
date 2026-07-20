@@ -261,7 +261,7 @@ object AppDatabaseHelper {
         visit.startDatetime = visitEntity.startDate
         visit.stopDatetime = visitEntity.stopDate
         visit.encounters = EncounterDAO().findEncountersByVisitID(visitEntity.id)
-        visit.patient = PatientDAO().findPatientByID(visitEntity.patientKeyID.toString())
+        visit.patient = PatientDAO().findPatientByID(visitEntity.patientKeyID)
         return visit
     }
 
@@ -280,6 +280,7 @@ object AppDatabaseHelper {
 
     @JvmStatic
     fun convert(patientEntity: PatientEntity): Patient {
+        val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
         val patient = Patient(patientEntity.id, patientEntity.encounters, null)
         patient.display = patientEntity.display
         patient.uuid = patientEntity.uuid
@@ -289,11 +290,15 @@ object AppDatabaseHelper {
             patient.identifiers = ArrayList()
         }
         patient.identifiers.add(patientIdentifier)
-        val personName = PersonName()
-        personName.givenName = patientEntity.givenName
-        personName.middleName = patientEntity.middleName
-        personName.familyName = patientEntity.familyName
-        patient.names.add(personName)
+        val personName = PersonName().apply {
+            givenName = patientEntity.givenName
+            middleName = patientEntity.middleName
+            familyName = patientEntity.familyName
+        }
+        patient.names = listOf(personName)
+        
+        logger.i("[DB-Load] Patient ID: ${patient.id}, Name: '${personName.nameString}', Middle: '${personName.middleName}'")
+
         patient.gender = patientEntity.gender
         patient.birthdate = patientEntity.birthDate
         val photoByteArray = patientEntity.photo
@@ -318,19 +323,36 @@ object AppDatabaseHelper {
     @JvmStatic
     fun convert(patient: Patient): PatientEntity {
         val patientEntity = PatientEntity()
-        patientEntity.display = if (patient.name != null) patient.name.nameString else ""
-        patientEntity.uuid = patient.uuid
-        patientEntity.isSynced = patient.isSynced
-        if (patient.identifier != null) {
-            patientEntity.identifier = patient.identifier.identifier
+        val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
+        
+        val pName = patient.name
+        if (pName != null) {
+            val nameStr = pName.nameString
+            logger.i("[DB-Save] Patient Name: '$nameStr', Middle: '${pName.middleName}'")
+            patientEntity.display = nameStr
+            patientEntity.givenName = pName.givenName
+            patientEntity.middleName = pName.middleName
+            patientEntity.familyName = pName.familyName
         } else {
-            patientEntity.identifier = null
+            patientEntity.display = ""
+            logger.w("[DB-Save] Patient Name is null!")
         }
-        if (patient.name != null) {
-            patientEntity.givenName = patient.name.givenName
-            patientEntity.middleName = patient.name.middleName
-            patientEntity.familyName = patient.name.familyName
+        
+        patientEntity.uuid = patient.uuid
+        
+        val identifiers = patient.identifiers
+        if (identifiers != null && !identifiers.isEmpty()) {
+            // Try to find the primary/preferred identifier or just the first one that has a string
+            val idObj = identifiers.find { it.preferred == true && it.identifier != null } 
+                       ?: identifiers.find { it.identifier != null }
+                       ?: identifiers[0]
+            
+            patientEntity.identifier = idObj.identifier
+            logger.i("[DB-Save] Patient Identifier list size: ${identifiers.size}, Selected: '${patientEntity.identifier}'")
+        } else {
+            logger.w("[DB-Save] Patient has NO identifiers!")
         }
+
         patientEntity.gender = patient.gender
         patientEntity.birthDate = patient.birthdate
         patientEntity.deathDate = null
@@ -358,7 +380,7 @@ object AppDatabaseHelper {
             patientEntity.city = patient.address.cityVillage
         }
         patientEntity.encounters = patient.encounters
-        patientEntity.deceased = patient.isDeceased.toString()
+        patientEntity.deceased = (patient.isDeceased ?: false).toString()
         return patientEntity
     }
 

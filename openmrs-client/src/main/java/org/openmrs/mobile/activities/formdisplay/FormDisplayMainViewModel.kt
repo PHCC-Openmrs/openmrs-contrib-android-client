@@ -52,7 +52,7 @@ class FormDisplayMainViewModel @Inject constructor(
     private val encounterUuid: String? = savedStateHandle.get(ENCOUNTER_UUID)
     private val isUpdateEncounter = !encounterUuid.isNullOrEmpty()
 
-    val patient: Patient = patientDAO.findPatientByID(patientId.toString())
+    val patient: Patient = patientDAO.findPatientByID(patientId)
 
     fun submitForm(
         inputFields: List<InputField>,

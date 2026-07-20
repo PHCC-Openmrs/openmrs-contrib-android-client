@@ -68,7 +68,7 @@ class VisitDAO @Inject constructor() {
 
     private fun saveVisit(visit: Visit, patientID: Long): Long {
         val encounterDAO = EncounterDAO()
-        visit.patient = PatientDAO().findPatientByID(patientID.toString())
+        visit.patient = PatientDAO().findPatientByID(patientID)
         val visitEntity = convert(visit)
         val visitID = visitRoomDAO.addVisit(visitEntity)
         if (visit.encounters != null) {
@@ -83,7 +83,7 @@ class VisitDAO @Inject constructor() {
         val encounterDAO = EncounterDAO()
         val observationDAO = ObservationDAO()
         visit.id = visitID
-        visit.patient = PatientDAO().findPatientByID(patientID.toString())
+        visit.patient = PatientDAO().findPatientByID(patientID)
         if (visit.encounters != null) {
             for (encounter in visit.encounters) {
                 var encounterID = encounterDAO.getEncounterByUUID(encounter.uuid)

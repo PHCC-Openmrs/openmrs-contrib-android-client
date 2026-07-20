@@ -141,7 +141,8 @@ object DateUtils {
     }
 
     fun getDateTimeFromDifference(yearDiff: Int, monthDiff: Int): DateTime {
-        return LocalDate().toDateTimeAtStartOfDay().minusYears(yearDiff).minusMonths(monthDiff)
+        // Subtract 1 hour buffer to avoid "future date" errors due to timezone/clock drift
+        return LocalDate().toDateTimeAtStartOfDay().minusYears(yearDiff).minusMonths(monthDiff).minusHours(1)
     }
 
     @JvmStatic

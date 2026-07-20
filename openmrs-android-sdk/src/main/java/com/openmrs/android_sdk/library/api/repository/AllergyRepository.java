@@ -62,6 +62,9 @@ public class AllergyRepository extends BaseRepository {
      * @return the allergies observable
      */
     public Observable<List<Allergy>> syncAllergies(Patient patient) {
+        if (patient.getUuid() == null || patient.getUuid().isEmpty()) {
+            return Observable.error(new IllegalArgumentException("Patient UUID cannot be null or empty"));
+        }
         return AppDatabaseHelper.createObservableIO(() -> {
             String patientId = patient.getId().toString();
             Response<Results<Allergy>> response = restApi.getAllergies(patient.getUuid()).execute();
