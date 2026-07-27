@@ -24,8 +24,15 @@ class LoginRepository @Inject constructor() : BaseRepository() {
             restApi = RestServiceBuilder.createService(RestApi::class.java, username, password)
             val response = restApi.getSession().execute()
             if (response.isSuccessful && response.body() != null) {
-                val sessionId = response.headers().get("Set-Cookie").toString().split("=")[1]
-                response.body()?.sessionId = sessionId
+                // There can be more than one Set-Cookie header (e.g. CSRFGuard adds its own), and
+                // a repeat login against an already-live server session may come back with no
+                // Set-Cookie at all - in both cases fall back to the sessionId Gson already
+                // deserialized from the response body instead of crashing on a bad assumption.
+                val cookieSessionId = response.headers().values("Set-Cookie")
+                        .firstOrNull { it.startsWith("JSESSIONID=") }
+                        ?.substringAfter("=")
+                        ?.substringBefore(";")
+                response.body()?.sessionId = cookieSessionId ?: response.body()?.sessionId
                 return@Callable response.body()!!
             } else {
                 throw Exception("Error fetching session: ${response.message()}")

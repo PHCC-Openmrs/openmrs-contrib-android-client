@@ -31,6 +31,8 @@ import com.openmrs.android_sdk.library.models.ResultType.AllergyDeletionLocalSuc
 import com.openmrs.android_sdk.library.models.ResultType.AllergyDeletionSuccess
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.ALLERGY_UUID
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.EDIT_ALLERGIES
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.REMOVE_ALLERGIES
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -54,6 +56,9 @@ class PatientAllergyFragment : BaseFragment(), OnLongPressListener, onInputSelec
     private val viewModel: PatientDashboardAllergyViewModel by viewModels()
 
     private var selectedAllergy: Allergy? = null
+
+    /** Actions for the currently-shown long-press dialog, in the same order as its options. */
+    private var dialogActions: List<() -> Unit> = emptyList()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentPatientAllergyBinding.inflate(inflater, container, false)
@@ -137,38 +142,54 @@ class PatientAllergyFragment : BaseFragment(), OnLongPressListener, onInputSelec
         }
     }
 
+    /**
+     * View-only roles (e.g. Clerk, granted `Get Allergies` but neither `Edit Allergies` nor
+     * `Remove Allergies`) get no long-press menu at all - there is nothing they're allowed to do.
+     */
     override fun showDialogueBox(allergy: Allergy) {
         selectedAllergy = allergy
-        val dialogList = ArrayList<CustomDialogModel>().apply {
-            add(CustomDialogModel(getString(R.string.update_allergy_dialog), R.drawable.ic_allergy_edit))
-            add(CustomDialogModel(getString(R.string.delete_allergy_dialog), R.drawable.ic_photo_delete))
+        val dialogList = ArrayList<CustomDialogModel>()
+        val actions = ArrayList<() -> Unit>()
+        if (hasPrivilege(EDIT_ALLERGIES)) {
+            dialogList.add(CustomDialogModel(getString(R.string.update_allergy_dialog), R.drawable.ic_allergy_edit))
+            actions.add { openUpdateAllergy() }
         }
+        if (hasPrivilege(REMOVE_ALLERGIES)) {
+            dialogList.add(CustomDialogModel(getString(R.string.delete_allergy_dialog), R.drawable.ic_photo_delete))
+            actions.add { confirmDeleteAllergy() }
+        }
+        if (dialogList.isEmpty()) return
+        dialogActions = actions
         CustomPickerDialog(dialogList)
                 .apply { setTargetFragment(this@PatientAllergyFragment, 1000) }
                 .show(parentFragmentManager, "tag")
     }
 
     override fun performFunction(position: Int) {
-        if (position == 1) {
-            AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
-                    .apply {
-                        setTitle(getString(R.string.delete_allergy_title, selectedAllergy!!.allergen!!.codedAllergen!!.display))
-                        setMessage(R.string.delete_allergy_description)
-                        setCancelable(false)
-                        setPositiveButton(R.string.mark_patient_deceased_proceed) { dialog, id ->
-                            dialog.cancel()
-                            deleteAllergy()
-                        }
-                        setNegativeButton(R.string.dialog_button_cancel) { dialog, id -> dialog.cancel() }
+        dialogActions.getOrNull(position)?.invoke()
+    }
+
+    private fun confirmDeleteAllergy() {
+        AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
+                .apply {
+                    setTitle(getString(R.string.delete_allergy_title, selectedAllergy!!.allergen!!.codedAllergen!!.display))
+                    setMessage(R.string.delete_allergy_description)
+                    setCancelable(false)
+                    setPositiveButton(R.string.mark_patient_deceased_proceed) { dialog, id ->
+                        dialog.cancel()
+                        deleteAllergy()
                     }
-                    .create()
-                    .show()
-        } else {
-            Intent(activity, AddEditAllergyActivity::class.java).apply {
-                putExtra(PATIENT_ID_BUNDLE, viewModel.getPatient().id.toString())
-                putExtra(ALLERGY_UUID, selectedAllergy!!.uuid)
-                startActivity(this)
-            }
+                    setNegativeButton(R.string.dialog_button_cancel) { dialog, id -> dialog.cancel() }
+                }
+                .create()
+                .show()
+    }
+
+    private fun openUpdateAllergy() {
+        Intent(activity, AddEditAllergyActivity::class.java).apply {
+            putExtra(PATIENT_ID_BUNDLE, viewModel.getPatient().id.toString())
+            putExtra(ALLERGY_UUID, selectedAllergy!!.uuid)
+            startActivity(this)
         }
     }
 

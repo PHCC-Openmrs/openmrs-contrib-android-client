@@ -21,6 +21,8 @@
     <dimen name="dashboard_text_size">18sp</dimen>
     <dimen name="dashboard_text_top_margin">10dp</dimen>
     <dimen name="dashboard_text_bottom_margin">15dp</dimen>
+    <dimen name="dashboard_tile_gutter">6dp</dimen>
+    <dimen name="dashboard_tile_row_spacing">16dp</dimen>
     <dimen name="settings_list_text_title_size">16sp</dimen>
     <dimen name="settings_icon_size">24dp</dimen>
     <dimen name="text_size_large">18sp</dimen>

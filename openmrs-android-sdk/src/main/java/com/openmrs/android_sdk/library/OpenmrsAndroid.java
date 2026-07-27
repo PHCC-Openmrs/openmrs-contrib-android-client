@@ -239,8 +239,10 @@ public class OpenmrsAndroid {
     }
 
     /**
-     * Sets server url.
+     * Sets s
      *
+     * erver url.
+     *1
      * @param serverUrl the server url
      */
     public static void setServerUrl(String serverUrl) {

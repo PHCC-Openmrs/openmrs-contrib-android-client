@@ -35,18 +35,27 @@ import com.openmrs.android_sdk.utilities.ResourceSerializer;
 @Singleton
 public class RestServiceBuilder {
     private static String API_BASE_URL = OpenmrsAndroid.getServerUrl() + ApplicationConstants.API.REST_ENDPOINT;
-    private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder()
+
+    // Immutable base client (timeouts + connection pool/dispatcher only, no interceptors).
+    // Each createService() call derives its OWN client via newBuilder() (which keeps the same
+    // connection pool/dispatcher) with EXACTLY the one auth interceptor that call needs, instead
+    // of mutating a single shared Builder. Mutating a shared static Builder meant every call ever
+    // made (Hilt singleton resolution, login attempts, the periodic AuthenticateCheckService
+    // check, ...) permanently appended another interceptor to it, so a request could pick up
+    // stale/wrong credentials baked in by some earlier, unrelated call.
+    private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS);
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .build();
+
     private static Retrofit.Builder builder;
 
     static {
         builder =
                 new Retrofit.Builder()
                         .baseUrl(API_BASE_URL)
-                        .addConverterFactory(buildGsonConverter())
-                        .client((httpClient).build());
+                        .addConverterFactory(buildGsonConverter());
     }
 
     /**
@@ -59,26 +68,41 @@ public class RestServiceBuilder {
      * @return the s
      */
     public static <S> S createService(Class<S> serviceClass, String username, String password) {
-        if (username != null && password != null) {
-            String credentials = username + ":" + password;
-            final String basic = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
+        // Prefer the credentials explicitly passed by the caller (e.g. LoginRepository passes
+        // the just-typed username/password, which haven't been persisted to SharedPreferences
+        // yet at this point - see LoginViewModel.login()). Only fall back to a live
+        // OpenmrsAndroid read when no explicit credentials were given, which covers the
+        // Dagger/Hilt @Singleton path (createService(Class) below): that instance can be built
+        // before login (before any credentials exist), so it must re-check SharedPreferences at
+        // request time rather than have a fixed (possibly empty) value baked in at construction.
+        final String explicitUsername = username;
+        final String explicitPassword = password;
 
-            // header interceptor
-            httpClient.addNetworkInterceptor(chain -> {
-                Request original = chain.request();
+        OkHttpClient client = BASE_HTTP_CLIENT.newBuilder()
+                .addNetworkInterceptor(chain -> {
+                    Request original = chain.request();
 
-                Request.Builder requestBuilder = original.newBuilder()
-                        .header("Authorization", basic)
-                        .header("Accept", "application/json")
-                        .method(original.method(), original.body());
+                    Request.Builder requestBuilder = original.newBuilder()
+                            .header("Accept", "application/json")
+                            .method(original.method(), original.body());
 
-                Request request = requestBuilder.build();
-                return chain.proceed(request);
-            });
+                    String currentUsername = (explicitUsername != null && !explicitUsername.isEmpty())
+                            ? explicitUsername : OpenmrsAndroid.getUsername();
+                    String currentPassword = (explicitPassword != null && !explicitPassword.isEmpty())
+                            ? explicitPassword : OpenmrsAndroid.getPassword();
 
-            httpClient.addInterceptor(new ChuckerInterceptor(OpenmrsAndroid.getInstance()));
-        }
-        OkHttpClient client = httpClient.build();
+                    if (currentUsername != null && !currentUsername.isEmpty()
+                            && currentPassword != null && !currentPassword.isEmpty()) {
+                        String credentials = currentUsername + ":" + currentPassword;
+                        String basic = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
+                        requestBuilder.header("Authorization", basic);
+                    }
+
+                    return chain.proceed(requestBuilder.build());
+                })
+                .addInterceptor(new ChuckerInterceptor(OpenmrsAndroid.getInstance()))
+                .build();
+
         Retrofit retrofit = builder.client(client).build();
         return retrofit.create(serviceClass);
     }

@@ -20,6 +20,7 @@ import android.view.MenuItem
 import androidx.appcompat.widget.SearchView
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.models.Patient
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_PATIENTS
 import com.openmrs.android_sdk.utilities.StringUtils.notEmpty
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -78,6 +79,7 @@ class SyncedPatientsActivity : ACBaseActivity() {
         menuInflater.inflate(R.menu.find_locally_and_add_patients_menu, menu)
 
         addPatientMenuItem = menu.findItem(R.id.actionAddPatients)
+        addPatientMenuItem?.isVisible = hasPrivilege(GET_PATIENTS)
         enableAddPatient(OpenmrsAndroid.getSyncState())
 
         val searchMenuItem = menu.findItem(R.id.actionSearchLocal)

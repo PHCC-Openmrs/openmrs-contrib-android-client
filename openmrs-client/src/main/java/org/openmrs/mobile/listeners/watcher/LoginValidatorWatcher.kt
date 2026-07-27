@@ -28,7 +28,8 @@ class LoginValidatorWatcher(private val mUrl: EditText,
                             private val mUsername: EditText,
                             private val mPassword: EditText,
                             private val mLocation: Spinner,
-                            private val mLoginButton: Button) : TextWatcher, OnItemSelectedListener {
+                            private val mLoginButton: Button,
+                            private val mContinueButton: Button) : TextWatcher, OnItemSelectedListener {
     var isUrlChanged = false
     var isLocationErrorOccurred = false
 
@@ -46,6 +47,7 @@ class LoginValidatorWatcher(private val mUrl: EditText,
             urlChanged(editable)
         }
         mLoginButton.isEnabled = isAllDataValid
+        mContinueButton.isEnabled = validateNotEmpty(mUsername) && validateNotEmpty(mPassword)
     }
 
     private fun urlChanged(editable: Editable) {
@@ -70,22 +72,10 @@ class LoginValidatorWatcher(private val mUrl: EditText,
         // This method is intentionally empty
     }
 
+    // Location spinner visibility is owned by LoginFragment's credentials/location step toggle
+    // (it only ever exists once a fetch has actually succeeded) - this just reports validity.
     private val isAllDataValid: Boolean
-        get() {
-            val result = validateNotEmpty(mUsername) && validateNotEmpty(mPassword) && !isUrlChanged && validateLocation()
-            if (isLocationErrorOccurred && isUrlChanged) {
-                mLocation.isEnabled = false
-                mLocation.visibility = View.GONE
-            } else {
-                mLocation.isEnabled = true
-                mLocation.visibility = View.VISIBLE
-            }
-            if (!result && !isLocationErrorOccurred && isUrlChanged) {
-                mLocation.isEnabled = false
-                mLocation.visibility = View.GONE
-            }
-            return result
-        }
+        get() = validateNotEmpty(mUsername) && validateNotEmpty(mPassword) && !isUrlChanged && validateLocation()
 
     private fun validateNotEmpty(editText: EditText): Boolean {
         return notEmpty(editText.text.toString())
@@ -98,7 +88,10 @@ class LoginValidatorWatcher(private val mUrl: EditText,
      */
     private fun validateLocation(): Boolean {
         if (mLocation.adapter != null) {
-            if (mLocation.adapter.count > 0) {
+            // Position 0 is always the "Session Location*" placeholder prompt (see
+            // LoginFragment.getLocationStringList), so a count of 1 means there are no real
+            // locations to choose from - in that case a location isn't required to log in.
+            if (mLocation.adapter.count > 1) {
                 return mLocation.selectedItemId != 0L
             }
         }

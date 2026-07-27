@@ -4,6 +4,7 @@ import android.content.Context
 import com.openmrs.android_sdk.library.dao.AllergyRoomDAO
 import com.openmrs.android_sdk.library.dao.AppointmentRoomDAO
 import com.openmrs.android_sdk.library.dao.ConceptRoomDAO
+import com.openmrs.android_sdk.library.dao.PrivilegeCacheRoomDAO
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO
 import com.openmrs.android_sdk.library.databases.AppDatabase
 import dagger.Module
@@ -40,6 +41,11 @@ object AppDatabaseModule {
     @Singleton
     fun provideAppointmentRoomDAO(@ApplicationContext context: Context): AppointmentRoomDAO =
         AppDatabase.getDatabase(context).appointmentRoomDAO()
+
+    @Provides
+    @Singleton
+    fun providePrivilegeCacheRoomDAO(@ApplicationContext context: Context): PrivilegeCacheRoomDAO =
+        AppDatabase.getDatabase(context).privilegeCacheRoomDAO()
 }
 
 

@@ -27,7 +27,10 @@ import com.google.gson.annotations.Expose
  */
 data class User(@Expose var username: String? = null,
                 @Expose var systemId: String? = null,
-                @Expose var person: Person? = null) : Resource() {
+
+                @Expose var person: Person? = null,
+                @Expose var roles: List<Role>? = null,
+                @Expose var privileges: List<Privilege>? = null) : Resource() {
 
     override fun toString(): String {
         if (username == null)

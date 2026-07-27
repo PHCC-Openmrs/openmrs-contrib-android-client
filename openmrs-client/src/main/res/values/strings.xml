@@ -25,6 +25,7 @@
 
     <!-- Login view -->
     <string name="login_button">Login</string>
+    <string name="login_continue_button">Continue</string>
     <string name="login_username_hint">Username</string>
     <string name="login_password_hint">Password</string>
     <string name="login_location_select">Session Location</string>
@@ -98,6 +99,7 @@
     <!-- Location dialog  -->
     <string name="location_dialog_title">Select Location</string>
     <string name="location_dialog_current_location">Current Location: </string>
+    <string name="location_dialog_no_selection_error">Please select a location</string>
 
     <!-- Reset patient info dialog -->
     <string name="reset_dialog_message">All patient information entered will be erased</string>

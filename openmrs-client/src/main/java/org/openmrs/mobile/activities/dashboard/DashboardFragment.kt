@@ -21,12 +21,19 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.navigation.fragment.findNavController
 import com.github.amlcurran.showcaseview.OnShowcaseEventListener
 import com.github.amlcurran.showcaseview.ShowcaseView
 import com.github.amlcurran.showcaseview.targets.Target
 import com.github.amlcurran.showcaseview.targets.ViewTarget
 import com.openmrs.android_sdk.utilities.ApplicationConstants
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.ADD_ENCOUNTERS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.ADD_PATIENTS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.FORM_ENTRY
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_PATIENTS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_PROVIDERS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_VISITS
 import com.openmrs.android_sdk.utilities.ImageUtils
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -46,38 +53,60 @@ class DashboardFragment : BaseFragment(), View.OnClickListener {
 
         val settings2 = requireActivity().getSharedPreferences(ApplicationConstants.OPENMRS_PREF_FILE, 0)
         if (settings2.getBoolean("my_first_time", true)) {
-            showOverlayTutorial((binding.findPatientView).id, getString(R.string.dashboard_search_icon_label),
-                    getString(R.string.showcase_find_patients), R.style.CustomShowcaseTheme,
-                    ApplicationConstants.ShowCaseViewConstants.SHOW_FIND_PATIENT, true)
+            showOverlayTutorialFrom(0)
             settings2.edit().putBoolean("my_first_time", false).apply()
         }
     }
 
-    private fun showOverlayTutorial(view: Int, title: String, content: String, styleTheme: Int,
-                                    currentViewCount: Int, showTextBelow: Boolean) {
-        val viewTarget: Target = ViewTarget(view, this.activity)
+    /** One step of the first-launch walkthrough; only shown if [hasPrivilege] allows it. */
+    private data class TutorialStep(
+        val view: () -> View,
+        val title: String,
+        val content: String,
+        val style: Int,
+        val showTextBelow: Boolean,
+        val hasPrivilege: Boolean
+    )
+
+    private fun tutorialSteps(): List<TutorialStep> = with(binding) {
+        listOf(
+            TutorialStep({ findPatientView }, getString(R.string.dashboard_search_icon_label),
+                    getString(R.string.showcase_find_patients), R.style.CustomShowcaseTheme, true,
+                    hasPrivilege(GET_PATIENTS)),
+            TutorialStep({ activeVisitsView }, getString(R.string.dashboard_visits_icon_label),
+                    getString(R.string.showcase_active_visits), R.style.CustomShowcaseTheme, true,
+                    hasPrivilege(GET_VISITS)),
+            TutorialStep({ registryPatientView }, getString(R.string.action_register_patient),
+                    getString(R.string.showcase_register_patient), R.style.CustomShowcaseTheme, false,
+                    hasPrivilege(ADD_PATIENTS)),
+            TutorialStep({ captureVitalsView }, getString(R.string.dashboard_forms_icon_label),
+                    getString(R.string.showcase_form_entry), R.style.CustomShowcaseTheme, false,
+                    hasAnyPrivilege(ADD_ENCOUNTERS, FORM_ENTRY)),
+            TutorialStep({ dashboardProviderManagementView }, getString(R.string.action_provider_management),
+                    getString(R.string.showcase_manage_providers), R.style.CustomShowcaseThemeExit, false,
+                    hasPrivilege(GET_PROVIDERS))
+        )
+    }
+
+    /** Shows the first step from [startIndex] onward whose tile isn't gated out; no-op if none remain. */
+    private fun showOverlayTutorialFrom(startIndex: Int) {
+        val steps = tutorialSteps()
+        val index = (startIndex until steps.size).firstOrNull { steps[it].hasPrivilege } ?: return
+        showOverlayTutorial(steps, index)
+    }
+
+    private fun showOverlayTutorial(steps: List<TutorialStep>, index: Int) {
+        val step = steps[index]
+        val viewTarget: Target = ViewTarget(step.view().id, this.activity)
         val builder = ShowcaseView.Builder(this.activity)
                 .setTarget(viewTarget)
-                .setContentTitle(title)
-                .setContentText(content)
+                .setContentTitle(step.title)
+                .setContentText(step.content)
                 .hideOnTouchOutside()
-                .setStyle(styleTheme)
+                .setStyle(step.style)
                 .setShowcaseEventListener(object : OnShowcaseEventListener {
                     override fun onShowcaseViewHide(showcaseView: ShowcaseView) {
-                        when (currentViewCount) {
-                            ApplicationConstants.ShowCaseViewConstants.SHOW_FIND_PATIENT -> showOverlayTutorial((binding.activeVisitsView).id, getString(R.string.dashboard_visits_icon_label),
-                                    getString(R.string.showcase_active_visits), R.style.CustomShowcaseTheme,
-                                    ApplicationConstants.ShowCaseViewConstants.SHOW_ACTIVE_VISITS, true)
-                            ApplicationConstants.ShowCaseViewConstants.SHOW_ACTIVE_VISITS -> showOverlayTutorial((binding.registryPatientView).id, getString(R.string.action_register_patient),
-                                    getString(R.string.showcase_register_patient), R.style.CustomShowcaseTheme,
-                                    ApplicationConstants.ShowCaseViewConstants.SHOW_REGISTER_PATIENT, false)
-                            ApplicationConstants.ShowCaseViewConstants.SHOW_REGISTER_PATIENT -> showOverlayTutorial((binding.captureVitalsView).id, getString(R.string.dashboard_forms_icon_label),
-                                    getString(R.string.showcase_form_entry), R.style.CustomShowcaseTheme,
-                                    ApplicationConstants.ShowCaseViewConstants.SHOW_FORM_ENTRY, false)
-                            ApplicationConstants.ShowCaseViewConstants.SHOW_FORM_ENTRY -> showOverlayTutorial((binding.dashboardProviderManagementView).id, getString(R.string.action_provider_management),
-                                    getString(R.string.showcase_manage_providers), R.style.CustomShowcaseThemeExit,
-                                    ApplicationConstants.ShowCaseViewConstants.SHOW_MANAGE_PROVIDERS, false)
-                        }
+                        showOverlayTutorialFrom(index + 1)
                         showcaseView.visibility = View.GONE
                     }
 
@@ -90,7 +119,7 @@ class DashboardFragment : BaseFragment(), View.OnClickListener {
                     override fun onShowcaseViewTouchBlocked(motionEvent: MotionEvent) { //This method is intentionally left blank
                     }
                 })
-        if (showTextBelow) {
+        if (step.showTextBelow) {
             builder.build()
         } else {
             builder.build().forceTextPosition(ShowcaseView.ABOVE_SHOWCASE)
@@ -102,8 +131,59 @@ class DashboardFragment : BaseFragment(), View.OnClickListener {
 
         bindDrawableResources()
         setListeners()
+        layoutVisibleTiles()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-layout in case a privilege sync completed while the dashboard was already visible
+        // (e.g. right after first login), so gating applies without needing a relaunch.
+        layoutVisibleTiles()
+    }
+
+    /**
+     * Packs whichever dashboard tiles the current user's role has privilege for into
+     * dynamically-built two-per-row groups, so the grid has no gaps/overlap regardless of how
+     * many of the 5 tiles end up visible (a fixed 2-column ConstraintLayout chain would leave
+     * later tiles overlapping earlier ones whenever a tile in between was hidden).
+     * Fails open: while privilege data hasn't been fetched yet, [hasPrivilege]/[hasAnyPrivilege]
+     * return true, so every tile stays visible exactly as before this check existed.
+     */
+    private fun layoutVisibleTiles() = with(binding) {
+        val tiles = listOf(
+                findPatientsCardView to hasPrivilege(GET_PATIENTS),
+                activeVisitsCardView to hasPrivilege(GET_VISITS),
+                registerPatientCardView to hasPrivilege(ADD_PATIENTS),
+                formEntryCardView to hasAnyPrivilege(ADD_ENCOUNTERS, FORM_ENTRY),
+                manageProviderCardView to hasPrivilege(GET_PROVIDERS)
+        )
+
+        // Detach every tile from wherever it currently sits (its placeholder slot, or a row
+        // built by a previous call) before repacking from scratch.
+        tiles.forEach { (tile, _) -> (tile.parent as? ViewGroup)?.removeView(tile) }
+        tilesContainer.removeAllViews()
+
+        val gutter = resources.getDimensionPixelSize(R.dimen.dashboard_tile_gutter)
+        val rowSpacing = resources.getDimensionPixelSize(R.dimen.dashboard_tile_row_spacing)
+
+        tiles.filter { it.second }.map { it.first }.chunked(2).forEachIndexed { index, rowTiles ->
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = if (index == 0) 0 else rowSpacing }
+            }
+            rowTiles.forEach { tile ->
+                tile.visibility = View.VISIBLE
+                row.addView(tile, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    leftMargin = gutter
+                    rightMargin = gutter
+                })
+            }
+            tilesContainer.addView(row)
+        }
     }
 
     private fun setListeners() {

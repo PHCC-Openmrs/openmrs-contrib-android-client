@@ -19,27 +19,25 @@
     android:layout_height="match_parent"
     tools:context=".activities.dashboard.DashboardFragment">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/constraintLayout"
+    <!--
+      The 5 tile CardViews below are placeholders only: DashboardFragment reparents whichever
+      ones the current user's role has privilege for into dynamically-built two-per-row groups
+      inside tilesContainer, so the grid packs cleanly (no gaps/overlap) whether 1, 2, 3, 4 or 5
+      tiles end up visible. Their original flat order here is irrelevant to the final layout.
+    -->
+    <LinearLayout
+        android:id="@+id/tilesContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="16dp"
-        android:layout_marginRight="12dp">
-
+        android:layout_marginRight="8dp"
+        android:orientation="vertical">
 
         <androidx.cardview.widget.CardView
             android:id="@+id/findPatientsCardView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginLeft="14dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="22dp"
-            android:layout_marginRight="22dp"
-            app:layout_constraintEnd_toStartOf="@+id/activeVisitsCardView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <RelativeLayout
                 android:id="@+id/findPatientView"
@@ -73,18 +71,10 @@
 
         </androidx.cardview.widget.CardView>
 
-
         <androidx.cardview.widget.CardView
             android:id="@+id/activeVisitsCardView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:layout_constraintBottom_toTopOf="@+id/formEntryCardView"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/findPatientsCardView"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_marginRight="12dp"
-            app:layout_constraintVertical_chainStyle="spread_inside">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <RelativeLayout
                 android:id="@+id/activeVisitsView"
@@ -118,19 +108,10 @@
 
         </androidx.cardview.widget.CardView>
 
-
         <androidx.cardview.widget.CardView
             android:id="@+id/registerPatientCardView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginLeft="14dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="22dp"
-            android:layout_marginRight="22dp"
-            app:layout_constraintEnd_toStartOf="@+id/formEntryCardView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/findPatientsCardView">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <RelativeLayout
                 android:id="@+id/registryPatientView"
@@ -166,14 +147,8 @@
 
         <androidx.cardview.widget.CardView
             android:id="@+id/formEntryCardView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintBottom_toTopOf="@+id/manageProviderCardView"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/registerPatientCardView"
-            app:layout_constraintTop_toBottomOf="@+id/activeVisitsCardView"
-            android:layout_marginTop="16dp"
-            android:layout_marginRight="12dp">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <RelativeLayout
                 android:id="@+id/captureVitalsView"
@@ -207,21 +182,10 @@
 
         </androidx.cardview.widget.CardView>
 
-
         <androidx.cardview.widget.CardView
             android:id="@+id/manageProviderCardView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginLeft="12dp"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginRight="16dp"
-            android:layout_marginBottom="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/formEntryCardView">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <RelativeLayout
                 android:id="@+id/dashboardProviderManagementView"
@@ -255,7 +219,6 @@
 
         </androidx.cardview.widget.CardView>
 
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </ScrollView>

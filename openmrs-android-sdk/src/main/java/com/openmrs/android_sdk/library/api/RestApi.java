@@ -40,6 +40,7 @@ import com.openmrs.android_sdk.library.models.DrugCreate;
 import com.openmrs.android_sdk.library.models.Encounter;
 import com.openmrs.android_sdk.library.models.EncounterType;
 import com.openmrs.android_sdk.library.models.Encountercreate;
+import com.openmrs.android_sdk.library.models.FhirLocationBundle;
 import com.openmrs.android_sdk.library.models.FormCreate;
 import com.openmrs.android_sdk.library.models.FormData;
 import com.openmrs.android_sdk.library.models.IdGenPatientIdentifiers;
@@ -99,6 +100,33 @@ public interface RestApi {
     Call<Results<LocationEntity>> getLocations(@Url String url,
                                                @Query("tag") String tag,
                                                @Query("v") String representation);
+
+    /**
+     * Gets locations tagged with a given location tag via the FHIR2 module, the same API the
+     * OpenMRS O3 web app uses for its login-location picker. Used instead of the legacy
+     * {@link #getLocations(String, String, String)} tag search, which can return empty results
+     * for a tag search that the FHIR endpoint correctly resolves (a known quirk/bug in the
+     * legacy REST webservices module's tag-based location search on some OpenMRS instances).
+     *
+     * @param url   the full ".../ws/fhir2/R4/Location" URL
+     * @param tag   the location tag name (e.g. "Login Location")
+     * @param count max results per page
+     * @return the FHIR searchset Bundle
+     */
+    @GET()
+    Call<FhirLocationBundle> getFhirLocationsByTag(@Url String url,
+                                                    @Query("_tag") String tag,
+                                                    @Query("_summary") String summary,
+                                                    @Query("_count") int count);
+
+    /**
+     * Fetches a subsequent page of a FHIR Bundle via its own absolute "next" link URL.
+     *
+     * @param url the full page URL, taken from a previous {@link FhirLocationBundle}'s "next" link
+     * @return the FHIR searchset Bundle page
+     */
+    @GET()
+    Call<FhirLocationBundle> getFhirBundlePage(@Url String url);
 
     /**
      * Gets system property.
@@ -672,11 +700,12 @@ public interface RestApi {
     /**
      * Gets full user info.
      *
-     * @param uuid the uuid
+     * @param uuid           the uuid
+     * @param representation the custom representation (e.g. roles/privileges), may be null
      * @return the full user info
      */
     @GET("user/{uuid}")
-    Call<User> getFullUserInfo(@Path("uuid") String uuid);
+    Call<User> getFullUserInfo(@Path("uuid") String uuid, @Query("v") String representation);
 
     /**
      * Gets concepts.

@@ -4,8 +4,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.RestServiceBuilder
+import com.openmrs.android_sdk.library.databases.AppDatabase
 import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
+import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.LocationDAO
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
@@ -32,7 +34,8 @@ class LoginViewModel @Inject constructor(
         private val visitRepository: VisitRepository,
         private val locationRepository: LocationRepository,
         private val locationDAO: LocationDAO,
-        private val userService: UserService
+        private val userService: UserService,
+        private val privilegeRepository: PrivilegeRepository
 ) : BaseViewModel<ResultType>() {
 
     private val _warningDialogLiveData = MutableLiveData<Boolean>()
@@ -87,7 +90,13 @@ class LoginViewModel @Inject constructor(
 
                     OpenmrsAndroid.deleteSecretKey()
                     if (wipeDatabase) {
-                        OpenMRS.getInstance().deleteDatabase(ApplicationConstants.DB_NAME)
+                        // clearAllTables() wipes every row but keeps the same open connection -
+                        // deleting the underlying file instead (via Context.deleteDatabase) closes
+                        // that connection, but every DAO Hilt hands out (FormListService,
+                        // PrivilegeCacheRoomDAO, ...) was resolved once and cached for the
+                        // process's lifetime, so they'd keep pointing at the now-closed database
+                        // and throw "database is not open" the next time anything used them.
+                        AppDatabase.getDatabase(OpenMRS.getInstance()).clearAllTables()
                         setData(session.sessionId!!, url, username, password)
                     }
                     if (AuthorizationManager().isUserNameOrServerEmpty()) {
@@ -102,6 +111,11 @@ class LoginViewModel @Inject constructor(
 
                     setLogin(true, url)
                     userService.updateUserInformation(username)
+                    // The /session response already carries the fully-resolved effective
+                    // privileges/roles for the current user and requires no privilege beyond
+                    // being authenticated (unlike /user, which needs "Get Users" - a privilege
+                    // clinical roles like Clerk/Nurse typically don't have).
+                    session.user?.let { privilegeRepository.cacheEffectivePrivileges(it) }
 
                     return@map ResultType.LoginSuccess
                 }
@@ -127,11 +141,11 @@ class LoginViewModel @Inject constructor(
         )
     }
 
-    fun fetchLocations(url: String) {
+    fun fetchLocations(url: String, username: String? = null, password: String? = null) {
         setLoading(OperationType.LocationsFetching)
         if (hasNetwork()) {
             lastCorrectUrl = url
-            addSubscription(locationRepository.getLocations(url)
+            addSubscription(locationRepository.getLocations(url, username, password)
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
                             { locationsList ->

@@ -19,13 +19,11 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentPagerAdapter
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.ALLERGY_TAB_POS
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.CHARTS_TAB_POS
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.DETAILS_TAB_POS
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.DIAGNOSIS_TAB_POS
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.TAB_COUNT
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.VISITS_TAB_POS
-import com.openmrs.android_sdk.utilities.ApplicationConstants.PatientDashboardTabs.VITALS_TAB_POS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ALLERGIES
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_DIAGNOSES
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ENCOUNTERS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_OBSERVATIONS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_VISITS
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.patientdashboard.allergy.PatientAllergyFragment
 import org.openmrs.mobile.activities.patientdashboard.charts.PatientChartsFragment
@@ -33,37 +31,59 @@ import org.openmrs.mobile.activities.patientdashboard.details.PatientDetailsFrag
 import org.openmrs.mobile.activities.patientdashboard.diagnosis.PatientDiagnosisFragment
 import org.openmrs.mobile.activities.patientdashboard.visits.PatientVisitsFragment
 import org.openmrs.mobile.activities.patientdashboard.vitals.PatientVitalsFragment
+import org.openmrs.mobile.utilities.PrivilegeUtils
 
 class PatientDashboardPagerAdapter(private val fm: FragmentManager,
                                    private val context: Context,
                                    private val mPatientId: Long
 ) : FragmentPagerAdapter(fm) {
 
+    enum class TabType { DETAILS, ALLERGY, DIAGNOSIS, VISITS, VITALS, CHARTS }
+
+    private data class TabSpec(val type: TabType, val titleRes: Int)
+
     private val registeredFragments = SparseArray<Fragment>()
 
-    override fun getItem(i: Int): Fragment {
-        return when (i) {
-            DETAILS_TAB_POS -> PatientDetailsFragment.newInstance(mPatientId)
-            ALLERGY_TAB_POS -> PatientAllergyFragment.newInstance(mPatientId)
-            DIAGNOSIS_TAB_POS -> PatientDiagnosisFragment.newInstance(mPatientId)
-            VISITS_TAB_POS -> PatientVisitsFragment.newInstance(mPatientId)
-            VITALS_TAB_POS -> PatientVitalsFragment.newInstance(mPatientId)
-            CHARTS_TAB_POS -> PatientChartsFragment.newInstance(mPatientId)
-            else -> throw IllegalStateException()
+    /**
+     * Tabs the current user's role has privilege to see, in display order. Details is always
+     * included since reaching this screen already required Get Patients. Fails open: while
+     * privilege data hasn't been fetched yet, every tab is included exactly as before this check
+     * existed.
+     */
+    private val visibleTabs: List<TabSpec> = buildList {
+        add(TabSpec(TabType.DETAILS, R.string.patient_scroll_tab_details_label))
+        if (PrivilegeUtils.hasPrivilege(GET_ALLERGIES)) {
+            add(TabSpec(TabType.ALLERGY, R.string.patient_scroll_tab_allergy_label))
+        }
+        if (PrivilegeUtils.hasPrivilege(GET_DIAGNOSES)) {
+            add(TabSpec(TabType.DIAGNOSIS, R.string.patient_scroll_tab_diagnosis_label))
+        }
+        if (PrivilegeUtils.hasPrivilege(GET_VISITS)) {
+            add(TabSpec(TabType.VISITS, R.string.patient_scroll_tab_visits_label))
+        }
+        if (PrivilegeUtils.hasPrivilege(GET_OBSERVATIONS)) {
+            add(TabSpec(TabType.VITALS, R.string.patient_scroll_tab_vitals_label))
+        }
+        if (PrivilegeUtils.hasAnyPrivilege(GET_ENCOUNTERS, GET_OBSERVATIONS)) {
+            add(TabSpec(TabType.CHARTS, R.string.patient_scroll_tab_charts_label))
         }
     }
 
-    override fun getPageTitle(position: Int): CharSequence? {
-        return when (position) {
-            DETAILS_TAB_POS -> context.getString(R.string.patient_scroll_tab_details_label)
-            ALLERGY_TAB_POS -> context.getString(R.string.patient_scroll_tab_allergy_label)
-            DIAGNOSIS_TAB_POS -> context.getString(R.string.patient_scroll_tab_diagnosis_label)
-            VISITS_TAB_POS -> context.getString(R.string.patient_scroll_tab_visits_label)
-            VITALS_TAB_POS -> context.getString(R.string.patient_scroll_tab_vitals_label)
-            CHARTS_TAB_POS -> context.getString(R.string.patient_scroll_tab_charts_label)
-            else -> super.getPageTitle(position)
+    /** Identifies which tab is at [position] without relying on a fixed numeric index. */
+    fun tabTypeAt(position: Int): TabType = visibleTabs[position].type
+
+    override fun getItem(i: Int): Fragment {
+        return when (visibleTabs[i].type) {
+            TabType.DETAILS -> PatientDetailsFragment.newInstance(mPatientId)
+            TabType.ALLERGY -> PatientAllergyFragment.newInstance(mPatientId)
+            TabType.DIAGNOSIS -> PatientDiagnosisFragment.newInstance(mPatientId)
+            TabType.VISITS -> PatientVisitsFragment.newInstance(mPatientId)
+            TabType.VITALS -> PatientVitalsFragment.newInstance(mPatientId)
+            TabType.CHARTS -> PatientChartsFragment.newInstance(mPatientId)
         }
     }
+
+    override fun getPageTitle(position: Int): CharSequence = context.getString(visibleTabs[position].titleRes)
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
         val fragment = super.instantiateItem(container, position) as Fragment
@@ -76,5 +96,5 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
         super.destroyItem(container, position, `object`)
     }
 
-    override fun getCount(): Int = TAB_COUNT
+    override fun getCount(): Int = visibleTabs.size
 }

@@ -31,6 +31,9 @@ import com.openmrs.android_sdk.library.models.Encounter
 import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VISIT_ID
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.ADD_ENCOUNTERS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.EDIT_VISITS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.FORM_ENTRY
 import com.openmrs.android_sdk.utilities.NetworkUtils
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
@@ -97,7 +100,9 @@ class VisitDashboardFragment : BaseFragment() {
 
         if (visitEncounters.isEmpty()) {
             visitDashboardEmpty.makeVisible()
-            showEmptyEncountersSnackBar()
+            // The snackbar's action jumps straight into Form Entry - same privilege as the
+            // "Fill Form" menu item, and just as reachable, so it needs the same gate.
+            if (hasAnyPrivilege(ADD_ENCOUNTERS, FORM_ENTRY)) showEmptyEncountersSnackBar()
         }
     }
 
@@ -158,7 +163,11 @@ class VisitDashboardFragment : BaseFragment() {
     override fun onCreateOptionsMenu(menu: Menu, menuInflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, menuInflater)
         viewModel.visit?.run {
-            if (isActiveVisit()) menuInflater.inflate(R.menu.active_visit_menu, menu)
+            if (isActiveVisit()) {
+                menuInflater.inflate(R.menu.active_visit_menu, menu)
+                menu.findItem(R.id.actionEndVisit)?.isVisible = hasPrivilege(EDIT_VISITS)
+                menu.findItem(R.id.actionFillForm)?.isVisible = hasAnyPrivilege(ADD_ENCOUNTERS, FORM_ENTRY)
+            }
         }
     }
 

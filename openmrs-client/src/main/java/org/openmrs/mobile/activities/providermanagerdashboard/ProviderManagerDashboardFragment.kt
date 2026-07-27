@@ -26,6 +26,7 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.openmrs.android_sdk.library.models.Provider
 import com.openmrs.android_sdk.library.models.Result
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.MANAGE_PROVIDERS
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -68,8 +69,13 @@ class ProviderManagerDashboardFragment : BaseFragment() {
         }
 
         // Add provider floating action button
-        providerManagementFragAddFAB.setOnClickListener {
-            startActivity(Intent(activity, AddEditProviderActivity::class.java))
+        providerManagementFragAddFAB.apply {
+            if (hasPrivilege(MANAGE_PROVIDERS)) {
+                makeVisible()
+                setOnClickListener { startActivity(Intent(activity, AddEditProviderActivity::class.java)) }
+            } else {
+                makeGone()
+            }
         }
     }
 

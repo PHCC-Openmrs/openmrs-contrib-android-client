@@ -19,9 +19,5 @@ class ProviderDashboardPagerAdapter constructor(fm: FragmentManager?) : Fragment
     override fun getPageTitle(position: Int): CharSequence = mFragmentTitleList[position]
 
 
-    override fun getCount(): Int = TAB_COUNT
-
-    companion object {
-        private const val TAB_COUNT = 2
-    }
+    override fun getCount(): Int = mFragmentList.size
 }

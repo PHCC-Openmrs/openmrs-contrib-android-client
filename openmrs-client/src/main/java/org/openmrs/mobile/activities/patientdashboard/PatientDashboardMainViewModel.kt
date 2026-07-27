@@ -29,7 +29,15 @@ class PatientDashboardMainViewModel @Inject constructor(
 ) : BaseViewModel<Unit>() {
 
     val patientId: Long = savedStateHandle.get<Long>(PATIENT_ID_BUNDLE)!!
-    private var patient: Patient = patientDAO.findPatientByID(patientId)
+    private var patient: Patient? = patientDAO.findPatientByID(patientId)
+
+    /**
+     * False when [patientId] doesn't correspond to any locally stored patient (e.g. a stale
+     * "recently viewed"/restored-activity reference to a patient that's no longer cached
+     * locally). The Activity checks this right after construction and finishes instead of
+     * proceeding, since every other method here assumes a loaded patient.
+     */
+    val isPatientFound: Boolean get() = patient != null
 
     private var runningSyncs = 0
 
@@ -46,17 +54,18 @@ class PatientDashboardMainViewModel @Inject constructor(
     }
 
     fun syncPatientData() {
+        val currentPatient = patient ?: return
         setLoading(PatientSynchronizing)
-        if (patient.uuid.isNullOrEmpty()) {
-            syncUnsyncedPatient()
+        if (currentPatient.uuid.isNullOrEmpty()) {
+            syncUnsyncedPatient(currentPatient)
         } else {
-            syncAllData(patient)
+            syncAllData(currentPatient)
         }
     }
 
-    private fun syncUnsyncedPatient() {
+    private fun syncUnsyncedPatient(unsyncedPatient: Patient) {
         runningSyncs++
-        addSubscription(patientRepository.syncPatient(patient)
+        addSubscription(patientRepository.syncPatient(unsyncedPatient)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         { syncedPatient ->

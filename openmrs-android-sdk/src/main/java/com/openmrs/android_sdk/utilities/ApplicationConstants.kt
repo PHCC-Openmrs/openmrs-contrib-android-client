@@ -28,7 +28,7 @@ object ApplicationConstants {
     const val VISIT_TYPE_UUID = "visit_type_uuid"
     const val LAST_SESSION_TOKEN = "last_session_id"
     const val LAST_LOGIN_SERVER_URL = "last_login_server_url"
-    const val DEFAULT_OPEN_MRS_URL = "https://openmrs-care-dev.beehyv.com/openmrs/"
+    const val DEFAULT_OPEN_MRS_URL = "http://192.168.5.228/openmrs"
     const val DB_NAME = "openmrs.db"
     const val DB_PASSWORD_BCRYPT_PEPPER = "$2a$08\$iUp3M1VapYpjcAXQBNX6uu"
     const val DB_PASSWORD_LITERAL_PEPPER = "Open Sesame"
@@ -69,6 +69,36 @@ object ApplicationConstants {
         const val REST_ENDPOINT = "/ws/rest/v1/"
         const val FULL = "full"
         const val TAG_ADMISSION_LOCATION = "Admission Location"
+        const val FHIR2_LOCATION_ENDPOINT = "/ws/fhir2/R4/Location"
+    }
+
+    object RBAC {
+        // matches org.openmrs.util.RoleConstants.SUPERUSER in openmrs-core
+        const val SUPERUSER_ROLE_NAME = "System Developer"
+    }
+
+    /** OpenMRS core privilege names (see https://wiki.openmrs.org/display/docs/Privileges) used to gate UI elements. */
+    object Privileges {
+        const val GET_PATIENTS = "Get Patients"
+        const val ADD_PATIENTS = "Add Patients"
+        const val EDIT_PATIENTS = "Edit Patients"
+        const val DELETE_PATIENTS = "Delete Patients"
+        const val GET_VISITS = "Get Visits"
+        const val ADD_VISITS = "Add Visits"
+        const val EDIT_VISITS = "Edit Visits"
+        const val ADD_ENCOUNTERS = "Add Encounters"
+        const val GET_ENCOUNTERS = "Get Encounters"
+        const val GET_OBSERVATIONS = "Get Observations"
+        const val ADD_OBSERVATIONS = "Add Observations"
+        const val EDIT_OBSERVATIONS = "Edit Observations"
+        const val GET_DIAGNOSES = "Get Diagnoses"
+        const val FORM_ENTRY = "Form Entry"
+        const val GET_ALLERGIES = "Get Allergies"
+        const val ADD_ALLERGIES = "Add Allergies"
+        const val EDIT_ALLERGIES = "Edit Allergies"
+        const val REMOVE_ALLERGIES = "Remove Allergies"
+        const val GET_PROVIDERS = "Get Providers"
+        const val MANAGE_PROVIDERS = "Manage Providers"
     }
 
     object UserKeys {

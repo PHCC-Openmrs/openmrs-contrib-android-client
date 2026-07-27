@@ -25,8 +25,11 @@ import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity;
 import com.openmrs.android_sdk.library.models.EncounterType;
 import com.openmrs.android_sdk.library.models.Results;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
+
+import org.openmrs.mobile.utilities.PrivilegeUtils;
 
 @AndroidEntryPoint
 public class FormListService extends IntentService {
@@ -42,29 +45,33 @@ public class FormListService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         if (!NetworkUtils.isOnline()) return;
-        // Refresh forms
-        FormResourceDAO formResourceDAO = appDatabase.formResourceDAO();
-        Response<Results<FormResourceEntity>> response = null;
-        try {
-            response = apiService.getForms().execute();
-            if (response.isSuccessful() && response.body() != null) {
-                formResourceDAO.deleteAllForms();
-                List<FormResourceEntity> formResourceList = response.body().getResults();
-                for (FormResourceEntity formResourceEntity : formResourceList) {
-                    if (formResourceEntity.getName() == null) {
-                        formResourceEntity.setName("Unnamed Form");
+        // Refresh forms - only for roles that can actually access Form Entry; other roles
+        // (e.g. Clerk) don't hold "Get Forms" server-side, so attempting this would just
+        // 403 and surface a confusing error toast right after login.
+        if (PrivilegeUtils.hasAnyPrivilege(ApplicationConstants.Privileges.ADD_ENCOUNTERS, ApplicationConstants.Privileges.FORM_ENTRY)) {
+            FormResourceDAO formResourceDAO = appDatabase.formResourceDAO();
+            Response<Results<FormResourceEntity>> response = null;
+            try {
+                response = apiService.getForms().execute();
+                if (response.isSuccessful() && response.body() != null) {
+                    formResourceDAO.deleteAllForms();
+                    List<FormResourceEntity> formResourceList = response.body().getResults();
+                    for (FormResourceEntity formResourceEntity : formResourceList) {
+                        if (formResourceEntity.getName() == null) {
+                            formResourceEntity.setName("Unnamed Form");
+                        }
+                        if (formResourceEntity.getEncounterTypeResource() != null && formResourceEntity.getEncounterTypeResource().getUuid() != null) {
+                            formResourceEntity.setEncounterTypeUuid(formResourceEntity.getEncounterTypeResource().getUuid());
+                        }
+                        formResourceDAO.addFormResource(formResourceEntity);
                     }
-                    if (formResourceEntity.getEncounterTypeResource() != null && formResourceEntity.getEncounterTypeResource().getUuid() != null) {
-                        formResourceEntity.setEncounterTypeUuid(formResourceEntity.getEncounterTypeResource().getUuid());
-                    }
-                    formResourceDAO.addFormResource(formResourceEntity);
+                    ToastUtil.notify("Synced " + formResourceList.size() + " forms");
+                } else {
+                    ToastUtil.error(response != null ? response.message() : "Error fetching forms");
                 }
-                ToastUtil.notify("Synced " + formResourceList.size() + " forms");
-            } else {
-                ToastUtil.error(response != null ? response.message() : "Error fetching forms");
+            } catch (Exception e) {
+                ToastUtil.error("Error with forms sync: " + e.getMessage());
             }
-        } catch (Exception e) {
-            ToastUtil.error("Error with forms sync: " + e.getMessage());
         }
         // Refresh encounter types
         EncounterTypeRoomDAO encounterTypeRoomDAO = appDatabase.encounterTypeRoomDAO();

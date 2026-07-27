@@ -20,6 +20,8 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.TypeConverters;
+import androidx.room.migration.Migration;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import com.openmrs.android_sdk.library.dao.AllergyRoomDAO;
 import com.openmrs.android_sdk.library.dao.AppointmentRoomDAO;
@@ -33,6 +35,7 @@ import com.openmrs.android_sdk.library.dao.LocationRoomDAO;
 import com.openmrs.android_sdk.library.dao.ObservationRoomDAO;
 import com.openmrs.android_sdk.library.dao.OrderRoomDAO;
 import com.openmrs.android_sdk.library.dao.PatientRoomDAO;
+import com.openmrs.android_sdk.library.dao.PrivilegeCacheRoomDAO;
 import com.openmrs.android_sdk.library.dao.ProgramRoomDAO;
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO;
 import com.openmrs.android_sdk.library.dao.VisitRoomDAO;
@@ -46,6 +49,7 @@ import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.databases.entities.ObservationEntity;
 import com.openmrs.android_sdk.library.databases.entities.OrderEntity;
 import com.openmrs.android_sdk.library.databases.entities.PatientEntity;
+import com.openmrs.android_sdk.library.databases.entities.PrivilegeCacheEntity;
 import com.openmrs.android_sdk.library.databases.entities.ProgramEntity;
 import com.openmrs.android_sdk.library.databases.entities.StandaloneEncounterEntity;
 import com.openmrs.android_sdk.library.databases.entities.StandaloneObservationEntity;
@@ -74,12 +78,30 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         AppointmentEntity.class,
         OrderEntity.class,
         ProgramEntity.class,
-        DrugEntity.class},
-        version = 4)
+        DrugEntity.class,
+        PrivilegeCacheEntity.class},
+        version = 5)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
+
+    /**
+     * Adds the privilege_cache_table only, so existing installs upgrading to version 5 keep
+     * their already-synced patients/visits/concepts/etc. instead of falling back to a full wipe.
+     */
+    private static final Migration MIGRATION_4_5 = new Migration(4, 5) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("CREATE TABLE IF NOT EXISTS `privilege_cache_table` (" +
+                    "`id` INTEGER NOT NULL, " +
+                    "`privilege_names` TEXT NOT NULL, " +
+                    "`role_names` TEXT NOT NULL, " +
+                    "`is_super_user` INTEGER NOT NULL, " +
+                    "`cached_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))");
+        }
+    };
 
     /**
      * Gets database.
@@ -94,7 +116,9 @@ public abstract class AppDatabase extends RoomDatabase {
                 if (INSTANCE == null) {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
-                            .allowMainThreadQueries().fallbackToDestructiveMigration()
+                            .allowMainThreadQueries()
+                            .addMigrations(MIGRATION_4_5)
+                            .fallbackToDestructiveMigration()
                             .build();
                 }
             }
@@ -205,4 +229,11 @@ public abstract class AppDatabase extends RoomDatabase {
      * @return the Drug Room DAO
      */
     public abstract DrugRoomDAO drugRoomDAO();
+
+    /**
+     * Privilege cache room dao.
+     *
+     * @return the privilege cache room dao
+     */
+    public abstract PrivilegeCacheRoomDAO privilegeCacheRoomDAO();
 }

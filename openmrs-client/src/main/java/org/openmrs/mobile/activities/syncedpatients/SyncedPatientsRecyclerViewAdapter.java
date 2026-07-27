@@ -39,6 +39,7 @@ import com.openmrs.android_sdk.utilities.DateUtils;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
+import org.openmrs.mobile.utilities.PrivilegeUtils;
 
 public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<SyncedPatientsRecyclerViewAdapter.PatientViewHolder> {
     private SyncedPatientsFragment mContext;
@@ -50,6 +51,10 @@ public class SyncedPatientsRecyclerViewAdapter extends RecyclerView.Adapter<Sync
         public boolean onCreateActionMode(androidx.appcompat.view.ActionMode mode, Menu menu) {
             multiSelect = true;
             mode.getMenuInflater().inflate(R.menu.delete_multi_patient_menu, menu);
+            MenuItem deleteItem = menu.findItem(R.id.item_delete);
+            if (deleteItem != null) {
+                deleteItem.setVisible(PrivilegeUtils.hasPrivilege(ApplicationConstants.Privileges.DELETE_PATIENTS));
+            }
             return true;
         }
 

@@ -54,6 +54,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.snackbar.Snackbar;
 import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
+import com.openmrs.android_sdk.library.PrivilegeChecker;
 import com.openmrs.android_sdk.library.dao.LocationDAO;
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.models.Patient;
@@ -73,6 +74,7 @@ import org.openmrs.mobile.bundle.CustomDialogBundle;
 import org.openmrs.mobile.net.AuthorizationManager;
 import org.openmrs.mobile.utilities.ForceClose;
 import org.openmrs.mobile.utilities.LanguageUtils;
+import org.openmrs.mobile.utilities.PrivilegeUtils;
 import org.openmrs.mobile.utilities.ThemeUtils;
 
 @AndroidEntryPoint
@@ -263,8 +265,26 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     public void logout() {
         OpenmrsAndroid.clearUserPreferencesData();
+        PrivilegeChecker.clearCache();
         mAuthorizationManager.moveToLoginActivity();
         ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.logout_success);
+    }
+
+    /**
+     * @param privilegeName an OpenMRS privilege name, e.g. {@link ApplicationConstants.Privileges#ADD_PATIENTS}
+     * @return true if the current user has the privilege, or if privilege data hasn't been
+     * fetched yet (fresh install, pre-sync, or an older server without RBAC support) - gating
+     * always fails open so this app's existing behavior is preserved by default.
+     */
+    protected boolean hasPrivilege(String privilegeName) {
+        return PrivilegeUtils.hasPrivilege(privilegeName);
+    }
+
+    /**
+     * @see #hasPrivilege(String)
+     */
+    protected boolean hasAnyPrivilege(String... privilegeNames) {
+        return PrivilegeUtils.hasAnyPrivilege(privilegeNames);
     }
 
     private void showCredentialChangedDialog() {

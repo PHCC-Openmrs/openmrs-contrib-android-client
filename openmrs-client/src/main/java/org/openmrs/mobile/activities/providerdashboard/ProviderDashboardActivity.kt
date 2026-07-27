@@ -9,6 +9,9 @@ import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PROVIDER_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_PATIENTS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_PROVIDERS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.MANAGE_PROVIDERS
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -66,8 +69,12 @@ class ProviderDashboardActivity : ACBaseActivity() {
         }
         providerDashboardTablayout.setupWithViewPager(providerDashboardPager)
         providerDashboardPager.adapter = ProviderDashboardPagerAdapter(supportFragmentManager).apply {
-            addFragment(PatientRelationshipFragment(), getString(R.string.patients_tab_title))
-            addFragment(ProviderRelationshipFragment(), getString(R.string.provider_tab_title))
+            if (hasAnyPrivilege(GET_PATIENTS, GET_PROVIDERS)) {
+                addFragment(PatientRelationshipFragment(), getString(R.string.patients_tab_title))
+            }
+            if (hasPrivilege(GET_PROVIDERS)) {
+                addFragment(ProviderRelationshipFragment(), getString(R.string.provider_tab_title))
+            }
         }
     }
 
@@ -81,12 +88,15 @@ class ProviderDashboardActivity : ACBaseActivity() {
         activityDashboardUpdateFab.setOnClickListener { startProviderUpdateActivity() }
     }
 
+    // core bundles provider add/edit/delete into a single "Manage Providers" privilege
     private fun showFABMenu() = with(binding.actionsFab) {
         isActionFABOpen = true
-        customFabDeleteLl.makeVisible()
-        customFabUpdateLl.makeVisible()
-        customFabDeleteLl.animate().translationY(-resources.getDimension(R.dimen.custom_fab_bottom_margin_55))
-        customFabUpdateLl.animate().translationY(-resources.getDimension(R.dimen.custom_fab_bottom_margin_105))
+        if (hasPrivilege(MANAGE_PROVIDERS)) {
+            customFabDeleteLl.makeVisible()
+            customFabUpdateLl.makeVisible()
+            customFabDeleteLl.animate().translationY(-resources.getDimension(R.dimen.custom_fab_bottom_margin_55))
+            customFabUpdateLl.animate().translationY(-resources.getDimension(R.dimen.custom_fab_bottom_margin_105))
+        }
     }
 
     private fun closeFABMenu() = with(binding.actionsFab) {

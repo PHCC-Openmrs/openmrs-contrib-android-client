@@ -25,6 +25,9 @@ import com.openmrs.android_sdk.library.models.OperationType.PatientDeleting
 import com.openmrs.android_sdk.library.models.OperationType.PatientSynchronizing
 import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.ADD_ALLERGIES
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.DELETE_PATIENTS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.EDIT_PATIENTS
 import com.openmrs.android_sdk.utilities.NetworkUtils
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
@@ -55,6 +58,14 @@ class PatientDashboardActivity : ACBaseActivity() {
         with(supportActionBar!!) {
             elevation = 0f
             title = getString(R.string.app_name)
+        }
+
+        if (!viewModel.isPatientFound) {
+            // e.g. a stale "recently viewed patient"/restored-activity reference to a patient
+            // that's no longer cached locally (deleted, or local data was reset).
+            ToastUtil.error(getString(R.string.get_patient_from_database_error))
+            finish()
+            return
         }
 
         patientId = viewModel.patientId
@@ -116,6 +127,12 @@ class PatientDashboardActivity : ACBaseActivity() {
         viewModel.deletePatient()
     }
 
+    /** True if the current tab is the Allergy tab AND the user may add an allergy from it. */
+    private fun isAddAllergyTab(position: Int): Boolean {
+        val adapter = binding.pager.adapter as? PatientDashboardPagerAdapter ?: return false
+        return adapter.tabTypeAt(position) == PatientDashboardPagerAdapter.TabType.ALLERGY && hasPrivilege(ADD_ALLERGIES)
+    }
+
     private fun initViewPager() {
         val adapter = PatientDashboardPagerAdapter(supportFragmentManager, this, patientId)
         with(binding) {
@@ -127,7 +144,7 @@ class PatientDashboardActivity : ACBaseActivity() {
                 override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
                 override fun onPageSelected(position: Int) {
                     actionsFab.activityDashboardActionFab.apply {
-                        if (position == 1) {
+                        if (isAddAllergyTab(position)) {
                             // Convert main & sub FABs into Add Allergy FAB
                             closeFABs(animate = false)
                             setImageResource(R.drawable.ic_add)
@@ -143,7 +160,7 @@ class PatientDashboardActivity : ACBaseActivity() {
     private fun setupActionFABs() {
         with(binding.actionsFab) {
             activityDashboardActionFab.setOnClickListener {
-                if (binding.pager.currentItem == 1) {
+                if (isAddAllergyTab(binding.pager.currentItem)) {
                     Intent(this@PatientDashboardActivity, AddEditAllergyActivity::class.java)
                             .putExtra(PATIENT_ID_BUNDLE, patientId)
                             .apply { startActivity(this) }
@@ -160,10 +177,14 @@ class PatientDashboardActivity : ACBaseActivity() {
     private fun openFABs() {
         animateMainFABIcon()
         with(binding.actionsFab) {
-            customFabDeleteLl.makeVisible()
-            customFabUpdateLl.makeVisible()
-            customFabDeleteLl.animate().translationY(-resources!!.getDimension(R.dimen.custom_fab_bottom_margin_55))
-            customFabUpdateLl.animate().translationY(-resources!!.getDimension(R.dimen.custom_fab_bottom_margin_105))
+            if (hasPrivilege(DELETE_PATIENTS)) {
+                customFabDeleteLl.makeVisible()
+                customFabDeleteLl.animate().translationY(-resources!!.getDimension(R.dimen.custom_fab_bottom_margin_55))
+            }
+            if (hasPrivilege(EDIT_PATIENTS)) {
+                customFabUpdateLl.makeVisible()
+                customFabUpdateLl.animate().translationY(-resources!!.getDimension(R.dimen.custom_fab_bottom_margin_105))
+            }
         }
         isActionFABOpen = true
     }
@@ -207,6 +228,12 @@ class PatientDashboardActivity : ACBaseActivity() {
         super.onCreateOptionsMenu(menu)
         menuInflater.inflate(R.menu.patient_details_menu, menu)
         menuInflater.inflate(R.menu.patient_dashboard_menu, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        super.onPrepareOptionsMenu(menu)
+        menu.findItem(R.id.actionDelete)?.isVisible = hasPrivilege(DELETE_PATIENTS)
         return true
     }
 

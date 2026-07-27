@@ -478,7 +478,12 @@ public class CustomFragmentDialog extends DialogFragment {
                     ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.SUCCESS, org.openmrs.mobile.R.string.multiple_patients_deleted);
                     break;
                 case SELECT_LOCATION:
-                    OpenmrsAndroid.setLocation(locationListView.getAdapter().getItem(locationListView.getCheckedItemPosition()).toString());
+                    int checkedPosition = locationListView.getCheckedItemPosition();
+                    if (checkedPosition < 0 || checkedPosition >= locationListView.getAdapter().getCount()) {
+                        ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.ERROR, org.openmrs.mobile.R.string.location_dialog_no_selection_error);
+                        break;
+                    }
+                    OpenmrsAndroid.setLocation(locationListView.getAdapter().getItem(checkedPosition).toString());
                     ToastUtil.showShortToast(getContext(), ToastUtil.ToastType.SUCCESS, org.openmrs.mobile.R.string.location_successfully_updated);
                     dismiss();
                     break;

@@ -101,7 +101,7 @@ public class PatientRoomDAOTest {
         patientRoomDAO.addPatient(expectedPatientEntity1);
         patientRoomDAO.addPatient(expectedPatientEntity2);
 
-        patientRoomDAO.findPatientByID(expectedPatientEntity1.getId().toString())
+        patientRoomDAO.findPatientByID(expectedPatientEntity1.getId())
                 .test()
                 .assertValue(actualPatientEntities -> Objects.equals(renderPatientEntityString(actualPatientEntities), renderPatientEntityString(expectedPatientEntity1)));
     }

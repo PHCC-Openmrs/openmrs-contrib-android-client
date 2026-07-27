@@ -169,6 +169,22 @@
                     android:textColorHint="@color/dark_grey_8x" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/continueButton"
+                style="@style/loginButtonStyle"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_gravity="center_vertical|center_horizontal|center"
+                android:layout_marginHorizontal="25dp"
+                android:layout_marginVertical="@dimen/padding_16"
+                android:enabled="false"
+                android:fontFamily="@font/montserrat"
+                android:gravity="center_vertical|center_horizontal"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/login_continue_button"
+                android:textSize="20sp" />
+
             <Spinner
                 android:id="@+id/locationSpinner"
                 android:layout_width="fill_parent"
@@ -176,7 +192,8 @@
                 android:layout_marginHorizontal="25dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/login_spinner"
-                android:gravity="center_vertical" />
+                android:gravity="center_vertical"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/loginButton"
@@ -192,7 +209,8 @@
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:text="@string/login_button"
-                android:textSize="20sp" />
+                android:textSize="20sp"
+                android:visibility="gone" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"

@@ -75,14 +75,15 @@ public class UserService {
     }
 
     private void fetchFullUserInformation(String uuid) {
-        Call<User> call = restApi.getFullUserInfo(uuid);
+        Call<User> call = restApi.getFullUserInfo(uuid, null);
         call.enqueue(new Callback<User>() {
             @Override
             public void onResponse(@NonNull Call<User> call, @NonNull Response<User> response) {
                 if (response.isSuccessful()) {
+                    User user = response.body();
                     Map<String, String> userInfo = new HashMap<>();
-                    userInfo.put(ApplicationConstants.UserKeys.USER_PERSON_NAME, response.body().getPerson().getDisplay());
-                    userInfo.put(ApplicationConstants.UserKeys.USER_UUID, response.body().getPerson().getUuid());
+                    userInfo.put(ApplicationConstants.UserKeys.USER_PERSON_NAME, user.getPerson().getDisplay());
+                    userInfo.put(ApplicationConstants.UserKeys.USER_UUID, user.getPerson().getUuid());
                     OpenmrsAndroid.setCurrentUserInformation(userInfo);
                 } else {
                     ToastUtil.error(response.message());

@@ -61,6 +61,11 @@ class LoginFragment : BaseFragment() {
     private val isActivityNotNull: Boolean get() = isAdded && activity != null
     private lateinit var loginValidatorWatcher: LoginValidatorWatcher
 
+    // True only while a location fetch triggered by the user tapping Continue is in flight, so
+    // the silent background fetch hideURLDialog() does at screen-open (before the user has typed
+    // anything) can fail quietly instead of surfacing an error the user hasn't earned yet.
+    private var isExplicitLocationFetch = false
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentLoginBinding.inflate(inflater, container, false)
 
@@ -119,6 +124,7 @@ class LoginFragment : BaseFragment() {
                         ResultType.LocationsFetchingNoInternetConnection -> {
                             ToastUtil.error(getString(R.string.no_internet_connection_message))
                             setLocationErrorOccurred(true)
+                            showCredentialsStep()
                             hideUrlLoadingAnimation()
                         }
                         else -> throw IllegalStateException()
@@ -132,9 +138,15 @@ class LoginFragment : BaseFragment() {
                         }
                         OperationType.LocationsFetching -> {
                             hideUrlLoadingAnimation()
-                            showURLErrorSnackbar(result.throwable.message!!)
-                            initLoginForm(emptyList(), viewModel.lastCorrectUrl)
+                            // A silent background fetch (hideURLDialog() on screen-open, before
+                            // the user has entered anything) failing here is expected for any
+                            // server that requires auth to list locations - only surface the
+                            // error once the user has actually asked for it via Continue.
+                            if (isExplicitLocationFetch) {
+                                showURLErrorSnackbar(result.throwable.message!!)
+                            }
                             setLocationErrorOccurred(true)
+                            showCredentialsStep()
                         }
                         else -> throw IllegalStateException()
                     }
@@ -170,7 +182,7 @@ class LoginFragment : BaseFragment() {
             setSyncButtonState(!syncState)
         }
         loginValidatorWatcher = LoginValidatorWatcher(loginUrlField, loginUsernameField,
-                loginPasswordField, locationSpinner, loginButton)
+                loginPasswordField, locationSpinner, loginButton, continueButton)
         loginValidatorWatcher.run {
             loginUrlField.onFocusChangeListener = View.OnFocusChangeListener { view: View, hasFocus: Boolean ->
                 if ((!isEmpty(loginUrlField) && !hasFocus && isUrlChanged)
@@ -199,6 +211,7 @@ class LoginFragment : BaseFragment() {
                 textInputLayoutPassword.isHintAnimationEnabled = true
             }
         }
+        continueButton.setOnClickListener { onContinueClicked() }
         loginButton.setOnClickListener {
             viewModel.showWarningOrLogin(loginUsernameField.text.toString(),
                     loginPasswordField.text.toString(),
@@ -240,6 +253,7 @@ class LoginFragment : BaseFragment() {
 
     private fun showLocationLoadingAnimation() {
         binding.loginButton.isEnabled = false
+        binding.continueButton.isEnabled = false
         binding.locationLoadingProgressBar.makeVisible()
     }
 
@@ -259,7 +273,26 @@ class LoginFragment : BaseFragment() {
             loginLoading.makeGone()
             loginFormView.makeVisible()
             loginButton.isEnabled = locationsList.isEmpty()
+            showLocationStep()
         }
+    }
+
+    /**
+     * Credentials-only phase: URL/username/password with a Continue button. Shown up front, and
+     * returned to whenever a location fetch fails, so the user always has a clear retry action
+     * instead of being left staring at an empty location dropdown and a dead Login button.
+     */
+    private fun showCredentialsStep() = with(binding) {
+        continueButton.makeVisible()
+        locationSpinner.makeGone()
+        loginButton.makeGone()
+    }
+
+    /** Revealed once locations are fetched successfully - hides Continue, shows the real form. */
+    private fun showLocationStep() = with(binding) {
+        continueButton.makeGone()
+        locationSpinner.makeVisible()
+        loginButton.makeVisible()
     }
 
     private fun onUserAuthenticated() {
@@ -327,14 +360,38 @@ class LoginFragment : BaseFragment() {
     private fun setUrl(url: String) {
         val result = URLValidator.validate(url)
         if (result.isURLValid) {
-            viewModel.fetchLocations(result.url)
+            viewModel.fetchLocations(result.url, currentUsername(), currentPassword())
         } else {
             showURLErrorSnackbar(getString(R.string.invalid_URL_message))
         }
     }
 
+    private fun currentUsername() = binding.loginUsernameField.text.toString()
+    private fun currentPassword() = binding.loginPasswordField.text.toString()
+
+    /**
+     * Explicit "Continue" tap: fetch locations with the credentials just entered. Kept separate
+     * from the silent screen-open fetch in [hideURLDialog] so a failure here (wrong credentials,
+     * server requires auth for locations, etc.) is worth surfacing to the user - they just asked
+     * for it - where a failure there isn't, since they haven't done anything yet.
+     */
+    private fun onContinueClicked() {
+        val username = currentUsername()
+        val password = currentPassword()
+        if (username.isEmpty() || password.isEmpty()) return
+        hideSoftKeys()
+        val result = URLValidator.validate(binding.loginUrlField.text.toString())
+        if (!result.isURLValid) {
+            showURLErrorSnackbar(getString(R.string.invalid_URL_message))
+            return
+        }
+        isExplicitLocationFetch = true
+        viewModel.fetchLocations(result.url, username, password)
+    }
+
     fun hideURLDialog() {
         if (viewModel.locations.isEmpty()) {
+            isExplicitLocationFetch = false
             viewModel.fetchLocations(viewModel.lastCorrectUrl)
         } else {
             initLoginForm(viewModel.locations, viewModel.lastCorrectUrl)
