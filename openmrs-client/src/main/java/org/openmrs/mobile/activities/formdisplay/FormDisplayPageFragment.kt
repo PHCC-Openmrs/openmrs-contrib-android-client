@@ -51,8 +51,6 @@ import com.openmrs.android_sdk.utilities.SelectOneField
 import com.openmrs.android_sdk.utilities.TextField
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
-// import org.adw.library.widgets.discreteseekbar.DiscreteSeekBar
-import com.google.android.material.slider.Slider
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.bundle.FormFieldsWrapper
@@ -240,41 +238,30 @@ class FormDisplayPageFragment : BaseFragment() {
         val inputField = viewModel.getOrCreateInputField(question.questionOptions!!.concept!!)
 
         val options = question.questionOptions!!
-        if (options.min != null && options.max != null && !options.isAllowDecimal) {
-            val from = options.min!!.toFloat()
-            val to = options.max!!.toFloat()
-            // Clamp value to [from, to] to prevent Slider crash if initial value is -1.0
-            val currentVal = if (inputField.value.toFloat() < from) from else if (inputField.value.toFloat() > to) to else inputField.value.toFloat()
-
-            val slider = Slider(requireContext()).apply {
-                valueFrom = from
-                valueTo = to
-                stepSize = 1.0f
-                id = inputField.id
-                value = currentVal
+        val ed = RangeEditText(activity).apply {
+            name = getLabel(question).toString()
+            hint = if (options.min != null && options.max != null) {
+                "${getLabel(question)} (${options.min} - ${options.max})"
+            } else {
+                getLabel(question).toString()
             }
-            sectionContainer.addView(slider, lp)
-            setOnSliderChangeListener(slider, inputField)
-        } else {
-            val ed = RangeEditText(activity).apply {
-                name = getLabel(question).toString()
-                hint = getLabel(question).toString()
-                isSingleLine = true
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
-                inputType = if (options.isAllowDecimal) {
-                    InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
-                } else {
-                    InputType.TYPE_CLASS_NUMBER
-                }
-                id = inputField.id
+            isSingleLine = true
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+            inputType = if (options.isAllowDecimal) {
+                InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
+            } else {
+                InputType.TYPE_CLASS_NUMBER
             }
-            if (inputField.hasValue) {
-                ed.setText(inputField.value.toString())
-                ed.setSelection(ed.length())
-            }
-            sectionContainer.addView(ed, lp)
-            setOnTextChangedListener(ed, inputField)
+            id = inputField.id
+            options.min?.toDoubleOrNull()?.let { lowerlimit = it }
+            options.max?.toDoubleOrNull()?.let { upperlimit = it }
         }
+        if (inputField.hasValue) {
+            ed.setText(inputField.value.toString())
+            ed.setSelection(ed.length())
+        }
+        sectionContainer.addView(ed, lp)
+        setOnTextChangedListener(ed, inputField)
     }
 
     private fun createAndAttachSelectQuestionDropdown(question: Question, sectionContainer: LinearLayout) {
@@ -435,12 +422,6 @@ class FormDisplayPageFragment : BaseFragment() {
         sectionContainer.addView(editText)
     }
 
-    private fun setOnSliderChangeListener(slider: Slider, inputField: InputField) {
-        slider.addOnChangeListener { _, value, _ ->
-            inputField.value = value.toDouble()
-        }
-    }
-
     private fun setOnTextChangedListener(et: EditText, inputField: InputField) {
         et.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -508,20 +489,12 @@ class FormDisplayPageFragment : BaseFragment() {
         var allEmpty = true
         var valid = true
         for (field in viewModel.inputFields) {
-            try {
-                val ed: RangeEditText = requireActivity().findViewById(field.id)
-                if (!isEmpty(ed)) {
-                    allEmpty = false
-                    if (!ed.validInput || ed.outOfRange) {
-                        ed.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
-                        valid = false
-                    }
-                }
-            } catch (e: Exception) {
-                // Check if it's a Slider
-                val view = requireActivity().findViewById<View>(field.id)
-                if (view is Slider) {
-                    if (view.value > view.valueFrom) allEmpty = false
+            val ed = requireActivity().findViewById<View>(field.id) as? RangeEditText ?: continue
+            if (!isEmpty(ed)) {
+                allEmpty = false
+                if (!ed.validInput || ed.outOfRange) {
+                    ed.setTextColor(ContextCompat.getColor(requireContext(), R.color.red))
+                    valid = false
                 }
             }
         }

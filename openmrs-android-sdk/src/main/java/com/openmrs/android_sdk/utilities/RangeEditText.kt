@@ -19,10 +19,10 @@ class RangeEditText(context: Context?) : AppCompatEditText(context!!) {
 
     val validInput: Boolean get() {
         val input = text.toString()
-        return input[0] != '.' && input[0] != ','
+        return input.isNotEmpty() && input[0] != '.' && input[0] != ','
     }
     val outOfRange: Boolean get() {
-        val input = text.toString().toDouble()
-        return (upperlimit != -1.0 && upperlimit != -1.0) && (upperlimit < input || lowerlimit > input)
+        val input = text.toString().toDoubleOrNull() ?: return false
+        return (upperlimit != -1.0 && lowerlimit != -1.0) && (upperlimit < input || lowerlimit > input)
     }
 }
