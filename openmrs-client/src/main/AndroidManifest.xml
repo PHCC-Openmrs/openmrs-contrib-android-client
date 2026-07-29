@@ -213,6 +213,16 @@
                 android:value="org.openmrs.mobile.activities.formlist.FormListActivity" />
         </activity>
         <activity
+            android:name=".activities.visitnote.VisitNoteActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:label="@string/visit_note"
+            android:parentActivityName=".activities.formlist.FormListActivity"
+            android:theme="@style/AppThemeOrig">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.openmrs.mobile.activities.formlist.FormListActivity" />
+        </activity>
+        <activity
             android:name=".activities.lastviewedpatients.LastViewedPatientsActivity"
             android:configChanges="keyboardHidden|screenSize"
             android:label="@string/action_download_patients"

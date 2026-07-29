@@ -489,6 +489,19 @@
     <string name="discharge_location_in_list" translatable="false">Discharged From %1$s</string>
     <string name="form_submitted_successfully">Form submitted successfully, sync patient to view it.</string>
 
+    <!--Visit Note -->
+    <string name="visit_note">Visit Note</string>
+    <string name="visit_note_clinical_note_hint">Clinical note</string>
+    <string name="visit_note_diagnoses_header">Diagnoses</string>
+    <string name="visit_note_search_diagnosis_hint">Search diagnosis</string>
+    <string name="visit_note_primary">Primary</string>
+    <string name="visit_note_secondary">Secondary</string>
+    <string name="visit_note_confirmed">Confirmed</string>
+    <string name="visit_note_presumed">Presumed</string>
+    <string name="visit_note_no_provider_error">No provider is linked to your account. Please contact your administrator.</string>
+    <string name="visit_note_saved_successfully">Visit note saved successfully.</string>
+    <string name="visit_note_save_error">Could not save the visit note. Please try again.</string>
+
     <!--Marking Patient Deceased -->
     <string name="mark_patient_deceased_no_concepts">Please add a valid deceased concept UUID and possible causes of death in the server</string>
     <string name="mark_patient_deceased">Mark Patient Deceased?</string>

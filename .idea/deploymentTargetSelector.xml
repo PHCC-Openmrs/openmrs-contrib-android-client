@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="openmrs-client">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-07-23T11:24:00.392699380Z">
+        <DropdownSelection timestamp="2026-07-28T12:06:23.470213606Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=/home/bhcp0200/.android/avd/Medium_Phone.avd" />

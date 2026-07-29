@@ -33,6 +33,7 @@ import androidx.work.Data;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
 
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.api.workers.provider.AddProviderWorker;
 import com.openmrs.android_sdk.library.api.workers.provider.DeleteProviderWorker;
 import com.openmrs.android_sdk.library.api.workers.provider.UpdateProviderWorker;
@@ -42,6 +43,8 @@ import com.openmrs.android_sdk.library.models.Provider;
 import com.openmrs.android_sdk.library.models.Resource;
 import com.openmrs.android_sdk.library.models.ResultType;
 import com.openmrs.android_sdk.library.models.Results;
+import com.openmrs.android_sdk.library.models.Session;
+import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 
 /**
@@ -259,6 +262,39 @@ public class ProviderRepository extends BaseRepository {
             Response<Results<Resource>> response = restApi.getEncounterRoles().execute();
             if (response.isSuccessful()) return response.body().getResults();
             else throw new Exception("fetch encounter roles error: " + response.message());
+        });
+    }
+
+    /**
+     * Resolves the Provider linked to the currently logged-in account, mirroring how O3 silently
+     * uses the session's provider instead of asking the user to pick one.
+     *
+     * First tries the session's `currentProvider`; if the account has no linked provider there,
+     * falls back to matching the full provider list against the cached logged-in person UUID.
+     *
+     * @return the resolved Provider, or null if none could be resolved
+     */
+    public Observable<Provider> getCurrentProvider() {
+        return createObservableIO(() -> {
+            Response<Session> sessionResponse = restApi.getSession().execute();
+            if (sessionResponse.isSuccessful() && sessionResponse.body() != null
+                    && sessionResponse.body().getCurrentProvider() != null) {
+                return sessionResponse.body().getCurrentProvider();
+            }
+
+            String personUuid = OpenmrsAndroid.getOpenMRSSharedPreferences()
+                    .getString(ApplicationConstants.UserKeys.USER_UUID, "");
+            if (personUuid.isEmpty()) return null;
+
+            Response<Results<Provider>> providersResponse = restApi.getProviderList().execute();
+            if (!providersResponse.isSuccessful() || providersResponse.body() == null) return null;
+
+            for (Provider provider : providersResponse.body().getResults()) {
+                if (provider.getPerson() != null && personUuid.equals(provider.getPerson().getUuid())) {
+                    return provider;
+                }
+            }
+            return null;
         });
     }
 }

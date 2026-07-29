@@ -13,6 +13,7 @@ package com.openmrs.android_sdk.library.api;
 import java.util.List;
 import java.util.Map;
 
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -35,6 +36,7 @@ import com.openmrs.android_sdk.library.models.AppointmentBlock;
 import com.openmrs.android_sdk.library.models.AppointmentType;
 import com.openmrs.android_sdk.library.models.ConceptAnswers;
 import com.openmrs.android_sdk.library.models.ConceptMembers;
+import com.openmrs.android_sdk.library.models.ConceptSearchResult;
 import com.openmrs.android_sdk.library.models.Drug;
 import com.openmrs.android_sdk.library.models.DrugCreate;
 import com.openmrs.android_sdk.library.models.Encounter;
@@ -51,6 +53,7 @@ import com.openmrs.android_sdk.library.models.Observation;
 import com.openmrs.android_sdk.library.models.OrderCreate;
 import com.openmrs.android_sdk.library.models.OrderGet;
 import com.openmrs.android_sdk.library.models.Patient;
+import com.openmrs.android_sdk.library.models.PatientDiagnosisResponse;
 import com.openmrs.android_sdk.library.models.PatientDto;
 import com.openmrs.android_sdk.library.models.PatientDtoUpdate;
 import com.openmrs.android_sdk.library.models.PatientPhoto;
@@ -716,6 +719,34 @@ public interface RestApi {
      */
     @GET("concept")
     Call<Results<ConceptEntity>> getConcepts(@Query("limit") int limit, @Query("startIndex") int startIndex);
+
+    /**
+     * Fuzzy-searches concepts by name within a given concept class (e.g. Diagnosis).
+     *
+     * @param name         the search text
+     * @param searchType   the search type, e.g. "fuzzy"
+     * @param conceptClass the UUID of the concept class to restrict results to
+     * @param representation the custom representation, e.g. "custom:(uuid,display)"
+     * @return the matching concepts
+     */
+    @GET("concept")
+    Call<Results<ConceptSearchResult>> searchConceptsByClass(@Query("name") String name,
+                                                              @Query("searchType") String searchType,
+                                                              @Query("class") String conceptClass,
+                                                              @Query("v") String representation);
+
+    /**
+     * Creates a patient diagnosis linked to an encounter.
+     *
+     * The body is sent as a raw {@link RequestBody} (built with org.json in {@code DiagnosisRepository})
+     * rather than a Gson-serialized model: the server requires the "condition" key to be present
+     * (even as JSON null), but the app's shared Gson instance is configured to omit null fields.
+     *
+     * @param patientDiagnosisCreate the JSON request body
+     * @return the created diagnosis
+     */
+    @POST("patientdiagnoses")
+    Call<PatientDiagnosisResponse> createPatientDiagnosis(@Body RequestBody patientDiagnosisCreate);
 
     /**
      * Gets concept from uuid.

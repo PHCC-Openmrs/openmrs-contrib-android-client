@@ -99,6 +99,7 @@ object ApplicationConstants {
         const val REMOVE_ALLERGIES = "Remove Allergies"
         const val GET_PROVIDERS = "Get Providers"
         const val MANAGE_PROVIDERS = "Manage Providers"
+        const val GET_ENCOUNTER_ROLES = "Get Encounter Roles"
     }
 
     object UserKeys {

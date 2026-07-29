@@ -40,6 +40,7 @@ import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.formadmission.FormAdmissionActivity
 import org.openmrs.mobile.activities.formdisplay.FormDisplayActivity
+import org.openmrs.mobile.activities.visitnote.VisitNoteActivity
 import org.openmrs.mobile.databinding.FragmentFormListBinding
 
 @AndroidEntryPoint
@@ -69,6 +70,8 @@ class FormListFragment : BaseFragment() {
                 val patientId: Long = requireArguments().get(PATIENT_ID_BUNDLE) as Long
                 if (encounterName == EncounterType.ADMISSION) {
                     startAdmissionFormActivity(formName!!, patientId, encounterType!!)
+                } else if (encounterName == EncounterType.VISIT_NOTE) {
+                    startVisitNoteActivity(patientId, encounterType!!)
                 } else {
                     if (formFieldsJson != null) {
                         startFormDisplayActivity(formName!!, encounterName!!, patientId, formFieldsJson!!, encounterType!!)
@@ -128,6 +131,14 @@ class FormListFragment : BaseFragment() {
     private fun startAdmissionFormActivity(formName: String, patientId: Long, encounterType: String) {
         Intent(context, FormAdmissionActivity::class.java).apply {
             putExtra(FORM_NAME, formName)
+            putExtra(PATIENT_ID_BUNDLE, patientId)
+            putExtra(ENCOUNTERTYPE, encounterType)
+            startActivity(this)
+        }
+    }
+
+    private fun startVisitNoteActivity(patientId: Long, encounterType: String) {
+        Intent(context, VisitNoteActivity::class.java).apply {
             putExtra(PATIENT_ID_BUNDLE, patientId)
             putExtra(ENCOUNTERTYPE, encounterType)
             startActivity(this)

@@ -145,6 +145,40 @@ else {
 
 
     /**
+     * Creates an encounter directly on the server and returns it (with its server-assigned uuid).
+     *
+     * Unlike [saveEncounter], this requires connectivity and does not queue for later sync - it
+     * exists for flows (like Visit Note) that need the created encounter's uuid immediately to
+     * chain a dependent call, e.g. attaching diagnoses via `/patientdiagnoses`.
+     *
+     * @param encounterCreate the Encountercreate object to submit
+     * @return the created Encounter
+     */
+    fun createEncounterOnline(encounterCreate: Encountercreate): Observable<Encounter> {
+        return AppDatabaseHelper.createObservableIO(Callable {
+            if (!NetworkUtils.isOnline()) throw Exception("Must be online to create this encounter")
+
+            val activeVisit = VisitDAO().getActiveVisitByPatientId(encounterCreate.patientId!!).execute()
+                ?: throw Exception("No active visit found for this patient locally.")
+
+            encounterCreate.visit = activeVisit.uuid
+            if (encounterCreate.location == null) {
+                encounterCreate.location = OpenmrsAndroid.getLocation()
+            }
+
+            restApi.createEncounter(encounterCreate).execute().run {
+                if (isSuccessful && body() != null) {
+                    val encounter = body()!!
+                    encounterDAO.saveEncounter(encounter, activeVisit.id)
+                    return@Callable encounter
+                } else {
+                    throw Exception("createEncounter error: ${message()}")
+                }
+            }
+        })
+    }
+
+    /**
      * Updates an encounter to the server.
      *
      * @param uuid the UUID of the encounter to be updated.

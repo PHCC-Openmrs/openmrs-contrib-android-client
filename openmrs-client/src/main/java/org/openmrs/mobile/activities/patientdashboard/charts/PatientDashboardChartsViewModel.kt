@@ -44,6 +44,10 @@ class PatientDashboardChartsViewModel @Inject constructor(
                     val encounterTypeDisplay = encounter.encounterType!!.display
                     if (displayableEncounterTypesArray.contains(encounterTypeDisplay)) {
                         for (obs in encounter.observations) {
+                            // Only numeric observations can be plotted on a line chart - skip
+                            // free text (e.g. "Text of encounter note"), coded answers, etc.
+                            if (obs.displayValue?.toDoubleOrNull() == null) continue
+
                             var observationLabel = obs.display
                             if (observationLabel!!.contains(":")) {
                                 observationLabel = observationLabel.substring(0, observationLabel.indexOf(':'))

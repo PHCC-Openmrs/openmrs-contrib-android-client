@@ -31,7 +31,9 @@ class Session(@field:SerializedName("sessionId")
               @field:Expose
               var isAuthenticated: Boolean, @field:SerializedName("user")
               @field:Expose
-              var user: User?) {
+              var user: User?, @field:SerializedName("currentProvider")
+              @field:Expose
+              var currentProvider: Provider? = null) {
 
     override fun toString(): String {
         return "\tsessionId: $sessionId\tauthenticated: $isAuthenticated"

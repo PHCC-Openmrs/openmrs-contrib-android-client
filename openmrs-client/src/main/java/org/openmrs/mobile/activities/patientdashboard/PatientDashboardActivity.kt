@@ -127,10 +127,39 @@ class PatientDashboardActivity : ACBaseActivity() {
         viewModel.deletePatient()
     }
 
+    /** True if the current tab is the Details tab. */
+    private fun isDetailsTab(position: Int): Boolean {
+        val adapter = binding.pager.adapter as? PatientDashboardPagerAdapter ?: return false
+        return adapter.tabTypeAt(position) == PatientDashboardPagerAdapter.TabType.DETAILS
+    }
+
     /** True if the current tab is the Allergy tab AND the user may add an allergy from it. */
     private fun isAddAllergyTab(position: Int): Boolean {
         val adapter = binding.pager.adapter as? PatientDashboardPagerAdapter ?: return false
         return adapter.tabTypeAt(position) == PatientDashboardPagerAdapter.TabType.ALLERGY && hasPrivilege(ADD_ALLERGIES)
+    }
+
+    /**
+     * The action FAB only has a defined action on Details (edit/delete demographics, expandable)
+     * and Allergy (add allergy). It has no purpose on Diagnosis/Visits/Vitals/Charts, so it's
+     * hidden there. Always closes any open sub-FAB menu first, so it can never leak/stack across
+     * tab changes (previously only closed when landing specifically on the Allergy tab).
+     */
+    private fun updateActionFabForPage(position: Int) {
+        closeFABs(animate = false)
+        with(binding.actionsFab.activityDashboardActionFab) {
+            when {
+                isAddAllergyTab(position) -> {
+                    makeVisible()
+                    setImageResource(R.drawable.ic_add)
+                }
+                isDetailsTab(position) -> {
+                    makeVisible()
+                    setImageResource(R.drawable.ic_edit_white_24dp)
+                }
+                else -> makeGone()
+            }
+        }
     }
 
     private fun initViewPager() {
@@ -142,18 +171,10 @@ class PatientDashboardActivity : ACBaseActivity() {
             tabhost.setupWithViewPager(pager)
             pager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
                 override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
-                override fun onPageSelected(position: Int) {
-                    actionsFab.activityDashboardActionFab.apply {
-                        if (isAddAllergyTab(position)) {
-                            // Convert main & sub FABs into Add Allergy FAB
-                            closeFABs(animate = false)
-                            setImageResource(R.drawable.ic_add)
-                        } else setImageResource(R.drawable.ic_edit_white_24dp)
-                    }
-                }
-
+                override fun onPageSelected(position: Int) = updateActionFabForPage(position)
                 override fun onPageScrollStateChanged(state: Int) {}
             })
+            updateActionFabForPage(pager.currentItem)
         }
     }
 
