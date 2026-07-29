@@ -27,16 +27,9 @@ import com.openmrs.android_sdk.library.databases.entities.ObservationEntity
 import com.openmrs.android_sdk.library.databases.entities.StandaloneEncounterEntity
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
 import com.openmrs.android_sdk.library.databases.entities.VisitEntity
-import com.openmrs.android_sdk.library.databases.entities.TimeSlotEntity
 import com.openmrs.android_sdk.library.databases.entities.PatientEntity
 import com.openmrs.android_sdk.library.databases.entities.StandaloneObservationEntity
 import com.openmrs.android_sdk.library.databases.entities.AppointmentEntity
-import com.openmrs.android_sdk.library.databases.entities.AppointmentTypeEntity
-import com.openmrs.android_sdk.library.databases.entities.AppointmentLocationEntity
-import com.openmrs.android_sdk.library.databases.entities.AppointmentProviderEntity
-import com.openmrs.android_sdk.library.databases.entities.AppointmentPatientEntity
-import com.openmrs.android_sdk.library.databases.entities.AppointmentBlockEntity
-import com.openmrs.android_sdk.library.databases.entities.AppointmentVisitEntity
 import com.openmrs.android_sdk.library.databases.entities.DosageFormEntity
 import com.openmrs.android_sdk.library.databases.entities.DrugConceptEntity
 import com.openmrs.android_sdk.library.databases.entities.DrugEntity
@@ -56,6 +49,8 @@ import com.openmrs.android_sdk.library.models.Resource
 import com.openmrs.android_sdk.library.models.Visit
 import com.openmrs.android_sdk.library.models.VisitType
 import com.openmrs.android_sdk.library.models.Appointment
+import com.openmrs.android_sdk.library.models.AppointmentLocationInfo
+import com.openmrs.android_sdk.library.models.AppointmentServiceInfo
 import com.openmrs.android_sdk.library.models.Person
 import com.openmrs.android_sdk.library.models.ConceptClass
 import com.openmrs.android_sdk.library.models.Drug
@@ -467,69 +462,33 @@ object AppDatabaseHelper {
                 .subscribeOn(Schedulers.io())
     }
 
-    fun convert(appointment: Appointment): AppointmentEntity {
-
-        val timeSlot = appointment.timeSlot
-        val appointmentBlock = appointment.timeSlot?.appointmentBlock
-        val patient = appointment.patient
-        val visit = appointment.visit
-        val appointmentType = appointment.appointmentType
-
-        val appointmentProviderEntity  = AppointmentProviderEntity()
-        appointmentProviderEntity.display = appointmentBlock?.provider?.display
-        appointmentProviderEntity.uuid = appointmentBlock?.provider?.uuid
-
-        val appointmentLocationEntity = AppointmentLocationEntity()
-        appointmentLocationEntity.display = appointmentBlock?.location?.display
-        appointmentLocationEntity.uuid = appointmentBlock?.location?.uuid
-
-        val appointmentBlockEntity = AppointmentBlockEntity()
-        val blockTypesObjectList = appointmentBlock?.types // List received from server
-        val typeStringList = mutableListOf<String>() // Entity requires this list
-        for(type in blockTypesObjectList!!) {
-            typeStringList.add(type.display!!)
-        }
-        appointmentBlockEntity.uuid = appointmentBlock.uuid
-        appointmentBlockEntity.display = appointmentBlock.display
-        appointmentBlockEntity.startDate = appointmentBlock.startDate
-        appointmentBlockEntity.endDate = appointmentBlock.endDate
-        appointmentBlockEntity.types = typeStringList
-        appointmentBlockEntity.provider = appointmentProviderEntity
-        appointmentBlockEntity.location = appointmentLocationEntity
-
-        val timeSlotEntity = TimeSlotEntity()
-        timeSlotEntity.uuid = appointment.timeSlot?.uuid
-        timeSlotEntity.display = appointment.timeSlot?.display
-        timeSlotEntity.startDate = timeSlot?.startDate
-        timeSlotEntity.endDate = timeSlot?.endDate
-        timeSlotEntity.appointmentBlock = appointmentBlockEntity
-
-        val appointmentPatientEntity = AppointmentPatientEntity()
-        appointmentPatientEntity.display = patient?.name?.nameString
-        appointmentPatientEntity.uuid = patient?.uuid
-
-        val appointmentVisitEntity = AppointmentVisitEntity()
-        appointmentVisitEntity.uuid = visit?.uuid
-        appointmentVisitEntity.display = visit?.display
-
-        val appointmentTypeEntity = AppointmentTypeEntity()
-        appointmentTypeEntity.uuid = appointmentType?.uuid
-        appointmentTypeEntity.display = appointmentType?.display
-        appointmentTypeEntity.description = appointmentType?.description
-        appointmentTypeEntity.duration = appointmentType?.duration
-        appointmentTypeEntity.confidential = appointmentType?.confidential!!
-
+    fun convert(appointment: Appointment, patientUuid: String): AppointmentEntity {
         val appointmentEntity = AppointmentEntity()
-
-        appointmentEntity.uuid = appointment.uuid
-        appointmentEntity.display = appointment.display
+        appointmentEntity.uuid = appointment.uuid ?: ""
+        appointmentEntity.patientUuid = patientUuid
+        appointmentEntity.appointmentNumber = appointment.appointmentNumber
+        appointmentEntity.serviceName = appointment.service?.name
+        appointmentEntity.locationName = appointment.location?.name
+        appointmentEntity.startDateTime = appointment.startDateTime
+        appointmentEntity.endDateTime = appointment.endDateTime
+        appointmentEntity.appointmentKind = appointment.appointmentKind
         appointmentEntity.status = appointment.status
-        appointmentEntity.reason = appointment.reason
-        appointmentEntity.timeSlot = timeSlotEntity
-        appointmentEntity.patient = appointmentPatientEntity
-        appointmentEntity.visit = appointmentVisitEntity
-
+        appointmentEntity.comments = appointment.comments
         return appointmentEntity
+    }
+
+    fun convert(appointmentEntity: AppointmentEntity): Appointment {
+        val appointment = Appointment()
+        appointment.uuid = appointmentEntity.uuid
+        appointment.appointmentNumber = appointmentEntity.appointmentNumber
+        appointment.service = AppointmentServiceInfo().apply { name = appointmentEntity.serviceName }
+        appointment.location = AppointmentLocationInfo().apply { name = appointmentEntity.locationName }
+        appointment.startDateTime = appointmentEntity.startDateTime
+        appointment.endDateTime = appointmentEntity.endDateTime
+        appointment.appointmentKind = appointmentEntity.appointmentKind
+        appointment.status = appointmentEntity.status
+        appointment.comments = appointmentEntity.comments
+        return appointment
     }
 
     /**

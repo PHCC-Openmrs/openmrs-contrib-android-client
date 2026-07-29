@@ -11,73 +11,32 @@ package com.openmrs.android_sdk.library.dao
 
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
-import androidx.room.Update
 import androidx.room.Query
 import androidx.room.Dao
 import com.openmrs.android_sdk.library.databases.entities.AppointmentEntity
 import io.reactivex.Single
 
 /**
- * The interface Appointment room dao.
+ * Room DAO backing the offline cache of a patient's appointments (from the `appointments`
+ * module's `/appointment/search` endpoint).
  */
 @Dao
 interface AppointmentRoomDAO {
 
     /**
-     * Add or update long.
-     *
-     * @param appointmentEntity the appointment entity
-     * @return the long
+     * Inserts or replaces (by uuid) a batch of appointments, e.g. after a fresh server search.
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun addOrUpdate(appointmentEntity: AppointmentEntity): Long
+    fun addOrUpdateAll(appointmentEntities: List<AppointmentEntity>)
 
     /**
-     * Add appointment
-     *
-     * @param apppointment the appointment entity
-     * @return the long
+     * Updates just the status of a cached appointment, e.g. after cancelling it.
      */
-    @Insert
-    fun addAppointment(appointmentEntity: AppointmentEntity): Long
+    @Query("UPDATE appointments SET status = :status WHERE uuid = :uuid")
+    fun updateStatus(uuid: String, status: String)
 
     /**
-     * Update appointment
-     *
-     * @param appointmentEntity the appointment entity
-     * @return the int
-     */
-    @Update
-    fun updateAppointment(appointmentEntity: AppointmentEntity): Int
-
-    /**
-     * Filter appointments based on appointment status
-     *
-     * @return the appointments
-     */
-    @Query("SELECT * FROM appointments WHERE status = :status")
-    fun getAppointmentsWithStatus(status: String): Single<List<AppointmentEntity>>
-
-    /**
-     * Filter appointments based on appointment type
-     *
-     * @return the appointments
-     */
-    @Query("SELECT * FROM appointments WHERE type_display = :typeDisplay")
-    fun getAppointmentsWithTypeDisplay(typeDisplay: String): Single<List<AppointmentEntity>>
-
-    /**
-     * Filter appointments for a given visit
-     *
-     * @return the appointments
-     */
-    @Query("SELECT * FROM appointments WHERE visit_uuid = :visitUuid")
-    fun getAppointmentsForVisit(visitUuid: String): Single<List<AppointmentEntity>>
-
-    /**
-     * Get appointments for a patient
-     *
-     * @return the appointments
+     * Get cached appointments for a patient.
      */
     @Query("SELECT * FROM appointments WHERE patient_uuid = :patientUuid")
     fun getAppointmentsForPatient(patientUuid: String): Single<List<AppointmentEntity>>

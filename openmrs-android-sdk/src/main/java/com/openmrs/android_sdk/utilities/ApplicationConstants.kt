@@ -100,6 +100,9 @@ object ApplicationConstants {
         const val GET_PROVIDERS = "Get Providers"
         const val MANAGE_PROVIDERS = "Manage Providers"
         const val GET_ENCOUNTER_ROLES = "Get Encounter Roles"
+        /** From the `appointments` module, not core OpenMRS - confirmed from a live server's 401 body. */
+        const val VIEW_APPOINTMENTS = "View Appointments"
+        const val MANAGE_APPOINTMENTS = "Manage Appointments"
     }
 
     object UserKeys {
@@ -155,6 +158,7 @@ object ApplicationConstants {
         const val PROVIDER_BUNDLE = "providerID"
         const val ALLERGY_UUID = "allergy_uuid"
         const val PATIENT_UUID = "patient_uuid"
+        const val APPOINTMENT_BUNDLE = "appointment_bundle"
     }
 
     object ServiceActions {

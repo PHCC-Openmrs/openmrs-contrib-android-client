@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ The contents of this file are subject to the OpenMRS Public License
+  ~ Version 1.0 (the "License"); you may not use this file except in
+  ~ compliance with the License. You may obtain a copy of the License at
+  ~ http://license.openmrs.org
+  ~
+  ~ Software distributed under the License is distributed on an "AS IS"
+  ~ basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+  ~ License for the specific language governing rights and limitations
+  ~ under the License.
+  ~
+  ~ Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+  -->
+
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp"
+            android:orientation="vertical">
+
+            <!-- Location -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/location" />
+
+            <Spinner
+                android:id="@+id/locationSpinner"
+                style="@style/AppointmentSpinner" />
+
+            <!-- Service -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/service" />
+
+            <Spinner
+                android:id="@+id/serviceSpinner"
+                style="@style/AppointmentSpinner" />
+
+            <!-- Appointment type -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/appointment_type_label" />
+
+            <Spinner
+                android:id="@+id/appointmentTypeSpinner"
+                style="@style/AppointmentSpinner" />
+
+            <!-- Appointment status (edit only, matches O3's edit form) -->
+            <TextView
+                android:id="@+id/appointmentStatusLabel"
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/appointment_status_label"
+                android:visibility="gone" />
+
+            <Spinner
+                android:id="@+id/appointmentStatusSpinner"
+                style="@style/AppointmentSpinner"
+                android:visibility="gone" />
+
+            <!-- Provider -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/provider" />
+
+            <Spinner
+                android:id="@+id/providerSpinner"
+                style="@style/AppointmentSpinner" />
+
+            <!-- Appointment time -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/appointment_time_label" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/startDateEditText"
+                    style="@style/AppointmentPickerField"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:hint="@string/date" />
+
+                <EditText
+                    android:id="@+id/startTimeEditText"
+                    style="@style/AppointmentPickerField"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:hint="@string/time" />
+            </LinearLayout>
+
+            <EditText
+                android:id="@+id/durationEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/rectangle_transparent_box"
+                android:hint="@string/duration_minutes"
+                android:importantForAutofill="no"
+                android:inputType="number"
+                android:padding="8dp"
+                android:textSize="14sp" />
+
+            <!-- Recurring appointment -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/AppointmentFieldLabel"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/recurring_appointment_label" />
+
+                <Switch
+                    android:id="@+id/recurringSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/recurringSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <RadioGroup
+                    android:id="@+id/recurringPeriodTypeRadioGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/recurringPeriodDayRadio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/recurring_period_day" />
+
+                    <RadioButton
+                        android:id="@+id/recurringPeriodWeekRadio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="@string/recurring_period_week" />
+                </RadioGroup>
+
+                <EditText
+                    android:id="@+id/recurringPeriodEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/rectangle_transparent_box"
+                    android:hint="@string/recurring_repeat_every"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:padding="8dp"
+                    android:text="1"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/recurringDaysOfWeekChipGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"
+                    app:singleSelection="false" />
+
+                <TextView
+                    style="@style/AppointmentFieldLabel"
+                    android:text="@string/recurring_end_date_label" />
+
+                <EditText
+                    android:id="@+id/recurringEndDateEditText"
+                    style="@style/AppointmentPickerField"
+                    android:layout_width="match_parent"
+                    android:hint="@string/date" />
+            </LinearLayout>
+
+            <!-- Date appointment issued -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/date_appointment_issued_label" />
+
+            <EditText
+                android:id="@+id/dateAppointmentScheduledEditText"
+                style="@style/AppointmentPickerField"
+                android:layout_width="match_parent"
+                android:hint="@string/date" />
+
+            <!-- Notes -->
+            <TextView
+                style="@style/AppointmentFieldLabel"
+                android:text="@string/notes" />
+
+            <EditText
+                android:id="@+id/notesEditText"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:background="@drawable/rectangle_transparent_box"
+                android:gravity="top"
+                android:hint="@string/add_comment"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine"
+                android:padding="8dp"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/cancelButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/cancel_button"
+                    android:fontFamily="@font/montserrat"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="10dp"
+                    android:text="@string/dialog_button_cancel"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/submitButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/save_button"
+                    android:fontFamily="@font/montserrat"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="10dp"
+                    android:text="@string/action_submit"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <View
+        android:id="@+id/transparentScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/translucent_50_percent"
+        android:visibility="gone" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -32,8 +32,11 @@ import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.models.Allergy;
 import com.openmrs.android_sdk.library.models.AllergyCreate;
 import com.openmrs.android_sdk.library.models.Appointment;
-import com.openmrs.android_sdk.library.models.AppointmentBlock;
-import com.openmrs.android_sdk.library.models.AppointmentType;
+import com.openmrs.android_sdk.library.models.AppointmentConflictRequest;
+import com.openmrs.android_sdk.library.models.AppointmentCreateRequest;
+import com.openmrs.android_sdk.library.models.AppointmentSearchRequest;
+import com.openmrs.android_sdk.library.models.AppointmentServiceInfo;
+import com.openmrs.android_sdk.library.models.AppointmentStatusChangeRequest;
 import com.openmrs.android_sdk.library.models.ConceptAnswers;
 import com.openmrs.android_sdk.library.models.ConceptMembers;
 import com.openmrs.android_sdk.library.models.ConceptSearchResult;
@@ -60,12 +63,12 @@ import com.openmrs.android_sdk.library.models.PatientPhoto;
 import com.openmrs.android_sdk.library.models.ProgramCreate;
 import com.openmrs.android_sdk.library.models.ProgramGet;
 import com.openmrs.android_sdk.library.models.Provider;
+import com.openmrs.android_sdk.library.models.RecurringAppointmentPayload;
 import com.openmrs.android_sdk.library.models.Resource;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.Session;
 import com.openmrs.android_sdk.library.models.SystemProperty;
 import com.openmrs.android_sdk.library.models.SystemSetting;
-import com.openmrs.android_sdk.library.models.TimeSlot;
 import com.openmrs.android_sdk.library.models.User;
 import com.openmrs.android_sdk.library.models.Visit;
 import com.openmrs.android_sdk.library.models.VisitType;
@@ -870,193 +873,66 @@ public interface RestApi {
                                 @Body AllergyCreate allergyCreate);
 
     /**
-     * Create Appointment
+     * Searches a patient's appointments. Talks to the `appointments` (Bahmni-origin) module's
+     * singular `/appointment/search` endpoint - the same one O3's esm-appointments-app calls
+     * (verified against a live O3 deployment) - NOT the legacy `appointmentscheduling` module.
      *
-     * @param appointment the appointment object
+     * @param searchRequest the patient uuid and search start date
+     * @return the matching appointments
+     */
+    @POST("appointment/search")
+    Call<List<Appointment>> searchAppointments(@Body AppointmentSearchRequest searchRequest);
+
+    /**
+     * Changes an appointment's status (e.g. cancelling it). This one action still goes through
+     * the older plural `/appointments/{uuid}/status-change` route, as confirmed from O3's source
+     * (changeAppointmentStatus in patient-appointments.resource.ts).
+     *
+     * @param appointmentUuid the appointment uuid
+     * @param statusChangeRequest the new status and timestamp
      * @return the call
      */
-    @POST("appointmentscheduling/appointment")
-    Call<Appointment> createAppointment(@Body Appointment appointment);
+    @POST("appointments/{uuid}/status-change")
+    Call<ResponseBody> changeAppointmentStatus(@Path("uuid") String appointmentUuid,
+                                                @Body AppointmentStatusChangeRequest statusChangeRequest);
 
     /**
-     * Create Appointment
+     * Creates a new appointment. Matches saveAppointment() in O3's appointments-form.resource.ts.
      *
-     * @param patientUUID the patient uuid
-     * @param status the appointment status
-     * @param typeUUID the appointment type uuid
-     * @param timeslot the appointment timeslot
+     * @param request the appointment details
+     * @return the created appointment
+     */
+    @POST("appointment")
+    Call<Appointment> createAppointment(@Body AppointmentCreateRequest request);
+
+    /**
+     * Checks whether an appointment would conflict with an existing one (double-booking or
+     * outside service hours). Matches checkAppointmentConflict() in O3: a 204 response means no
+     * conflict, a 200 response means a conflict was found.
+     *
+     * @param request the appointment details to check
      * @return the call
      */
-    @POST("appointmentscheduling/appointment")
-    Call<Appointment> createAppointment(@Query("patient") String patientUUID,
-                                        @Query("status") String status,
-                                        @Query("appointmentType") String typeUUID,
-                                        @Query("timeSlot") TimeSlot timeslot);
+    @POST("appointments/conflicts")
+    Call<ResponseBody> checkAppointmentConflicts(@Body AppointmentConflictRequest request);
 
     /**
-     * Get an Appointment
+     * Creates a recurring series of appointments. Matches saveRecurringAppointments() in O3.
      *
-     * @param uuid the uuid of the appointment
-     * @return the Appointment
-     */
-    @GET("appointmentscheduling/appointment/{uuid}")
-    Call<Results<Appointment>> getAppointment(@Path("uuid") String uuid);
-
-    /**
-     * Delete Appointment
-     *
-     * @param uuid the appointment uuid
+     * @param request the appointment details plus the recurrence pattern
      * @return the call
      */
-    @DELETE("appointmentscheduling/appointment/{uuid}")
-    Call<ResponseBody> deleteAppointment(@Path("uuid") String uuid);
+    @POST("recurring-appointments")
+    Call<ResponseBody> createRecurringAppointments(@Body RecurringAppointmentPayload request);
 
     /**
-     * Get Appointment(s) for a patient
+     * Gets the appointment services configured on the server (for the service picker), sorted
+     * server-side; matches useAppointmentServices() in O3.
      *
-     * @param patientUuid the uuid of the patient
-     * @param representation the representation to return
-     *
-     * @return the Appointment(s)
+     * @return the appointment services
      */
-    @GET("appointmentscheduling/appointment")
-    Call<Results<Appointment>> getAppointmentsForPatient(@Query("patient") String patientUuid,
-                                                      @Query("v") String representation);
-
-    /**
-     * Get all available TimeSlot(s)
-     *
-     * @return the TimeSlot(s)
-     */
-    @GET("appointmentscheduling/timeslot")
-    Call<Results<TimeSlot>> getTimeslots(@Query("v") String representation);
-
-    /**
-     * Create a TimeSlot
-     *
-     * @param timeSlot the TimeSlot object
-     * @return the call
-     */
-    @POST("appointmentscheduling/timeslot")
-    Call<TimeSlot> createTimeslot(@Body TimeSlot timeSlot);
-
-    /**
-     * Create a TimeSlot
-     *
-     * @param startDate the start date
-     * @param endDate the end date
-     * @param appointmentBlock the Appointment Block object
-     *
-     * @return the call
-     */
-    @POST("appointmentscheduling/timeslot")
-    Call<TimeSlot> createTimeslot(@Query("startDate") String startDate,
-                                  @Query("endDate") String endDate,
-                                  @Query("location") AppointmentBlock appointmentBlock);
-
-    /**
-     * Get a TimeSlot
-     *
-     * @param timeslotUuid the uuid of the TimeSlot
-     * @param representation the representation to return
-     *
-     * @return the TimeSlot
-     */
-    @GET("appointmentscheduling/timeslot/{uuid}")
-    Call<TimeSlot> getTimeslotByUuid(@Path("uuid") String timeslotUuid,
-                                     @Query("v") String representation);
-
-    /**
-     * Delete TimeSlot
-     *
-     * @param timeslotUuid the TimeSlot uuid
-     * @return the call
-     */
-    @DELETE("appointmentscheduling/timeslot/{uuid}")
-    Call<ResponseBody> deleteTimeslot(@Path("uuid") String timeslotUuid);
-
-    /**
-     * Get all available Appointment Block(s)
-     *
-     * @return the Appointment Block(s)
-     */
-    @GET("appointmentscheduling/appointmentblock")
-    Call<Results<AppointmentBlock>> getAppointmentBlocks(@Query("v") String representation);
-
-    /**
-     * Create an Appointment Block
-     *
-     * @param startDate the start date of the block
-     * @param endDate the end date of the block
-     * @param location the location name of the block
-     * @param types the list of appointment types
-     *
-     * @return the call
-     */
-    @POST("appointmentscheduling/appointmentblock")
-    Call<AppointmentBlock> createAppointmentBlock(@Query("startDate") String startDate,
-                                                  @Query("endDate") String endDate,
-                                                  @Query("location") String location,
-                                                  @Query("types") List<AppointmentType> types);
-
-    /**
-     * Delete Appointment Block
-     *
-     * @param appointmentBlockUuid the Appointment Block uuid
-     * @return the call
-     */
-    @DELETE("appointmentscheduling/appointmentblock/{uuid}")
-    Call<ResponseBody> deleteAppointmentBlock(@Path("uuid") String appointmentBlockUuid);
-
-    /**
-     * Get an Appointment Block
-     *
-     * @param appointmentBlockUuid the uuid of the Appointment Block
-     * @param representation the representation to return
-     *
-     * @return the Appointment Block
-     */
-    @GET("appointmentscheduling/appointmentblock/{uuid}")
-    Call<AppointmentBlock> getAppointmentBlockByUuid(@Path("uuid") String appointmentBlockUuid,
-                                                     @Query("v") String representation);
-
-    /**
-     * Get all available Appointment Type(s)
-     *
-     * @return the Appointment Type(s)
-     */
-    @GET("appointmentscheduling/appointmenttype")
-    Call<Results<AppointmentType>> getAppointmentTypes(@Query("v") String representation);
-
-    /**
-     * Create an Appointment Type
-     *
-     * @param appointmentType the Appointment Type object
-     * @return the call
-     */
-    @POST("appointmentscheduling/appointmenttype")
-    Call<AppointmentType> createAppointmentType(@Body AppointmentType appointmentType);
-
-    /**
-     * Delete Appointment Type
-     *
-     * @param appointmentTypeUuid the Appointment Type uuid
-     * @return the call
-     */
-    @DELETE("appointmentscheduling/appointmenttype/{uuid}")
-    Call<ResponseBody> deleteAppointmentType(@Path("uuid") String appointmentTypeUuid);
-
-    /**
-     * Get an Appointment Type
-     *
-     * @param appointmentTypeUuid the uuid of the Appointment Type
-     * @param representation the representation to return
-     *
-     * @return the Appointment Type
-     */
-    @GET("appointmentscheduling/appointmenttype/{uuid}")
-    Call<AppointmentType> getAppointmentTypeByUuid(@Path("uuid") String appointmentTypeUuid,
-                                                   @Query("v") String representation);
+    @GET("appointmentService/all/default")
+    Call<List<AppointmentServiceInfo>> getAppointmentServices();
 
     /**
      * Create an Order

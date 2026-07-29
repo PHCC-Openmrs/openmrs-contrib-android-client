@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 5)
+        version = 6)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -104,6 +104,32 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     /**
+     * Replaces the appointments table with the schema for the real O3 `appointments` module
+     * (flat service/location/status fields) instead of the legacy block/time-slot model it used
+     * to hold. No shipped UI ever populated that table, so dropping just this table (rather than
+     * writing a column migration, or letting fallbackToDestructiveMigration wipe every table) is
+     * safe and keeps existing installs' synced patients/visits/etc. intact.
+     */
+    private static final Migration MIGRATION_5_6 = new Migration(5, 6) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("DROP TABLE IF EXISTS `appointments`");
+            database.execSQL("CREATE TABLE IF NOT EXISTS `appointments` (" +
+                    "`uuid` TEXT NOT NULL, " +
+                    "`patient_uuid` TEXT, " +
+                    "`appointment_number` TEXT, " +
+                    "`service_name` TEXT, " +
+                    "`location_name` TEXT, " +
+                    "`start_date_time` INTEGER, " +
+                    "`end_date_time` INTEGER, " +
+                    "`appointment_kind` TEXT, " +
+                    "`status` TEXT, " +
+                    "`comments` TEXT, " +
+                    "PRIMARY KEY(`uuid`))");
+        }
+    };
+
+    /**
      * Gets database.
      *
      * @param context the context
@@ -117,7 +143,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
                             .allowMainThreadQueries()
-                            .addMigrations(MIGRATION_4_5)
+                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

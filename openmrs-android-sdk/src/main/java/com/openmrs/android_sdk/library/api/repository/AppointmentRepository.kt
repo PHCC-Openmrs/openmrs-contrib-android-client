@@ -13,31 +13,39 @@
  */
 package com.openmrs.android_sdk.library.api.repository
 
-import android.content.Context
-import com.openmrs.android_sdk.R
 import com.openmrs.android_sdk.library.OpenMRSLogger
 import com.openmrs.android_sdk.library.api.RestApi
 import com.openmrs.android_sdk.library.dao.AppointmentRoomDAO
-import com.openmrs.android_sdk.library.databases.AppDatabase
 import com.openmrs.android_sdk.library.databases.AppDatabaseHelper
 import com.openmrs.android_sdk.library.databases.AppDatabaseHelper.createObservableIO
-import com.openmrs.android_sdk.library.models.*
+import com.openmrs.android_sdk.library.models.Appointment
+import com.openmrs.android_sdk.library.models.AppointmentConflictRequest
+import com.openmrs.android_sdk.library.models.AppointmentCreateRequest
+import com.openmrs.android_sdk.library.models.AppointmentSearchRequest
+import com.openmrs.android_sdk.library.models.AppointmentServiceInfo
+import com.openmrs.android_sdk.library.models.AppointmentStatusChangeRequest
+import com.openmrs.android_sdk.library.models.RecurringAppointmentPayload
+import com.openmrs.android_sdk.utilities.DateUtils
 import retrofit2.Call
 import rx.Observable
 import java.io.IOException
+import java.util.TimeZone
 import java.util.concurrent.Callable
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * Talks to the `appointments` (Bahmni-origin) module - the same backend O3's esm-appointments-app
+ * uses - via the /appointment/search and /appointments/{uuid}/status-change endpoints (verified
+ * against a live O3 deployment). This is a different module from the legacy `appointmentscheduling`
+ * one this repository used to target.
+ */
 @Singleton
 class AppointmentRepository @Inject constructor(
-    val context: Context,
     val logger: OpenMRSLogger,
     var restApi: RestApi,
     val appointmentRoomDAO: AppointmentRoomDAO
 ) {
-
-    val representation =  context.resources.getString(R.string.appointment_resource_representation).trim()
 
     /**
      * Executes a retrofit request
@@ -50,149 +58,125 @@ class AppointmentRepository @Inject constructor(
     fun <T> executeRequest(call: Call<T>, message: String): T {
         val response = call.execute()
 
-        if (response.isSuccessful && response != null) {
+        if (response.isSuccessful && response.body() != null) {
             return response.body()!!
         } else {
             logger.e(message + response.message())
-            throw Exception(response.message())
+            throw IOException(message + response.message())
         }
     }
 
     /**
-     * Creates an appointment block
+     * Searches a patient's appointments on the server and caches the result locally, mirroring
+     * O3's usePatientAppointments hook (6-month lookback, no end date).
      *
-     * @param startDate the start date of the block
-     * @param endDate the end date of the block
-     * @param locationUUID the location name of the block
-     * @param types the list of appointment types
-     *
-     * @return the AppointmentBlock object
+     * The response is filtered down to this patient client-side as a safety net: the search
+     * endpoint has been observed returning every patient's appointments regardless of the
+     * patientUuids filter (see AppointmentSearchRequest's kdoc), so trusting the server's
+     * filtering alone isn't safe.
      */
-    fun createAppointmentBlock(
-        startDate: String,
-        endDate: String,
-        locationUUID: String,
-        types: List<AppointmentType>
-    ): Observable<AppointmentBlock> {
-        return createObservableIO<AppointmentBlock>(Callable {
-            val call = restApi.createAppointmentBlock(startDate, endDate, locationUUID, types)
-            executeRequest(call, "Error creating an appointment block: ")
+    fun searchAppointmentsAndSave(
+        patientUuid: String,
+        startDate: String = defaultSearchStartDate()
+    ): Observable<List<Appointment>> {
+        return createObservableIO(Callable {
+            val call = restApi.searchAppointments(AppointmentSearchRequest(listOf(patientUuid), startDate))
+            val appointments = executeRequest(call, "Error searching appointments: ")
+                .filter { it.patient?.uuid == patientUuid }
+            val entities = appointments.map { AppDatabaseHelper.convert(it, patientUuid) }
+            appointmentRoomDAO.addOrUpdateAll(entities)
+            appointments
         })
     }
 
     /**
-     * Creates a time slot
-     *
-     * @param timeSlot the TimeSlot object
-     *
-     * @return the TimeSlot object
+     * Reads a patient's appointments from the local cache only, for offline fallback.
      */
-    fun createTimeSlot(timeSlot: TimeSlot): Observable<TimeSlot> {
-        return createObservableIO<TimeSlot>(Callable {
-            val call = restApi.createTimeslot(timeSlot)
-            executeRequest(call, "Error creating Time Slot: ")
+    fun getCachedAppointments(patientUuid: String): Observable<List<Appointment>> {
+        return createObservableIO(Callable {
+            appointmentRoomDAO.getAppointmentsForPatient(patientUuid).blockingGet()
+                .map { AppDatabaseHelper.convert(it) }
         })
     }
 
     /**
-     * Creates a time slot
-     *
-     * @param startDate the start date
-     * @param endDate the end date
-     * @param appointmentBlock the Appointment Block object
-     *
-     * @return the TimeSlot object
+     * Cancels an appointment on the server and reflects the new status in the local cache.
      */
-    fun createTimeSlot(
-        startDate: String,
-        endDate: String,
-        appointmentBlock: AppointmentBlock
-    ): Observable<TimeSlot> {
-        return createObservableIO<TimeSlot>(Callable {
-            val call = restApi.createTimeslot(startDate, endDate, appointmentBlock)
-            executeRequest(call, "Error creating Time Slot: ")
+    fun cancelAppointment(appointmentUuid: String): Observable<Unit> {
+        return createObservableIO(Callable {
+            val statusChangeRequest = AppointmentStatusChangeRequest(
+                toStatus = Appointment.Status.CANCELLED,
+                onDate = DateUtils.getCurrentDateTime(),
+                timeZone = TimeZone.getDefault().id
+            )
+            val call = restApi.changeAppointmentStatus(appointmentUuid, statusChangeRequest)
+            executeRequest(call, "Error cancelling appointment: ")
+            appointmentRoomDAO.updateStatus(appointmentUuid, Appointment.Status.CANCELLED)
         })
     }
 
     /**
-     * Creates an appointment if appointment block is available
-     *
-     * @param patientUUID the patient uuid
-     * @param appointmentStatus the appointment status
-     * @param appointmentTypeUUID the Appointment type uuid
-     * @param timeSlotStartDate the timeslot start
-     * @param timeSlotEndDate the timeslot end
-     * @param appointmentBlock the Appointment Block object
-     *
-     * @return the Appointment object
+     * Fetches the appointment services configured on the server, for the service picker.
      */
-    fun createAppointment(
-        patientUUID: String,
-        appointmentStatus: String,
-        appointmentTypeUUID: String,
-        timeSlotStartDate: String,
-        timeSlotEndDate: String,
-        appointmentBlock: AppointmentBlock
-    ): Observable<Appointment> {
-        val timeSlot = createTimeSlot(timeSlotStartDate, timeSlotEndDate, appointmentBlock).toBlocking().first()
-        return createObservableIO<Appointment>(Callable {
-            val call = restApi.createAppointment(patientUUID, appointmentStatus, appointmentTypeUUID, timeSlot)
-            executeRequest(call, "Error creating Appointment: ")
+    fun getAppointmentServices(): Observable<List<AppointmentServiceInfo>> {
+        return createObservableIO(Callable {
+            executeRequest(restApi.getAppointmentServices(), "Error fetching appointment services: ")
         })
-
     }
 
     /**
-     * Creates an appointment if appointment block is NOT available
-     *
-     * @param patientUUID the patient uuid
-     * @param appointmentStatus the appointment status
-     * @param appointmentTypeUUID the Appointment type uuid
-     * @param timeSlotStartDate the timeslot start
-     * @param timeSlotEndDate the timeslot end
-     * @param blockStartDate the start date of the block
-     * @param blockEndDate the end date of the block
-     * @param blockLocationUUID the uuid of the location of the block
-     * @param blockTypes the list of appointment types
-     *
-     * @return the Appointment object
+     * Checks whether an appointment would conflict with an existing one (double-booking or
+     * outside service hours), matching O3's checkAppointmentConflict(). Returns true if a
+     * conflict was found.
      */
-    fun createAppointment(
-        patientUUID: String,
-        appointmentStatus: String,
-        appointmentTypeUUID: String,
-        timeSlotStartDate: String,
-        timeSlotEndDate: String,
-        blockStartDate: String,
-        blockEndDate: String,
-        blockLocationUUID: String,
-        blockTypes: List<AppointmentType>
-    ) {
-        val mAppointmentBlock = createAppointmentBlock(blockStartDate, blockEndDate,
-            blockLocationUUID, blockTypes).toBlocking().first()
-
-        createAppointment(patientUUID, appointmentStatus, appointmentTypeUUID, timeSlotStartDate, timeSlotEndDate, mAppointmentBlock)
+    fun hasConflict(request: AppointmentConflictRequest): Observable<Boolean> {
+        return createObservableIO(Callable {
+            val response = restApi.checkAppointmentConflicts(request).execute()
+            if (!response.isSuccessful) {
+                throw IOException("Error checking appointment conflicts: " + response.message())
+            }
+            response.code() == 200
+        })
     }
 
     /**
-     * Fetch appointments from server and save to local db
-     *
-     * @param patientUUID the patient uuid
+     * Creates a new appointment on the server, matching O3's saveAppointment().
      */
-    fun getAppointmentsAndSave(patientUUID: String): Observable<List<Appointment>> {
-        return createObservableIO<List<Appointment>>(Callable {
-            val call = restApi.getAppointmentsForPatient(patientUUID, representation)
-            val response = call.execute()
-            if (response.isSuccessful && response != null) {
-                val appointments = response.body()!!.results
-                for (appointment in appointments) {
-                    val appointmentEntity = AppDatabaseHelper.convert(appointment)
-                    appointmentRoomDAO.addAppointment(appointmentEntity)
-                }
-                return@Callable appointments
-            } else {
-                throw IOException("Error getting and saving appointments from server: " + response.message())
+    fun createAppointment(request: AppointmentCreateRequest): Observable<Appointment> {
+        return createObservableIO(Callable {
+            executeRequest(restApi.createAppointment(request), "Error creating appointment: ")
+        })
+    }
+
+    /**
+     * Creates a recurring series of appointments on the server, matching O3's
+     * saveRecurringAppointments().
+     */
+    fun createRecurringAppointments(request: RecurringAppointmentPayload): Observable<Unit> {
+        return createObservableIO(Callable {
+            val response = restApi.createRecurringAppointments(request).execute()
+            if (!response.isSuccessful) {
+                throw IOException("Error creating recurring appointments: " + response.message())
             }
         })
+    }
+
+    companion object {
+        /** Matches O3's `dayjs().subtract(6, 'month').toISOString()` default search window. */
+        fun defaultSearchStartDate(): String {
+            val sixMonthsAgo = DateUtils.getDateTimeFromDifference(0, 6).millis
+            return DateUtils.convertTime(sixMonthsAgo, DateUtils.OPEN_MRS_REQUEST_FORMAT)
+        }
+
+        /**
+         * Formats an epoch-millis timestamp the same way O3's `dayjs(...).format()` does when
+         * building an appointment create/conflict-check payload (e.g. "2026-07-30T15:22:00+05:30")
+         * - a colon-separated offset, no milliseconds. Distinct from [defaultSearchStartDate]'s
+         * format, which is what the search/status-change endpoints expect instead.
+         */
+        fun formatAppointmentDateTime(epochMillis: Long): String {
+            val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX")
+            return format.format(java.util.Date(epochMillis))
+        }
     }
 }

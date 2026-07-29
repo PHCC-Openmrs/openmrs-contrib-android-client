@@ -1,0 +1,39 @@
+[
+  {
+    "uuid": "6dbbd1d9-ba68-4260-a4c7-9b98859abf8c",
+    "appointmentNumber": "260729083217909",
+    "patient": {
+      "uuid": "c7ec7d3d-cd3f-4f64-8566-e59bb678a362"
+    },
+    "service": {
+      "uuid": "7ba3aa21-cc56-47ca-bb4d-a60549f666c0",
+      "name": "General Medicine service"
+    },
+    "location": {
+      "uuid": "44c3efb0-2583-4c80-a79e-1f756a03c0a1",
+      "name": "Outpatient Clinic"
+    },
+    "startDateTime": 1785313860000,
+    "endDateTime": 1785313920000,
+    "appointmentKind": "Scheduled",
+    "status": "Scheduled",
+    "comments": ""
+  },
+  {
+    "uuid": "71250d59-3241-4f57-904b-31ae29d42768",
+    "appointmentNumber": "260721095203866",
+    "patient": {
+      "uuid": "411afe0f-b8a9-4acb-8b6c-ff1700fb5ff5"
+    },
+    "service": {
+      "uuid": "7ba3aa21-cc56-47ca-bb4d-a60549f666c0",
+      "name": "General Medicine service"
+    },
+    "location": {},
+    "startDateTime": 1695227462000,
+    "endDateTime": 1695229742000,
+    "appointmentKind": "Scheduled",
+    "status": "Scheduled",
+    "comments": null
+  }
+]

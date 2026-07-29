@@ -26,7 +26,9 @@ enum class OperationType {
     ProviderRegistering,
     ProviderUpdating,
     Login,
-    LocationsFetching
+    LocationsFetching,
+    PatientAppointmentsFetching,
+    AppointmentCancelling
 }
 
 enum class ResultType {
@@ -53,5 +55,8 @@ enum class ResultType {
     LoginNoInternetConnection,
     LocationsFetchingLocalSuccess,
     LocationsFetchingSuccess,
-    LocationsFetchingNoInternetConnection
+    LocationsFetchingNoInternetConnection,
+    AppointmentCreateSuccess,
+    AppointmentCreateError,
+    AppointmentConflict
 }

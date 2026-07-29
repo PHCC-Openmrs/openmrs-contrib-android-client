@@ -14,11 +14,12 @@
 package com.openmrs.android_sdk.library.api.repository
 
 import com.openmrs.android_sdk.library.api.RestApi
-import com.openmrs.android_sdk.library.databases.entities.LocationEntity
-import com.openmrs.android_sdk.library.models.*
+import com.openmrs.android_sdk.library.dao.AppointmentRoomDAO
+import com.openmrs.android_sdk.library.models.Appointment
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
+import io.mockk.verify
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.buffer
@@ -49,79 +50,11 @@ class AppointmentRepositoryTest {
     @Inject
     lateinit var appointmentRepository: AppointmentRepository
 
-    val startDate = "2023-07-15T10:00:00Z"
-    val endDate = "2023-07-15T11:00:00Z"
-    val location = "Sample Location"
+    @Inject
+    lateinit var appointmentRoomDAO: AppointmentRoomDAO
 
-    val appointmentTypesList = listOf(
-        AppointmentType().apply {
-            visitType = VisitType().apply {
-                uuid = "12345678-1234-1234-1234-123456789abc"
-                display = "Type A"
-            }
-            description = "Sample description 1"
-            duration = "30 minutes"
-            confidential = false
-        },
-        AppointmentType().apply {
-            visitType = VisitType().apply {
-                uuid = "98765432-5432-5432-5432-987654321fed"
-                display = "Type B"
-            }
-            description = "Sample description 2"
-            duration = "60 minutes"
-            confidential = true
-        }
-    )
-
-    val appointmentBlockGet = AppointmentBlock().apply {
-        startDate = "2023-07-15T10:00:00Z"
-        endDate = "2023-07-15T11:00:00Z"
-        provider = Provider().apply {
-            identifier = "user1"
-            retired = false
-        }
-        location = LocationEntity("Sample Clinic").apply {
-            name = "Sample Clinic"
-            address_1 = "123 Main St"
-        }
-        types = listOf(
-            AppointmentType().apply {
-                visitType = VisitType().apply {
-                    uuid = "12345678-1234-1234-1234-123456789abc"
-                    display = "Type A"
-                }
-                description = "Sample description 1"
-                duration = "30 minutes"
-                confidential = false
-            },
-            AppointmentType().apply {
-                visitType = VisitType().apply {
-                    uuid = "98765432-5432-5432-5432-987654321fed"
-                    display = "Type B"
-                }
-                description = "Sample description 2"
-                duration = "60 minutes"
-                confidential = true
-            }
-        )
-    }
-
-    val timeSlotGet = TimeSlot().apply {
-        startDate = "2023-07-15T10:00:00Z"
-        endDate = "2023-07-15T11:00:00Z"
-        appointmentBlock = appointmentBlockGet
-    }
-
-    val appointmentType = AppointmentType().apply {
-        visitType = VisitType().apply {
-            uuid = "12345678-1234-1234-1234-123456789abc"
-            display = "Type A"
-        }
-        description = "Sample description 1"
-        duration = "30 minutes"
-        confidential = false
-    }
+    val patientUuid = "c7ec7d3d-cd3f-4f64-8566-e59bb678a362"
+    val startDate = "2026-01-29T00:00:00.000+0530"
 
     @Before
     fun setup() {
@@ -144,35 +77,29 @@ class AppointmentRepositoryTest {
     }
 
     @Test
-    fun createAppointmentBlock_success_returnsAppointmentBlock() {
+    fun searchAppointmentsAndSave_serverReturnsOtherPatients_filtersToRequestedPatient() {
+        // The fixture includes a second appointment for a different patient, mirroring a real
+        // server response observed to ignore the patient filter entirely.
+        enqueueMockResponse("mocked_responses/AppointmentRepository/AppointmentSearch-success.json")
 
-        enqueueMockResponse("mocked_responses/AppointmentRepository/AppointmentBlockCreate-success.json")
-        val result: AppointmentBlock = appointmentRepository.createAppointmentBlock(startDate, endDate, location, appointmentTypesList).toBlocking().first()
+        val result = appointmentRepository.searchAppointmentsAndSave(patientUuid, startDate).toBlocking().first()
 
-        assertEquals(result.endDate, appointmentBlockGet.endDate)
-
+        assertEquals(1, result.size)
+        assertEquals("6dbbd1d9-ba68-4260-a4c7-9b98859abf8c", result[0].uuid)
+        assertEquals("General Medicine service", result[0].service?.name)
+        assertEquals(Appointment.Status.SCHEDULED, result[0].status)
+        verify { appointmentRoomDAO.addOrUpdateAll(any()) }
     }
 
     @Test
-    fun createTimeSlot_success_returnsTimeSlot() {
+    fun cancelAppointment_success_updatesLocalStatus() {
+        mockWebServer.enqueue(MockResponse().setResponseCode(200).setBody("{}"))
 
-        enqueueMockResponse("mocked_responses/AppointmentRepository/TimeSlotCreate-success.json")
-        val result: TimeSlot = appointmentRepository.createTimeSlot(timeSlotGet).toBlocking().first()
+        appointmentRepository.cancelAppointment("6dbbd1d9-ba68-4260-a4c7-9b98859abf8c").toBlocking().first()
 
-        assertEquals(result.endDate, timeSlotGet.endDate)
-    }
-
-    @Test
-    fun createTimeSlotWithQuery_success_returnsTimeSlot() {
-        val startDate = "2023-07-15T10:00:00Z"
-        val endDate = "2023-07-15T11:00:00Z"
-        val appointmentBlockGet = appointmentBlockGet
-
-        enqueueMockResponse("mocked_responses/AppointmentRepository/TimeSlotCreate-success.json")
-        val result: TimeSlot = appointmentRepository.createTimeSlot(startDate, endDate, appointmentBlockGet).toBlocking().first()
-
-        assertEquals(result.endDate, endDate)
-
+        verify {
+            appointmentRoomDAO.updateStatus("6dbbd1d9-ba68-4260-a4c7-9b98859abf8c", Appointment.Status.CANCELLED)
+        }
     }
 
     fun enqueueMockResponse(fileName: String) {

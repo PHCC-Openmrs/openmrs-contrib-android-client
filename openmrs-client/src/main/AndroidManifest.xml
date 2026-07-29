@@ -284,6 +284,10 @@
             android:label="@string/allergy_heading"
             android:theme="@style/AppThemeOrig" />
         <activity
+            android:name=".activities.addeditappointment.AddEditAppointmentActivity"
+            android:label="@string/new_appointment_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:theme="@style/AppTheme" />
 

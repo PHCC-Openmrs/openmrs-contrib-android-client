@@ -156,9 +156,70 @@
     <string name="patient_scroll_tab_visits_label">Visits</string>
     <string name="patient_scroll_tab_vitals_label">Vitals</string>
     <string name="patient_scroll_tab_charts_label">Charts</string>
+    <string name="patient_scroll_tab_appointments_label">Appointments</string>
     <string name="download_started">"Downloading…"</string>
     <string name="action_starting_visit">"Starting Visit"</string>
     <string name="visit_start_error">Failed to start a visit</string>
+
+    <!--Patient Appointments tab-->
+    <string name="appointments_tab_upcoming">Upcoming</string>
+    <string name="appointments_tab_today">Today</string>
+    <string name="appointments_tab_past">Past</string>
+    <string name="empty_appointments_list">No appointments to display.</string>
+    <string name="appointment_no_service">No service specified</string>
+    <string name="appointment_cancel_action">Cancel appointment</string>
+    <string name="appointment_edit_action">Edit</string>
+    <string name="appointment_cancel_confirm_title">Cancel appointment</string>
+    <string name="appointment_cancel_confirm_message">Are you sure you want to cancel this appointment?</string>
+    <string name="appointment_cancel_error">Failed to cancel appointment</string>
+
+    <!--Add/Edit Appointment-->
+    <string name="new_appointment_title">Add appointment</string>
+    <string name="location">Location</string>
+    <string name="service">Service</string>
+    <string name="provider">Provider</string>
+    <string name="notes">Notes</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="duration_minutes">Duration (minutes)</string>
+    <string name="appointment_type_label">Appointment type</string>
+    <string name="appointment_kind_scheduled">Scheduled</string>
+    <string name="appointment_kind_walk_in">Walk In</string>
+    <string name="appointment_kind_virtual">Virtual</string>
+    <string name="appointment_time_label">Appointment time</string>
+    <string name="recurring_appointment_label">Recurring appointment</string>
+    <string name="recurring_period_day">Day</string>
+    <string name="recurring_period_week">Week</string>
+    <string name="recurring_repeat_every">Repeat every</string>
+    <string name="recurring_end_date_label">Recurring end date</string>
+    <string name="date_appointment_issued_label">Date appointment issued</string>
+    <string name="create_appointment_confirm_title">Schedule appointment</string>
+    <string name="create_appointment_confirm_message">Are you sure you want to schedule this appointment?</string>
+    <string name="appointment_form_error">Error scheduling appointment</string>
+    <string name="appointment_form_success">Appointment scheduled</string>
+    <string name="appointment_conflict_error">This appointment conflicts with an existing one or is outside service hours</string>
+    <string name="warning_select_location">Please select a location</string>
+    <string name="warning_select_service">Please select a service</string>
+    <string name="warning_select_provider">Please select a provider</string>
+    <string name="warning_select_start_time">Please select a start time</string>
+    <string name="warning_invalid_duration">Duration must be greater than zero</string>
+    <string name="warning_select_recurring_days">Please select at least one day of the week</string>
+    <string name="warning_select_recurring_end_date">Please select a recurring end date</string>
+    <string name="warning_date_appointment_issued_after_start">Date appointment issued cannot be after the appointment date</string>
+    <string name="edit_appointment_title">Edit appointment</string>
+    <string name="edit_appointment_confirm_title">Edit appointment</string>
+    <string name="edit_appointment_confirm_message">Are you sure you want to save these changes?</string>
+    <string name="appointment_edit_success">Appointment edited</string>
+    <string name="appointment_edit_error">Error editing appointment</string>
+    <string name="appointment_status_label">Appointment status</string>
+    <string name="appointment_status_requested">Requested</string>
+    <string name="appointment_status_waitlist">Wait List</string>
+    <string name="appointment_status_scheduled">Scheduled</string>
+    <string name="appointment_status_arrived">Arrived</string>
+    <string name="appointment_status_checked_in">Checked In</string>
+    <string name="appointment_status_completed">Completed</string>
+    <string name="appointment_status_cancelled">Cancelled</string>
+    <string name="appointment_status_missed">Missed</string>
 
     <!--SyncedPatient Activity-->
     <string name="patient_update_successful">Patient %1$s Updated</string>

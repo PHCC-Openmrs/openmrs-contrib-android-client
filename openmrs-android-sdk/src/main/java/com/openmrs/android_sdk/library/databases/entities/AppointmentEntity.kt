@@ -15,39 +15,38 @@ package com.openmrs.android_sdk.library.databases.entities
 import androidx.room.Entity
 import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
-import androidx.room.Embedded
 
 @Entity(tableName = "appointments")
-class AppointmentEntity{
-    
+class AppointmentEntity {
+
+    @PrimaryKey
     @ColumnInfo(name = "uuid")
-    var uuid: String? = ""
-    
-    @ColumnInfo(name = "display")
-    var display: String? = ""
-    
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id: Long? = null
+    var uuid: String = ""
 
-    @Embedded(prefix = "timeslot_")
-    var timeSlot: TimeSlotEntity? = null
+    @ColumnInfo(name = "patient_uuid")
+    var patientUuid: String? = null
 
-    @Embedded(prefix = "visit_")
-    var visit: AppointmentVisitEntity? = null
+    @ColumnInfo(name = "appointment_number")
+    var appointmentNumber: String? = null
 
-    @Embedded(prefix = "patient_")
-    var patient: AppointmentPatientEntity? = null
+    @ColumnInfo(name = "service_name")
+    var serviceName: String? = null
+
+    @ColumnInfo(name = "location_name")
+    var locationName: String? = null
+
+    @ColumnInfo(name = "start_date_time")
+    var startDateTime: Long? = null
+
+    @ColumnInfo(name = "end_date_time")
+    var endDateTime: Long? = null
+
+    @ColumnInfo(name = "appointment_kind")
+    var appointmentKind: String? = null
 
     @ColumnInfo(name = "status")
     var status: String? = null
 
-    @ColumnInfo(name = "reason")
-    var reason: String? = null
-
-    @ColumnInfo(name = "cancelReason")
-    var cancelReason: String? = null
-
-    @Embedded(prefix = "type_")
-    var appointmentType: AppointmentTypeEntity? = null
+    @ColumnInfo(name = "comments")
+    var comments: String? = null
 }

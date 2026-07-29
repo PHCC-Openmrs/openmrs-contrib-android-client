@@ -24,8 +24,10 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_DIA
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ENCOUNTERS
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_OBSERVATIONS
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_VISITS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.VIEW_APPOINTMENTS
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.patientdashboard.allergy.PatientAllergyFragment
+import org.openmrs.mobile.activities.patientdashboard.appointments.PatientAppointmentsFragment
 import org.openmrs.mobile.activities.patientdashboard.charts.PatientChartsFragment
 import org.openmrs.mobile.activities.patientdashboard.details.PatientDetailsFragment
 import org.openmrs.mobile.activities.patientdashboard.diagnosis.PatientDiagnosisFragment
@@ -38,7 +40,7 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
                                    private val mPatientId: Long
 ) : FragmentPagerAdapter(fm) {
 
-    enum class TabType { DETAILS, ALLERGY, DIAGNOSIS, VISITS, VITALS, CHARTS }
+    enum class TabType { DETAILS, ALLERGY, DIAGNOSIS, VISITS, VITALS, CHARTS, APPOINTMENTS }
 
     private data class TabSpec(val type: TabType, val titleRes: Int)
 
@@ -67,6 +69,9 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
         if (PrivilegeUtils.hasAnyPrivilege(GET_ENCOUNTERS, GET_OBSERVATIONS)) {
             add(TabSpec(TabType.CHARTS, R.string.patient_scroll_tab_charts_label))
         }
+        if (PrivilegeUtils.hasPrivilege(VIEW_APPOINTMENTS)) {
+            add(TabSpec(TabType.APPOINTMENTS, R.string.patient_scroll_tab_appointments_label))
+        }
     }
 
     /** Identifies which tab is at [position] without relying on a fixed numeric index. */
@@ -80,6 +85,7 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
             TabType.VISITS -> PatientVisitsFragment.newInstance(mPatientId)
             TabType.VITALS -> PatientVitalsFragment.newInstance(mPatientId)
             TabType.CHARTS -> PatientChartsFragment.newInstance(mPatientId)
+            TabType.APPOINTMENTS -> PatientAppointmentsFragment.newInstance(mPatientId)
         }
     }
 
