@@ -518,31 +518,18 @@
     <string name="more_about_openmrs"><![CDATA[more]]></string>
 
     <!-- Order Repository -->
-    <string name="orderGet_resource_representation" translatable="false">
-    "custom:(
-        uuid,
-        display,
-        orderNumber,
-        accessionNumber,
-        patient:(uuid),
-        concept:(uuid),
-        action,
-        careSetting,
-        dateActivated,
-        scheduledDate,
-        dateStopped,
-        autoExpireDate,
-        encounter:(uuid),
-        orderer:(uuid,display),
-        orderReason,
-        orderType:(uuid,display),
-        urgency,
-        type,
-        numberOfRepeats,
-        frequency,
-        fulfillerStatus,
-        fulfillerComment,
-        specimenSource
-    )
-    </string>
+    <!-- Verified against a live O3 deployment's GET order?...&v=custom:(...) request (patient/orders chart tab). -->
+    <string name="orderGet_resource_representation" translatable="false">custom:(uuid,display,orderNumber,accessionNumber,patient,concept,action,careSetting,previousOrder,dateActivated,scheduledDate,dateStopped,autoExpireDate,encounter:(uuid,display,visit),orderer:ref,orderReason,orderReasonNonCoded,orderType,urgency,instructions,commentToFulfiller,fulfillerStatus)</string>
+
+    <!-- Verified against a live O3 deployment's GET drug?q=...&v=custom:(...) request (drug order form autocomplete). -->
+    <string name="drugSearch_resource_representation" translatable="false">custom:(uuid,display,name,strength,dosageForm:(display,uuid),concept:(display,uuid))</string>
+
+    <!-- Verified against a live server's GET concept?q=...&v=custom:(...) request (lab order form test search). -->
+    <string name="testSearch_resource_representation" translatable="false">custom:(uuid,display,conceptClass:(uuid,display))</string>
+
+    <!-- Verified against a live server's GET concept/{uuid}?v=custom:(...) request (Add result form's datatype lookup). -->
+    <string name="conceptDetails_resource_representation" translatable="false">custom:(uuid,display,name,datatype,set,answers,hiNormal,hiAbsolute,hiCritical,lowNormal,lowAbsolute,lowCritical,units,allowDecimal)</string>
+
+    <!-- Mirrors O3's GET order/{uuid}?v=custom:(...) drug order detail fetch (esm-patient-medications-app/src/api/api.ts's customRepresentation), trimmed to the fields this app's Modify/Renew/Discontinue actions actually use. -->
+    <string name="drugOrderDetails_resource_representation" translatable="false">custom:(uuid,action,patient:ref,careSetting:ref,concept:ref,encounter:(uuid,display,visit),orderer:ref,drug:(uuid,display,concept:ref),dose,doseUnits:ref,route:ref,frequency:ref,asNeeded,numRefills,quantity,quantityUnits:ref,duration,durationUnits:ref,dosingInstructions,dosingType)</string>
 </resources>

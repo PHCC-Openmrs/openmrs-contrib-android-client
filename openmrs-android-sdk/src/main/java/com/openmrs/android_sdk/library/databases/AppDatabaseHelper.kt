@@ -54,7 +54,9 @@ import com.openmrs.android_sdk.library.models.AppointmentServiceInfo
 import com.openmrs.android_sdk.library.models.Person
 import com.openmrs.android_sdk.library.models.ConceptClass
 import com.openmrs.android_sdk.library.models.Drug
+import com.openmrs.android_sdk.library.models.OrderEncounterInfo
 import com.openmrs.android_sdk.library.models.OrderGet
+import com.openmrs.android_sdk.library.models.OrderResource
 import com.openmrs.android_sdk.library.models.ProgramGet
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.DateUtils
@@ -500,38 +502,63 @@ object AppDatabaseHelper {
      */
     fun convert(orderGet: OrderGet): OrderEntity {
         val orderEntity = OrderEntity().apply {
-            uuid = orderGet.uuid
+            uuid = orderGet.uuid ?: ""
             display = orderGet.display
-            action = orderGet.action
-            accessionNumber = orderGet.accessionNumber
-            autoExpireDate = orderGet.autoExpireDate
-            careSettingName = orderGet.careSettingName
-            conceptUuid = orderGet.concept.uuid
-            dateActivated = orderGet.dateActivated
-            dateStopped = orderGet.dateStopped
-            doseUnits = orderGet.doseUnits
-            urgency = orderGet.urgency
-            orderer.display = orderGet.orderer.display
-            orderer.uuid = orderGet.orderer.uuid
-            dosingType = orderGet.dosingType
-            drug = orderGet.drug
-            fulfillerStatus = orderGet.fulfillerStatus
-            specimenSource = orderGet.specimenSource
-            instructions = orderGet.instructions
-            type = orderGet.type
-            orderType.uuid = orderGet.orderType.uuid
-            orderType.display = orderGet.orderType.display
-            quantity = orderGet.quantity
-            dosingInstructions = orderGet.dosingInstructions
-            encounterUuid = orderGet.encounter.uuid
-            fulfillerComment = orderGet.fulfillerComment
-            scheduledDate = orderGet.scheduledDate
-            numberOfRepeats = orderGet.numberOfRepeats
-            orderReason = orderGet.orderReason
-            duration = orderGet.duration
-            orderNumber = orderGet.orderNumber
+            action = orderGet.action ?: ""
+            accessionNumber = orderGet.accessionNumber ?: ""
+            autoExpireDate = orderGet.autoExpireDate ?: ""
+            careSettingName = orderGet.careSetting?.display ?: ""
+            conceptUuid = orderGet.concept?.uuid ?: ""
+            conceptDisplay = orderGet.concept?.display ?: ""
+            patientUuid = orderGet.patient?.uuid ?: ""
+            dateActivated = orderGet.dateActivated ?: ""
+            dateStopped = orderGet.dateStopped ?: ""
+            urgency = orderGet.urgency ?: ""
+            orderer.display = orderGet.orderer?.display ?: ""
+            orderer.uuid = orderGet.orderer?.uuid ?: ""
+            fulfillerStatus = orderGet.fulfillerStatus ?: ""
+            instructions = orderGet.instructions ?: ""
+            orderType.uuid = orderGet.orderType?.uuid ?: ""
+            orderType.display = orderGet.orderType?.display ?: ""
+            encounterUuid = orderGet.encounter?.uuid ?: ""
+            commentToFulfiller = orderGet.commentToFulfiller ?: ""
+            scheduledDate = orderGet.scheduledDate ?: ""
+            orderReason = orderGet.orderReason ?: ""
+            orderNumber = orderGet.orderNumber ?: ""
         }
         return orderEntity
+    }
+
+    /**
+     * Convert a cached Room entity back to the retrofit model shape, for offline fallback.
+     *
+     * @param orderEntity the cached entity
+     *
+     * @return the type OrderGet
+     */
+    fun convert(orderEntity: OrderEntity): OrderGet {
+        val orderGet = OrderGet()
+        orderGet.uuid = orderEntity.uuid
+        orderGet.display = orderEntity.display
+        orderGet.action = orderEntity.action
+        orderGet.accessionNumber = orderEntity.accessionNumber
+        orderGet.autoExpireDate = orderEntity.autoExpireDate
+        orderGet.careSetting = OrderResource().apply { display = orderEntity.careSettingName }
+        orderGet.concept = OrderResource().apply { uuid = orderEntity.conceptUuid; display = orderEntity.conceptDisplay }
+        orderGet.patient = OrderResource().apply { uuid = orderEntity.patientUuid }
+        orderGet.dateActivated = orderEntity.dateActivated
+        orderGet.dateStopped = orderEntity.dateStopped
+        orderGet.urgency = orderEntity.urgency
+        orderGet.orderer = OrderResource().apply { uuid = orderEntity.orderer.uuid; display = orderEntity.orderer.display }
+        orderGet.fulfillerStatus = orderEntity.fulfillerStatus
+        orderGet.instructions = orderEntity.instructions
+        orderGet.orderType = OrderResource().apply { uuid = orderEntity.orderType.uuid; display = orderEntity.orderType.display }
+        orderGet.encounter = OrderEncounterInfo().apply { uuid = orderEntity.encounterUuid }
+        orderGet.commentToFulfiller = orderEntity.commentToFulfiller
+        orderGet.scheduledDate = orderEntity.scheduledDate
+        orderGet.orderReason = orderEntity.orderReason
+        orderGet.orderNumber = orderEntity.orderNumber
+        return orderGet
     }
 
     /**

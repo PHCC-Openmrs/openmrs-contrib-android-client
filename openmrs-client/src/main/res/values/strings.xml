@@ -157,6 +157,8 @@
     <string name="patient_scroll_tab_vitals_label">Vitals</string>
     <string name="patient_scroll_tab_charts_label">Charts</string>
     <string name="patient_scroll_tab_appointments_label">Appointments</string>
+    <string name="patient_scroll_tab_medications_label">Medications</string>
+    <string name="patient_scroll_tab_orders_label">Orders</string>
     <string name="download_started">"Downloading…"</string>
     <string name="action_starting_visit">"Starting Visit"</string>
     <string name="visit_start_error">Failed to start a visit</string>
@@ -206,6 +208,93 @@
     <string name="warning_select_recurring_days">Please select at least one day of the week</string>
     <string name="warning_select_recurring_end_date">Please select a recurring end date</string>
     <string name="warning_date_appointment_issued_after_start">Date appointment issued cannot be after the appointment date</string>
+
+    <!--Patient Orders tab-->
+    <string name="empty_orders_list">No orders to display for today.</string>
+    <string name="get_orders_error">Failed to fetch orders</string>
+    <string name="new_drug_order_title">Add drug order</string>
+
+    <!--Patient Medications tab-->
+    <string name="medications_section_active">Active Medications</string>
+    <string name="medications_section_upcoming">Upcoming Medications</string>
+    <string name="medications_section_past">Past Medications</string>
+    <string name="medications_empty_active">There are no active medications to display.</string>
+    <string name="medications_empty_upcoming">There are no upcoming medications to display.</string>
+    <string name="medications_empty_past">There are no past medications to display.</string>
+
+    <!--Order Basket-->
+    <string name="order_basket_title">Order basket</string>
+    <string name="drug_orders_section">Drug orders (%1$d)</string>
+    <string name="lab_orders_section">Lab orders (%1$d)</string>
+    <string name="order_basket_add">Add</string>
+    <string name="order_basket_incomplete">Incomplete</string>
+    <string name="order_basket_sign_and_close">Sign and close</string>
+    <string name="order_basket_submit_error">Error placing one or more orders. Please try again</string>
+
+    <!--Drug Search-->
+    <string name="drug_search_title">Add drug order</string>
+    <string name="drug_search_results_for">%1$d results for \"%2$s\"</string>
+    <string name="drug_search_clear_results">Clear Results</string>
+    <string name="drug_search_add_to_basket">Add to basket</string>
+    <string name="drug_search_order_form">Order form</string>
+
+    <!--Drug Order Form-->
+    <string name="drug">Drug</string>
+    <string name="drug_search_hint">Search for a drug</string>
+    <string name="dose">Dose</string>
+    <string name="route">Route</string>
+    <string name="frequency">Frequency</string>
+    <string name="as_needed">As needed (PRN)</string>
+    <string name="duration">Duration</string>
+    <string name="quantity_to_dispense">Quantity to dispense</string>
+    <string name="number_of_refills">Number of refills</string>
+    <string name="additional_instructions">Additional instructions</string>
+    <string name="create_drug_order_confirm_title">Create drug order</string>
+    <string name="create_drug_order_confirm_message">Are you sure you want to place this drug order?</string>
+    <string name="drug_order_form_success">Drug order created</string>
+    <string name="drug_order_form_error">Error creating drug order</string>
+
+    <!--Test Search-->
+    <string name="test_search_title">Add lab order</string>
+    <string name="test_search_hint">Search for a test</string>
+
+    <!--Test Order Form-->
+    <string name="new_test_order_title">Add lab order</string>
+    <string name="test">Test</string>
+    <string name="test_order_priority">Priority</string>
+    <string name="test_order_priority_routine">Routine</string>
+    <string name="test_order_priority_stat">Stat</string>
+    <string name="test_order_accession_number">Reference number</string>
+
+    <!--Order actions: Modify / Add result / Cancel-->
+    <string name="order_action_modify">Modify order</string>
+    <string name="order_action_add_result">Add result</string>
+    <string name="order_action_edit_results">Edit results</string>
+    <string name="order_action_cancel">Cancel order</string>
+    <string name="order_cancel_confirm_title">Cancel order</string>
+    <string name="order_cancel_confirm_message">Are you sure you want to cancel this order?</string>
+    <string name="order_action_error">Something went wrong. Please try again.</string>
+    <string name="modify_test_order_title">Modify order</string>
+    <string name="add_test_result_title">Add result</string>
+    <string name="test_result_value_label">Result</string>
+
+    <!--Medication order actions: Modify / Renew / Discontinue-->
+    <string name="order_action_renew">Renew</string>
+    <string name="order_action_discontinue">Discontinue</string>
+    <string name="modify_drug_order_title">Modify drug order</string>
+    <string name="drug_order_renew_confirm_title">Renew medication</string>
+    <string name="drug_order_renew_confirm_message">Are you sure you want to renew this medication?</string>
+    <string name="drug_order_discontinue_confirm_title">Discontinue medication</string>
+    <string name="drug_order_discontinue_confirm_message">Are you sure you want to discontinue this medication?</string>
+
+    <string name="warning_select_drug">Please select a drug</string>
+    <string name="warning_select_dose">Please enter a dose</string>
+    <string name="warning_select_dose_units">Please select dose units</string>
+    <string name="warning_select_frequency">Please select a frequency</string>
+    <string name="warning_select_duration">Please enter a duration</string>
+    <string name="warning_select_duration_units">Please select duration units</string>
+    <string name="warning_select_quantity">Please enter a quantity to dispense</string>
+    <string name="warning_select_quantity_units">Please select dispensing units</string>
     <string name="edit_appointment_title">Edit appointment</string>
     <string name="edit_appointment_confirm_title">Edit appointment</string>
     <string name="edit_appointment_confirm_message">Are you sure you want to save these changes?</string>

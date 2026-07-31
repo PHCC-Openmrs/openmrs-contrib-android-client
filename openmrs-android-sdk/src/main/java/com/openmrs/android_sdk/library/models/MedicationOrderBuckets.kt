@@ -9,14 +9,12 @@
  */
 package com.openmrs.android_sdk.library.models
 
-import com.google.gson.annotations.Expose
-import java.io.Serializable
-
-class OrderResource : Serializable {
-
-    @Expose
-    var uuid: String = ""
-
-    @Expose
-    var display: String = ""
-}
+/**
+ * A patient's drug orders split into O3's Medications widget buckets - see
+ * `bucketMedicationOrders` in openmrs-esm-patient-chart's esm-patient-medications-app/src/api/api.ts.
+ */
+data class MedicationOrderBuckets(
+    val activeOrders: List<OrderGet>,
+    val upcomingOrders: List<OrderGet>,
+    val pastOrders: List<OrderGet>
+)

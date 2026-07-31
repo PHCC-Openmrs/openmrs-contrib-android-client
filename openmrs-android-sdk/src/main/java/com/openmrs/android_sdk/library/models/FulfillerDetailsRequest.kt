@@ -10,13 +10,19 @@
 package com.openmrs.android_sdk.library.models
 
 import com.google.gson.annotations.Expose
+import com.google.gson.annotations.SerializedName
 import java.io.Serializable
 
-class OrderResource : Serializable {
-
+/**
+ * Request body for `POST order/{uuid}/fulfillerdetails/`, sent after a test result is recorded.
+ * Verified against a live server capture.
+ */
+class FulfillerDetailsRequest(
+    @SerializedName("fulfillerStatus")
     @Expose
-    var uuid: String = ""
+    val fulfillerStatus: String = "COMPLETED",
 
+    @SerializedName("fulfillerComment")
     @Expose
-    var display: String = ""
-}
+    val fulfillerComment: String? = "Test Results Entered"
+) : Serializable

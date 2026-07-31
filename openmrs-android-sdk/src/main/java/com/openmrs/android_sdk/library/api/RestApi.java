@@ -37,11 +37,17 @@ import com.openmrs.android_sdk.library.models.AppointmentCreateRequest;
 import com.openmrs.android_sdk.library.models.AppointmentSearchRequest;
 import com.openmrs.android_sdk.library.models.AppointmentServiceInfo;
 import com.openmrs.android_sdk.library.models.AppointmentStatusChangeRequest;
+import com.openmrs.android_sdk.library.models.AddObsRequest;
+import com.openmrs.android_sdk.library.models.ConceptDetails;
+import com.openmrs.android_sdk.library.models.FulfillerDetailsRequest;
 import com.openmrs.android_sdk.library.models.ConceptAnswers;
 import com.openmrs.android_sdk.library.models.ConceptMembers;
 import com.openmrs.android_sdk.library.models.ConceptSearchResult;
 import com.openmrs.android_sdk.library.models.Drug;
 import com.openmrs.android_sdk.library.models.DrugCreate;
+import com.openmrs.android_sdk.library.models.DrugOrderCreateRequest;
+import com.openmrs.android_sdk.library.models.DrugOrderDetails;
+import com.openmrs.android_sdk.library.models.DrugSearchResult;
 import com.openmrs.android_sdk.library.models.Encounter;
 import com.openmrs.android_sdk.library.models.EncounterType;
 import com.openmrs.android_sdk.library.models.Encountercreate;
@@ -54,7 +60,9 @@ import com.openmrs.android_sdk.library.models.Module;
 import com.openmrs.android_sdk.library.models.Obscreate;
 import com.openmrs.android_sdk.library.models.Observation;
 import com.openmrs.android_sdk.library.models.OrderCreate;
+import com.openmrs.android_sdk.library.models.OrderEntryConfig;
 import com.openmrs.android_sdk.library.models.OrderGet;
+import com.openmrs.android_sdk.library.models.OrderTypeInfo;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.PatientDiagnosisResponse;
 import com.openmrs.android_sdk.library.models.PatientDto;
@@ -68,6 +76,8 @@ import com.openmrs.android_sdk.library.models.Resource;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.Session;
 import com.openmrs.android_sdk.library.models.SystemProperty;
+import com.openmrs.android_sdk.library.models.TestOrderCreateRequest;
+import com.openmrs.android_sdk.library.models.TestSearchResult;
 import com.openmrs.android_sdk.library.models.SystemSetting;
 import com.openmrs.android_sdk.library.models.User;
 import com.openmrs.android_sdk.library.models.Visit;
@@ -944,6 +954,60 @@ public interface RestApi {
     Call<OrderGet> createOrder(@Body OrderCreate orderCreate);
 
     /**
+     * Creates a new drug order. Field names match the standard, documented OpenMRS core
+     * DrugOrder REST contract - NOT verified against a captured save request from this specific
+     * server (only read/config endpoints were captured for this feature).
+     *
+     * @param request the drug order details
+     * @return the created order
+     */
+    @POST("order")
+    Call<OrderGet> createDrugOrder(@Body DrugOrderCreateRequest request);
+
+    /**
+     * Creates, revises, or discontinues a test (lab) order, depending on `request.action`.
+     * Verified end-to-end against a live server for all three actions.
+     *
+     * @param request the test order details
+     * @return the created order
+     */
+    @POST("order")
+    Call<OrderGet> createTestOrder(@Body TestOrderCreateRequest request);
+
+    /**
+     * Gets a concept's datatype, answers, and reference range, e.g. to decide how to render the
+     * "Add result" form for a lab order. Verified against a live server.
+     *
+     * @param conceptUuid the concept uuid
+     * @param representation the response representation
+     * @return the concept details
+     */
+    @GET("concept/{uuid}")
+    Call<ConceptDetails> getConceptDetails(@Path("uuid") String conceptUuid, @Query("v") String representation);
+
+    /**
+     * Adds a test result as an obs into an order's own existing encounter. Verified against a
+     * live server.
+     *
+     * @param encounterUuid the order's own encounter uuid
+     * @param request the obs to add
+     * @return the updated encounter
+     */
+    @POST("encounter/{uuid}")
+    Call<Encounter> addObsToEncounter(@Path("uuid") String encounterUuid, @Body AddObsRequest request);
+
+    /**
+     * Marks an order's fulfiller status, e.g. COMPLETED after a test result is recorded. Verified
+     * against a live server.
+     *
+     * @param orderUuid the order uuid
+     * @param request the fulfiller details
+     * @return the response
+     */
+    @POST("order/{uuid}/fulfillerdetails/")
+    Call<ResponseBody> updateFulfillerDetails(@Path("uuid") String orderUuid, @Body FulfillerDetailsRequest request);
+
+    /**
      * Get all orders for a patient
      *
      * @param patientUuid the patient uuid
@@ -1032,6 +1096,62 @@ public interface RestApi {
                                        @Query("v") String representation);
 
     /**
+     * Get all orders for a patient, active on a given day, matching the exact query O3's Orders
+     * chart tab makes (verified against a live deployment).
+     *
+     * @param patientUuid the patient uuid
+     * @param careSetting the care setting uuid
+     * @param representation the response representation
+     * @param activatedOnOrAfterDate the start of the day to check (yyyy-MM-dd)
+     * @param activatedOnOrBeforeDate the end of the day to check (yyyy-MM-dd)
+     * @param excludeDiscontinueOrders whether to exclude DISCONTINUE action orders
+     * @param excludeCanceledAndExpired whether to exclude cancelled/expired orders
+     * @param orderTypes the order type uuid to filter to (e.g. Drug Order vs Test Order) -
+     *                    verified to filter server-side on this server
+     * @return the call
+     */
+    @GET("order")
+    Call<Results<OrderGet>> getOrdersForPatientOnDate(@Query("patient") String patientUuid,
+                                       @Query("careSetting") String careSetting,
+                                       @Query("v") String representation,
+                                       @Query("activatedOnOrAfterDate") String activatedOnOrAfterDate,
+                                       @Query("activatedOnOrBeforeDate") String activatedOnOrBeforeDate,
+                                       @Query("excludeDiscontinueOrders") boolean excludeDiscontinueOrders,
+                                       @Query("excludeCanceledAndExpired") boolean excludeCanceledAndExpired,
+                                       @Query("orderTypes") String orderTypes);
+
+    /**
+     * Get all non-discontinued orders for a patient, care setting, and order type - matches O3's
+     * Medications widget query (`useMedicationOrders`), which fetches every drug order regardless
+     * of date and buckets them into active/upcoming/past client-side instead of filtering by day.
+     *
+     * @param patientUuid the patient uuid
+     * @param careSetting the care setting uuid
+     * @param orderTypes the order type uuid to filter to
+     * @param representation the response representation
+     * @param excludeDiscontinueOrders whether to exclude DISCONTINUE action orders
+     * @return the call
+     */
+    @GET("order")
+    Call<Results<OrderGet>> getOrdersForPatientExcludingDiscontinued(@Query("patient") String patientUuid,
+                                       @Query("careSetting") String careSetting,
+                                       @Query("orderTypes") String orderTypes,
+                                       @Query("v") String representation,
+                                       @Query("excludeDiscontinueOrders") boolean excludeDiscontinueOrders);
+
+    /**
+     * Gets full details for a single drug order, including the DrugOrder-only fields (drug, dose,
+     * route, frequency, etc.) the list-level `order` representation deliberately omits - needed to
+     * pre-fill Modify/Renew and to discontinue a drug order (which needs the drug uuid).
+     *
+     * @param orderUuid the Order uuid
+     * @param representation the response representation
+     * @return the call
+     */
+    @GET("order/{uuid}")
+    Call<DrugOrderDetails> getDrugOrderDetails(@Path("uuid") String orderUuid, @Query("v") String representation);
+
+    /**
      * Delete an order
      *
      * @param orderUuid the Order uuid
@@ -1086,7 +1206,49 @@ public interface RestApi {
      */
     @DELETE("drug/{uuid}")
     Call<Drug> deleteDrug(@Path("uuid") String uuid);
-  
+
+    /**
+     * Searches drugs by name, for the drug order form's autocomplete. Verified against a live O3
+     * deployment's `GET drug?q=...` request.
+     *
+     * @param query the search text
+     * @param representation the response representation
+     * @return the matching drugs
+     */
+    @GET("drug")
+    Call<Results<DrugSearchResult>> searchDrugs(@Query("q") String query, @Query("v") String representation);
+
+    /**
+     * Searches concepts by name, for the lab order form's test search. The server does not
+     * support filtering this by concept class, so results must be filtered client-side.
+     *
+     * @param query the search text
+     * @param representation the response representation
+     * @return the matching concepts
+     */
+    @GET("concept")
+    Call<Results<TestSearchResult>> searchConcepts(@Query("q") String query, @Query("v") String representation);
+
+    /**
+     * Gets an order type by uuid (e.g. to resolve/display "Drug Order" vs "Test Order" for an
+     * existing order). Verified against a live O3 deployment.
+     *
+     * @param uuid the order type uuid
+     * @return the order type
+     */
+    @GET("ordertype/{uuid}")
+    Call<OrderTypeInfo> getOrderType(@Path("uuid") String uuid);
+
+    /**
+     * Gets the configuration needed to build a drug order form: routes, dosing/dispensing units,
+     * duration units, and order frequencies. Verified against a live O3 deployment's
+     * `GET orderentryconfig` request.
+     *
+     * @return the order entry config
+     */
+    @GET("orderentryconfig")
+    Call<OrderEntryConfig> getOrderEntryConfig();
+
     /**
      * Get all the available Programs
      *

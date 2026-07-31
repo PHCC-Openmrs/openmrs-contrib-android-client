@@ -18,15 +18,17 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.openmrs.android_sdk.library.models.OrderResource
 
+/**
+ * Caches the fields the verified `order` list representation actually returns (see OrderGet's
+ * kdoc). Drug-order-only fields (frequency, dose, drug, etc.) aren't included since a mixed
+ * order-type list wouldn't request those - fetch a single order with `v=full` for those.
+ */
 @Entity(tableName = "orders")
 class OrderEntity {
 
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "id")
-    var id: Long? = null
-
+    @PrimaryKey
     @ColumnInfo(name = "uuid")
-    var uuid: String? = ""
+    var uuid: String = ""
 
     @ColumnInfo(name = "display")
     var display: String? = ""
@@ -34,17 +36,8 @@ class OrderEntity {
     @ColumnInfo(name = "encounterUuid")
     var encounterUuid: String = ""
 
-    @ColumnInfo(name = "type")
-    var type: String = ""
-
     @ColumnInfo(name = "instructions")
     var instructions: String = ""
-
-    @ColumnInfo(name = "frequency")
-    var frequency: String = ""
-
-    @ColumnInfo(name = "doseUnits")
-    var doseUnits: String = ""
 
     @ColumnInfo(name = "careSettingName")
     var careSettingName: String = ""
@@ -58,24 +51,6 @@ class OrderEntity {
     @ColumnInfo(name = "dateActivated")
     var dateActivated: String = ""
 
-    @ColumnInfo(name = "quantity")
-    var quantity: String = ""
-
-    @ColumnInfo(name = "drug")
-    var drug: String = ""
-
-    @ColumnInfo(name = "dosingInstructions")
-    var dosingInstructions: String = ""
-
-    @ColumnInfo(name = "duration")
-    var duration: String = ""
-
-    @ColumnInfo(name = "dosingType")
-    var dosingType: String = ""
-
-    @ColumnInfo(name = "numberOfRepeats")
-    var numberOfRepeats: String = ""
-
     @ColumnInfo(name = "orderNumber")
     var orderNumber: String = ""
 
@@ -87,6 +62,9 @@ class OrderEntity {
 
     @ColumnInfo(name = "conceptUuid")
     var conceptUuid: String = ""
+
+    @ColumnInfo(name = "conceptDisplay")
+    var conceptDisplay: String = ""
 
     @ColumnInfo(name = "action")
     var action: String = ""
@@ -109,9 +87,6 @@ class OrderEntity {
     @ColumnInfo(name = "fulfillerStatus")
     var fulfillerStatus: String = ""
 
-    @ColumnInfo(name = "fulfillerComment")
-    var fulfillerComment: String = ""
-
-    @ColumnInfo(name = "specimenSource")
-    var specimenSource: String = ""
+    @ColumnInfo(name = "commentToFulfiller")
+    var commentToFulfiller: String = ""
 }

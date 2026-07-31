@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 6)
+        version = 7)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -125,6 +125,44 @@ public abstract class AppDatabase extends RoomDatabase {
                     "`appointment_kind` TEXT, " +
                     "`status` TEXT, " +
                     "`comments` TEXT, " +
+                    "PRIMARY KEY(`uuid`))");
+        }
+    };
+
+    /**
+     * Replaces the orders table with the schema matching the verified real `order` list
+     * representation (dropping DrugOrder-only columns like frequency/drug/dose that were never
+     * populated correctly, and fixing the careSetting/commentToFulfiller field mismatches). No
+     * shipped UI ever populated this table, so dropping just this table is safe.
+     */
+    private static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("DROP TABLE IF EXISTS `orders`");
+            database.execSQL("CREATE TABLE IF NOT EXISTS `orders` (" +
+                    "`uuid` TEXT NOT NULL, " +
+                    "`display` TEXT, " +
+                    "`encounterUuid` TEXT NOT NULL, " +
+                    "`instructions` TEXT NOT NULL, " +
+                    "`careSettingName` TEXT NOT NULL, " +
+                    "`urgency` TEXT NOT NULL, " +
+                    "`dateStopped` TEXT NOT NULL, " +
+                    "`dateActivated` TEXT NOT NULL, " +
+                    "`orderNumber` TEXT NOT NULL, " +
+                    "`accessionNumber` TEXT NOT NULL, " +
+                    "`patientUuid` TEXT NOT NULL, " +
+                    "`conceptUuid` TEXT NOT NULL, " +
+                    "`conceptDisplay` TEXT NOT NULL, " +
+                    "`action` TEXT NOT NULL, " +
+                    "`scheduledDate` TEXT NOT NULL, " +
+                    "`autoExpireDate` TEXT NOT NULL, " +
+                    "`orderReason` TEXT NOT NULL, " +
+                    "`fulfillerStatus` TEXT NOT NULL, " +
+                    "`commentToFulfiller` TEXT NOT NULL, " +
+                    "`orderer_uuid` TEXT NOT NULL, " +
+                    "`orderer_display` TEXT NOT NULL, " +
+                    "`orderType_uuid` TEXT NOT NULL, " +
+                    "`orderType_display` TEXT NOT NULL, " +
                     "PRIMARY KEY(`uuid`))");
         }
     };

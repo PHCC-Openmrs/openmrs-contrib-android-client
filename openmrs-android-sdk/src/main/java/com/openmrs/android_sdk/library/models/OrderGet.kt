@@ -13,99 +13,118 @@ import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import java.io.Serializable
 
-class OrderGet: Serializable {
+/**
+ * Response shape of the standard OpenMRS core `order` resource - verified against a live O3
+ * deployment's `GET order?...&v=custom:(uuid,display,orderNumber,accessionNumber,patient,concept,
+ * action,careSetting,previousOrder,dateActivated,scheduledDate,dateStopped,autoExpireDate,
+ * encounter:(uuid,display,visit),orderer:ref,orderReason,orderReasonNonCoded,orderType,urgency,
+ * instructions,commentToFulfiller,fulfillerStatus)` request.
+ *
+ * Only holds the fields in that representation - it deliberately omits DrugOrder-only fields
+ * (drug, dose, frequency, etc.) since a mixed order-type list wouldn't request those on plain
+ * Test Orders. Fetch a single order with `v=full` for those when showing order details.
+ */
+class OrderGet : Serializable {
 
+    @SerializedName("uuid")
     @Expose
-    var uuid: String = ""
+    var uuid: String? = null
 
+    @SerializedName("display")
     @Expose
-    var display: String = ""
+    var display: String? = null
 
+    @SerializedName("orderNumber")
     @Expose
-    @SerializedName("encounter")
-    var encounter: OrderResource = OrderResource()
+    var orderNumber: String? = null
 
+    @SerializedName("accessionNumber")
     @Expose
-    var type: String = ""
+    var accessionNumber: String? = null
 
-    @Expose
-    var instructions: String = ""
-
-    @Expose
-    var frequency: String = ""
-
-    @Expose
-    var doseUnits: String = ""
-
-    @Expose
-    @SerializedName("careSetting")
-    var careSettingName: String = ""
-
-    @Expose
-    var urgency: String = ""
-
-    @Expose
-    var dateStopped: String = ""
-
-    @Expose
-    var dateActivated: String = ""
-
-    @Expose
-    var quantity: String = ""
-
-    @Expose
-    var drug: String = ""
-
-    @Expose
-    var dosingInstructions: String = ""
-
-    @Expose
-    var duration: String = ""
-
-    @Expose
-    var dosingType: String = ""
-
-    @Expose
-    var numberOfRepeats: String = ""
-
-    @Expose
-    var orderNumber: String = ""
-
-    @Expose
-    var accessionNumber: String = ""
-
-    @Expose
     @SerializedName("patient")
-    var patient: OrderResource = OrderResource()
-
     @Expose
+    var patient: OrderResource? = null
+
     @SerializedName("concept")
-    var concept: OrderResource = OrderResource()
-
     @Expose
-    var action: String = ""
+    var concept: OrderResource? = null
 
+    @SerializedName("action")
     @Expose
-    var scheduledDate: String = ""
+    var action: String? = null
 
+    @SerializedName("careSetting")
     @Expose
-    var autoExpireDate: String = ""
+    var careSetting: OrderResource? = null
 
+    @SerializedName("previousOrder")
     @Expose
-    var orderer: OrderResource = OrderResource()
+    var previousOrder: OrderResource? = null
 
+    @SerializedName("dateActivated")
     @Expose
-    var orderReason: String = ""
+    var dateActivated: String? = null
 
+    @SerializedName("scheduledDate")
     @Expose
-    var orderType: OrderResource = OrderResource()
+    var scheduledDate: String? = null
 
+    @SerializedName("dateStopped")
     @Expose
-    var fulfillerStatus: String = ""
+    var dateStopped: String? = null
 
+    @SerializedName("autoExpireDate")
     @Expose
-    var fulfillerComment: String = ""
+    var autoExpireDate: String? = null
 
+    @SerializedName("encounter")
     @Expose
-    var specimenSource: String = ""
+    var encounter: OrderEncounterInfo? = null
+
+    @SerializedName("orderer")
+    @Expose
+    var orderer: OrderResource? = null
+
+    @SerializedName("orderReason")
+    @Expose
+    var orderReason: String? = null
+
+    @SerializedName("orderReasonNonCoded")
+    @Expose
+    var orderReasonNonCoded: String? = null
+
+    @SerializedName("orderType")
+    @Expose
+    var orderType: OrderResource? = null
+
+    @SerializedName("urgency")
+    @Expose
+    var urgency: String? = null
+
+    @SerializedName("instructions")
+    @Expose
+    var instructions: String? = null
+
+    @SerializedName("commentToFulfiller")
+    @Expose
+    var commentToFulfiller: String? = null
+
+    @SerializedName("fulfillerStatus")
+    @Expose
+    var fulfillerStatus: String? = null
+}
+
+class OrderEncounterInfo : Serializable {
+    @SerializedName("uuid")
+    @Expose
+    var uuid: String? = null
+
+    @SerializedName("display")
+    @Expose
+    var display: String? = null
+
+    @SerializedName("visit")
+    @Expose
+    var visit: OrderResource? = null
 }

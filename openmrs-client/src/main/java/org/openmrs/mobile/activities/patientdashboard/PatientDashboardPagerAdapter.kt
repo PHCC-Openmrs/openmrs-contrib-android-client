@@ -23,6 +23,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ALL
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_DIAGNOSES
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ENCOUNTERS
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_OBSERVATIONS
+import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ORDERS
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_VISITS
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.VIEW_APPOINTMENTS
 import org.openmrs.mobile.R
@@ -31,6 +32,8 @@ import org.openmrs.mobile.activities.patientdashboard.appointments.PatientAppoin
 import org.openmrs.mobile.activities.patientdashboard.charts.PatientChartsFragment
 import org.openmrs.mobile.activities.patientdashboard.details.PatientDetailsFragment
 import org.openmrs.mobile.activities.patientdashboard.diagnosis.PatientDiagnosisFragment
+import org.openmrs.mobile.activities.patientdashboard.medications.PatientMedicationsFragment
+import org.openmrs.mobile.activities.patientdashboard.orders.PatientOrdersFragment
 import org.openmrs.mobile.activities.patientdashboard.visits.PatientVisitsFragment
 import org.openmrs.mobile.activities.patientdashboard.vitals.PatientVitalsFragment
 import org.openmrs.mobile.utilities.PrivilegeUtils
@@ -40,7 +43,7 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
                                    private val mPatientId: Long
 ) : FragmentPagerAdapter(fm) {
 
-    enum class TabType { DETAILS, ALLERGY, DIAGNOSIS, VISITS, VITALS, CHARTS, APPOINTMENTS }
+    enum class TabType { DETAILS, ALLERGY, DIAGNOSIS, VISITS, VITALS, CHARTS, APPOINTMENTS, MEDICATIONS, ORDERS }
 
     private data class TabSpec(val type: TabType, val titleRes: Int)
 
@@ -72,6 +75,10 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
         if (PrivilegeUtils.hasPrivilege(VIEW_APPOINTMENTS)) {
             add(TabSpec(TabType.APPOINTMENTS, R.string.patient_scroll_tab_appointments_label))
         }
+        if (PrivilegeUtils.hasPrivilege(GET_ORDERS)) {
+            add(TabSpec(TabType.MEDICATIONS, R.string.patient_scroll_tab_medications_label))
+            add(TabSpec(TabType.ORDERS, R.string.patient_scroll_tab_orders_label))
+        }
     }
 
     /** Identifies which tab is at [position] without relying on a fixed numeric index. */
@@ -86,6 +93,8 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
             TabType.VITALS -> PatientVitalsFragment.newInstance(mPatientId)
             TabType.CHARTS -> PatientChartsFragment.newInstance(mPatientId)
             TabType.APPOINTMENTS -> PatientAppointmentsFragment.newInstance(mPatientId)
+            TabType.MEDICATIONS -> PatientMedicationsFragment.newInstance(mPatientId)
+            TabType.ORDERS -> PatientOrdersFragment.newInstance(mPatientId)
         }
     }
 

@@ -103,6 +103,8 @@ object ApplicationConstants {
         /** From the `appointments` module, not core OpenMRS - confirmed from a live server's 401 body. */
         const val VIEW_APPOINTMENTS = "View Appointments"
         const val MANAGE_APPOINTMENTS = "Manage Appointments"
+        const val GET_ORDERS = "Get Orders"
+        const val ADD_ORDERS = "Add Orders"
     }
 
     object UserKeys {
@@ -159,6 +161,11 @@ object ApplicationConstants {
         const val ALLERGY_UUID = "allergy_uuid"
         const val PATIENT_UUID = "patient_uuid"
         const val APPOINTMENT_BUNDLE = "appointment_bundle"
+        const val DRUG_SEARCH_RESULT_BUNDLE = "drug_search_result_bundle"
+        const val DRUG_ORDER_BASKET_ITEM_ID_BUNDLE = "drug_order_basket_item_id_bundle"
+        const val TEST_SEARCH_RESULT_BUNDLE = "test_search_result_bundle"
+        const val TEST_ORDER_BASKET_ITEM_ID_BUNDLE = "test_order_basket_item_id_bundle"
+        const val ORDER_BUNDLE = "order_bundle"
     }
 
     object ServiceActions {

@@ -28,7 +28,8 @@ enum class OperationType {
     Login,
     LocationsFetching,
     PatientAppointmentsFetching,
-    AppointmentCancelling
+    AppointmentCancelling,
+    PatientOrdersFetching
 }
 
 enum class ResultType {
@@ -58,5 +59,9 @@ enum class ResultType {
     LocationsFetchingNoInternetConnection,
     AppointmentCreateSuccess,
     AppointmentCreateError,
-    AppointmentConflict
+    AppointmentConflict,
+    DrugOrderCreateSuccess,
+    DrugOrderCreateError,
+    OrderActionSuccess,
+    OrderActionError
 }

@@ -10,13 +10,24 @@
 package com.openmrs.android_sdk.library.models
 
 import com.google.gson.annotations.Expose
+import com.google.gson.annotations.SerializedName
 import java.io.Serializable
 
-class OrderResource : Serializable {
-
+/** Response shape of `GET ordertype/{uuid}`, verified against a live O3 deployment. */
+class OrderTypeInfo : Serializable {
+    @SerializedName("uuid")
     @Expose
-    var uuid: String = ""
+    var uuid: String? = null
 
+    @SerializedName("display")
     @Expose
-    var display: String = ""
+    var display: String? = null
+
+    @SerializedName("name")
+    @Expose
+    var name: String? = null
+
+    @SerializedName("retired")
+    @Expose
+    var retired: Boolean? = null
 }

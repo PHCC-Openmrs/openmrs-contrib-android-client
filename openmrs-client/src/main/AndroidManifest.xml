@@ -288,6 +288,38 @@
             android:label="@string/new_appointment_title"
             android:theme="@style/AppThemeOrig" />
         <activity
+            android:name=".activities.orderbasket.OrderBasketActivity"
+            android:label="@string/order_basket_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.drugsearch.DrugSearchActivity"
+            android:label="@string/drug_search_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.orderform.DrugOrderFormActivity"
+            android:label="@string/new_drug_order_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.testsearch.TestSearchActivity"
+            android:label="@string/test_search_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.testorderform.TestOrderFormActivity"
+            android:label="@string/new_test_order_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.modifytestorder.ModifyTestOrderActivity"
+            android:label="@string/modify_test_order_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.addtestresult.AddTestResultActivity"
+            android:label="@string/add_test_result_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.modifydrugorder.ModifyDrugOrderActivity"
+            android:label="@string/modify_drug_order_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
             android:name="com.yalantis.ucrop.UCropActivity"
             android:theme="@style/AppTheme" />
 
