@@ -53,7 +53,10 @@ interface LocationRoomDAO {
      * @param mName the m name
      * @return the single
      */
-    @Query("SELECT * FROM locations WHERE display = :mName")
+    // LIMIT 1 makes this deterministic when two locations share a display name (Single errors
+    // if a query returns more than one row) - picking a match is strictly better than the
+    // uuid-less fallback LocationDAO.findLocationByName() falls back to on that error.
+    @Query("SELECT * FROM locations WHERE display = :mName LIMIT 1")
     fun findLocationByName(mName: String): Single<LocationEntity>
 
     /**

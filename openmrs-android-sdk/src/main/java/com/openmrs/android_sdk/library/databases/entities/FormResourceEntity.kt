@@ -50,6 +50,16 @@ class FormResourceEntity : Resource() {
     @ColumnInfo(name = "encounter_type")
     var encounterTypeUuid: String? = null
 
+    @ColumnInfo(name = "published")
+    @SerializedName("published")
+    @Expose
+    var published: Boolean? = null
+
+    @ColumnInfo(name = "retired")
+    @SerializedName("retired")
+    @Expose
+    var retired: Boolean? = null
+
     @Ignore
     @SerializedName("encounterType")
     @Expose

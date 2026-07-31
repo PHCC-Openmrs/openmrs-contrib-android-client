@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 7)
+        version = 8)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 

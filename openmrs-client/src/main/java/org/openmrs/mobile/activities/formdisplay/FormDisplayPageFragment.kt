@@ -174,7 +174,7 @@ class FormDisplayPageFragment : BaseFragment() {
         val selectOneField = viewModel.findSelectOneFieldById(conceptUuid)
                 ?: SelectOneField(emptyList(), conceptUuid).also { viewModel.selectOneFields.add(it) }
 
-        viewModel.addSubscription(viewModel.getLocations(tag).subscribe { locations ->
+        viewModel.addSubscription(viewModel.getLocations(tag).subscribe({ locations ->
             var finalLocations = locations
             if (finalLocations.isEmpty() && tag == "Admission Location") {
                 finalLocations = listOf("Inpatient ward", "Ward 1", "Ward 2", "Ward 3").map {
@@ -197,7 +197,11 @@ class FormDisplayPageFragment : BaseFragment() {
                 }
                 setOnItemSelectedListener(spinner, selectOneField)
             }
-        })
+        }, { error ->
+            // A location fetch failure (e.g. a server that 404s for this tag) must not crash the
+            // whole form - just leave this dropdown empty rather than taking down the activity.
+            error.printStackTrace()
+        }))
     }
 
     private fun createQuestionGroupLayout(question: Question): LinearLayout {

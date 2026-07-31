@@ -92,8 +92,22 @@ public interface RestApi {
      *
      * @return the forms
      */
-    @GET("form?v=custom:(uuid,name,encounterType:(uuid,display),resources:(uuid,name,valueReference))")
+    // 100 is the highest limit accepted by every OpenMRS deployment out of the box: the REST
+    // module's "webservices.rest.maxResultsAbsolute" global property defaults to 100, and
+    // exceeding it throws a 500 rather than clamping the response.
+    @GET("form?v=custom:(uuid,name,encounterType:(uuid,display),published,retired,resources:(uuid,name,valueReference))&limit=100")
     Call<Results<FormResourceEntity>> getForms();
+
+    /**
+     * Fetches the raw value of a clob-backed custom datatype (e.g. a form's JSON schema resource
+     * whose valueReference is a UUID pointing at out-of-line clob storage, rather than the JSON
+     * itself inline).
+     *
+     * @param uuid the clobdata UUID (the resource's valueReference)
+     * @return the raw clob content
+     */
+    @GET("clobdata/{uuid}")
+    Call<ResponseBody> getClobData(@Path("uuid") String uuid);
 
     /**
      * Gets locations.

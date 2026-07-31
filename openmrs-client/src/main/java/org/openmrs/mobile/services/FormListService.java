@@ -17,6 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Response;
 import android.app.IntentService;
 import android.content.Intent;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.openmrs.android_sdk.library.api.RestApi;
 import com.openmrs.android_sdk.library.dao.EncounterTypeRoomDAO;
@@ -33,6 +34,8 @@ import org.openmrs.mobile.utilities.PrivilegeUtils;
 
 @AndroidEntryPoint
 public class FormListService extends IntentService {
+    public static final String ACTION_FORM_LIST_SYNCED = "org.openmrs.mobile.ACTION_FORM_LIST_SYNCED";
+
     @Inject
     RestApi apiService;
     @Inject
@@ -75,17 +78,21 @@ public class FormListService extends IntentService {
         }
         // Refresh encounter types
         EncounterTypeRoomDAO encounterTypeRoomDAO = appDatabase.encounterTypeRoomDAO();
-        Response<Results<EncounterType>> response2 = null;
         try {
-            response2 = apiService.getEncounterTypes().execute();
-            if (!response2.isSuccessful()) ToastUtil.error(response2.message());
-            encounterTypeRoomDAO.deleteAllEncounterTypes();
-            List<EncounterType> encounterTypeList = response2.body().getResults();
-            for (EncounterType encounterType : encounterTypeList) {
-                encounterTypeRoomDAO.addEncounterType(encounterType);
+            Response<Results<EncounterType>> response2 = apiService.getEncounterTypes().execute();
+            if (response2.isSuccessful() && response2.body() != null) {
+                encounterTypeRoomDAO.deleteAllEncounterTypes();
+                List<EncounterType> encounterTypeList = response2.body().getResults();
+                for (EncounterType encounterType : encounterTypeList) {
+                    encounterTypeRoomDAO.addEncounterType(encounterType);
+                }
+            } else {
+                ToastUtil.error(response2.message());
             }
         } catch (Exception e) {
-            ToastUtil.error(response2.message());
+            ToastUtil.error("Error fetching encounter types: " + e.getMessage());
         }
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_FORM_LIST_SYNCED));
     }
 }

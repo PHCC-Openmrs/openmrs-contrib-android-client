@@ -13,6 +13,7 @@ package com.openmrs.android_sdk.library.api;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Singleton;
 
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Retrofit;
@@ -79,6 +80,28 @@ public class RestServiceBuilder {
         final String explicitPassword = password;
 
         OkHttpClient client = BASE_HTTP_CLIENT.newBuilder()
+                .addInterceptor(chain -> {
+                    // Long-lived RestApi instances (e.g. the Hilt @Singleton one) are built once
+                    // and keep whatever server URL was current at that moment forever - a later
+                    // login against a different server (which calls changeBaseUrl(), affecting
+                    // only *future* createService() calls) never reaches them, so they'd silently
+                    // keep hitting the old server. Re-resolving the scheme/host/port from
+                    // OpenmrsAndroid.getServerUrl() on every request (mirroring how credentials
+                    // below are re-read per request rather than baked in) keeps every RestApi
+                    // instance, however long-lived, pointed at whatever server is currently
+                    // configured.
+                    Request original = chain.request();
+                    HttpUrl currentBase = HttpUrl.parse(OpenmrsAndroid.getServerUrl());
+                    if (currentBase != null) {
+                        HttpUrl redirectedUrl = original.url().newBuilder()
+                                .scheme(currentBase.scheme())
+                                .host(currentBase.host())
+                                .port(currentBase.port())
+                                .build();
+                        original = original.newBuilder().url(redirectedUrl).build();
+                    }
+                    return chain.proceed(original);
+                })
                 .addNetworkInterceptor(chain -> {
                     Request original = chain.request();
 

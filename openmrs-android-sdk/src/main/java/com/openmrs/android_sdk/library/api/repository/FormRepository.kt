@@ -59,6 +59,22 @@ class FormRepository @Inject constructor() : BaseRepository() {
     }
 
     /**
+     * Resolves a clob-backed resource value (a form's "json"/"JSON schema" resource whose
+     * valueReference is a UUID pointing at out-of-line clob storage rather than inline JSON).
+     *
+     * @param uuid the clobdata UUID
+     * @return the resolved raw content, or null if it couldn't be fetched
+     */
+    fun fetchClobData(uuid: String): String? {
+        return try {
+            val response = restApi.getClobData(uuid).execute()
+            if (response.isSuccessful) response.body()?.string() else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Creates a form.
      *
      * @param uuid UUID of the form resource

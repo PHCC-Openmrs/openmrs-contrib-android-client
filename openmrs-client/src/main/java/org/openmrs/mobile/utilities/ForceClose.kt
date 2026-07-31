@@ -3,6 +3,7 @@ package org.openmrs.mobile.utilities
 import android.content.Context
 import android.os.Build
 import android.os.Process
+import android.util.Log
 import com.openmrs.android_sdk.library.OpenMRSLogger
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import javax.inject.Inject
@@ -26,6 +27,10 @@ class ForceClose @Inject constructor(private val context: Context) : Thread.Unca
     }
 
     override fun uncaughtException(thread: Thread, exception: Throwable) {
+        // This handler swallows the crash into an Intent extra that nothing reads, so without
+        // this the real exception never reaches Logcat - Android's default crash handler (which
+        // would normally print "FATAL EXCEPTION") never runs once a custom handler is installed.
+        Log.e("ForceClose", "Uncaught exception on thread ${thread.name}", exception)
         val stackTrace = StringWriter()
         exception.printStackTrace(PrintWriter(stackTrace))
         val errorReport = StringBuilder()

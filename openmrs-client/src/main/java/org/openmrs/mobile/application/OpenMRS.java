@@ -56,10 +56,23 @@ public class OpenMRS extends MultiDexApplication implements Configuration.Provid
         if (mExternalDirectoryPath == null) {
             mExternalDirectoryPath = this.getExternalFilesDir(null).toString();
         }
-        Intent i = new Intent(this, FormListService.class);
-        startService(i);
-        Intent intent = new Intent(this, AuthenticateCheckService.class);
-        startService(intent);
+        // Starting a plain background service from Application.onCreate() can be refused by the
+        // OS (BackgroundServiceStartNotAllowedException) when the process itself was launched in
+        // the background - e.g. the crash-recovery relaunch below, or various OS-triggered
+        // restarts. That must never take down app startup itself; these are opportunistic
+        // refreshes that also run at other well-defined points (e.g. login).
+        try {
+            Intent i = new Intent(this, FormListService.class);
+            startService(i);
+        } catch (Exception e) {
+            mLogger.e("Could not start FormListService from Application.onCreate(): " + e.getMessage());
+        }
+        try {
+            Intent intent = new Intent(this, AuthenticateCheckService.class);
+            startService(intent);
+        } catch (Exception e) {
+            mLogger.e("Could not start AuthenticateCheckService from Application.onCreate(): " + e.getMessage());
+        }
     }
 
     @NotNull

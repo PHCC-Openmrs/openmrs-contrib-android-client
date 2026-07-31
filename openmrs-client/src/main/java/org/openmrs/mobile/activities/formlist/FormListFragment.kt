@@ -13,7 +13,10 @@
  */
 package org.openmrs.mobile.activities.formlist
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,6 +28,7 @@ import androidx.annotation.Nullable
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import com.openmrs.android_sdk.library.models.EncounterType
@@ -42,6 +46,7 @@ import org.openmrs.mobile.activities.formadmission.FormAdmissionActivity
 import org.openmrs.mobile.activities.formdisplay.FormDisplayActivity
 import org.openmrs.mobile.activities.visitnote.VisitNoteActivity
 import org.openmrs.mobile.databinding.FragmentFormListBinding
+import org.openmrs.mobile.services.FormListService
 
 @AndroidEntryPoint
 class FormListFragment : BaseFragment() {
@@ -50,12 +55,25 @@ class FormListFragment : BaseFragment() {
 
     private val viewModel: FormListViewModel by viewModels()
 
+    // Forms are only synced from the server at login, so the local cache can go stale (e.g. a
+    // form gets unpublished server-side mid-session) - re-sync whenever this screen is opened,
+    // and refresh the list once that sync completes.
+    private val formListSyncedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            viewModel.refresh()
+        }
+    }
+
     @Nullable
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentFormListBinding.inflate(inflater, container, false)
 
         setupFormClickListener()
         setupObserver()
+
+        LocalBroadcastManager.getInstance(requireContext())
+            .registerReceiver(formListSyncedReceiver, IntentFilter(FormListService.ACTION_FORM_LIST_SYNCED))
+        requireContext().startService(Intent(requireContext(), FormListService::class.java))
 
         return binding.root
     }
@@ -68,9 +86,9 @@ class FormListFragment : BaseFragment() {
                     return@setOnItemClickListener
                 }
                 val patientId: Long = requireArguments().get(PATIENT_ID_BUNDLE) as Long
-                if (encounterName == EncounterType.ADMISSION) {
+                if (isNativeForm && encounterName == EncounterType.ADMISSION) {
                     startAdmissionFormActivity(formName!!, patientId, encounterType!!)
-                } else if (encounterName == EncounterType.VISIT_NOTE) {
+                } else if (isNativeForm && encounterName == EncounterType.VISIT_NOTE) {
                     startVisitNoteActivity(patientId, encounterType!!)
                 } else {
                     if (formFieldsJson != null) {
@@ -152,6 +170,7 @@ class FormListFragment : BaseFragment() {
     }
 
     override fun onDestroyView() {
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(formListSyncedReceiver)
         super.onDestroyView()
         _binding = null
     }
