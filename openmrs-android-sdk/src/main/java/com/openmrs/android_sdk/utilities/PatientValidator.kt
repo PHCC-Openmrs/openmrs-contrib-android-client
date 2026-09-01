@@ -102,6 +102,10 @@ class PatientValidator(private val patient: Patient,
             logger.w("Patient validation failed: National ID format invalid")
             return false
         }
+        if (!StringUtils.isValidLuhn(nationalId)) {
+            logger.w("Patient validation failed: National ID fails Luhn checksum")
+            return false
+        }
 
         return true
     }

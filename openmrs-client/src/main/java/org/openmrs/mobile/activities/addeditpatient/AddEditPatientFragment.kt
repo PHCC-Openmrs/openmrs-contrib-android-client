@@ -404,6 +404,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             textInputLayoutNationalId.error = getString(R.string.national_id_invalid_error)
             scrollToTop()
             isValid = false
+        } else if (!com.openmrs.android_sdk.utilities.StringUtils.isValidLuhn(getInput(nationalId))) {
+            textInputLayoutNationalId.isErrorEnabled = true
+            textInputLayoutNationalId.error = getString(R.string.national_id_checksum_error)
+            scrollToTop()
+            isValid = false
         } else {
             textInputLayoutNationalId.isErrorEnabled = false
             viewModel.setNationalId(getInput(nationalId).orEmpty())

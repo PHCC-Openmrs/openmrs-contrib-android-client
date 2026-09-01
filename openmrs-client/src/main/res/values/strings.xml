@@ -50,6 +50,7 @@
     <string name="reg_national_id_hint">National ID*</string>
     <string name="national_id_empty_error">National ID is required</string>
     <string name="national_id_invalid_error">National ID must start with 4, 7, 8 or 9 and be 9 digits</string>
+    <string name="national_id_checksum_error">Invalid National ID (checksum failed) - please re-check the number</string>
     <string name="reg_ques_name">Patient\’s Name</string>
     <string name="reg_ques_gender">Patient\'s gender*</string>
     <string name="reg_ques_dob">Patient\'s birth date*</string>
