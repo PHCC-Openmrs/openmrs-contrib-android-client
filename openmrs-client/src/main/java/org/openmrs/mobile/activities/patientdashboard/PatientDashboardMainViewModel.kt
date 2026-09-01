@@ -54,7 +54,17 @@ class PatientDashboardMainViewModel @Inject constructor(
     }
 
     fun syncPatientData() {
-        val currentPatient = patient ?: return
+        if (patient == null) return
+        // Don't let a second call (e.g. a rapid re-tap, or onCreate firing again) start another
+        // registration attempt while one for this same patient is still in flight.
+        if (runningSyncs > 0) return
+        // Re-read from the DB rather than trusting the field captured at ViewModel construction:
+        // a background sync (e.g. the auto-sync-on-reconnect batch) can assign this patient a
+        // uuid at any time this screen is open, and syncing here on a stale null-uuid snapshot
+        // would re-POST a duplicate registration that collides with the one that already
+        // succeeded.
+        val currentPatient = patientDAO.findPatientByID(patientId) ?: return
+        patient = currentPatient
         setLoading(PatientSynchronizing)
         if (currentPatient.uuid.isNullOrEmpty()) {
             syncUnsyncedPatient(currentPatient)
