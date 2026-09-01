@@ -168,10 +168,13 @@ public class PatientRepository extends BaseRepository {
                     logger.i("Server registration successful. UUID: " + returnedPatientDto.getUuid());
 
                     patient.setUuid(returnedPatientDto.getUuid());
-                    if (returnedPatientDto.getIdentifiers() != null && !returnedPatientDto.getIdentifiers().isEmpty()) {
-                        patient.setIdentifiers(returnedPatientDto.getIdentifiers());
-                        logger.i("Updated patient identifiers from server: " + patient.getIdentifier().getIdentifier());
-                    }
+                    // Deliberately NOT replacing patient.identifiers with returnedPatientDto's:
+                    // the create-patient response uses the default representation, whose
+                    // identifiers only carry {uuid, display, links} - no identifier value and no
+                    // identifierType - so overwriting here would wipe out the (correct, just-sent)
+                    // identifiers we already have, including their types, causing them to be
+                    // dropped on the next local save/reload. What we already hold is exactly what
+                    // the server just accepted, so it needs no updating.
 
                     if (patient.getPhoto() != null) {
                         uploadPatientPhoto(patient);

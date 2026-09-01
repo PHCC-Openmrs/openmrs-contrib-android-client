@@ -71,9 +71,15 @@ interface PatientRoomDAO {
     /**
      * Gets unsynced patients.
      *
+     * A patient is considered synced once it has a server-assigned uuid (matching
+     * [com.openmrs.android_sdk.library.models.Patient.isSynced], which is uuid-based - the raw
+     * `synced` column is legacy and never actually gets set to true, so filtering on it would
+     * return every patient ever saved locally, forever, and re-attempt registering already-synced
+     * ones on every sync).
+     *
      * @return the unsynced patients
      */
-    @Query("SELECT * FROM patients WHERE synced = 0")
+    @Query("SELECT * FROM patients WHERE uuid IS NULL OR uuid = ''")
     fun getUnsyncedPatients(): Single<List<PatientEntity>>
 
     /**
