@@ -49,8 +49,11 @@ class PatientValidator(private val patient: Patient,
                 logger.w("Patient validation failed: givenName contains illegal characters")
                 return false
             }
-            // Middle name can be left empty
-            if (middleName != null && !validateText(middleName!!, ILLEGAL_CHARACTERS)) {
+            if (middleName.isNullOrBlank()) {
+                logger.w("Patient validation failed: middleName is empty")
+                return false
+            }
+            if (!validateText(middleName!!, ILLEGAL_CHARACTERS)) {
                 logger.w("Patient validation failed: middleName contains illegal characters")
                 return false
             }

@@ -349,8 +349,13 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             textInputLayoutFirstName.isErrorEnabled = false
         }
 
-        // Middle name validation (can be empty)
-        if (!validateText(getInput(middlename), ILLEGAL_CHARACTERS)) {
+        // Middle name validation
+        if (isEmpty(middlename)) {
+            textInputLayoutMiddlename.isErrorEnabled = true
+            textInputLayoutMiddlename.error = getString(R.string.emptyerror)
+            scrollToTop()
+            isValid = false
+        } else if (!validateText(getInput(middlename), ILLEGAL_CHARACTERS)) {
             textInputLayoutMiddlename.isErrorEnabled = true
             textInputLayoutMiddlename.error = getString(R.string.midname_invalid_error)
             scrollToTop()
