@@ -450,6 +450,24 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             textInputLayoutAddress2.isErrorEnabled = false
         }
 
+        // Neighbourhood and Governorate are required by the server's address template.
+        if (isEmpty(cityAutoComplete)) {
+            textInputLayoutCity.isErrorEnabled = true
+            textInputLayoutCity.error = getString(R.string.emptyerror)
+            scrollToTop()
+            isValid = false
+        } else {
+            textInputLayoutCity.isErrorEnabled = false
+        }
+        if (isEmpty(stateAutoComplete)) {
+            textInputLayoutState.isErrorEnabled = true
+            textInputLayoutState.error = getString(R.string.emptyerror)
+            scrollToTop()
+            isValid = false
+        } else {
+            textInputLayoutState.isErrorEnabled = false
+        }
+
         viewModel.patient.addresses = listOf(PersonAddress().apply {
             address1 = getInput(addressOne)
             address2 = getInput(addressTwo)
@@ -849,6 +867,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         textInputLayoutNationalId.error = ""
         textInputLayoutAddress.error = ""
         textInputLayoutAddress2.error = ""
+        textInputLayoutCity.error = ""
+        textInputLayoutState.error = ""
         patientPhoto.setImageResource(R.drawable.ic_person_grey_500_48dp)
         viewModel.resetPatient()
     }

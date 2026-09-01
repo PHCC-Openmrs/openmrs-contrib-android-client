@@ -48,6 +48,8 @@
     <string name="reg_midname_hint">Middle Name*</string>
     <string name="reg_surname_hint">Family Name*</string>
     <string name="reg_national_id_hint">National ID*</string>
+    <string name="reg_neighbourhood_hint">Neighbourhood*</string>
+    <string name="reg_governorate_hint">Governorate*</string>
     <string name="national_id_empty_error">National ID is required</string>
     <string name="national_id_invalid_error">National ID must start with 4, 7, 8 or 9 and be 9 digits</string>
     <string name="national_id_checksum_error">Invalid National ID (checksum failed) - please re-check the number</string>
