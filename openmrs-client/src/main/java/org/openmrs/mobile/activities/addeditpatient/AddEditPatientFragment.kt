@@ -608,7 +608,9 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             }
         }
 
-        stateAutoComplete.onFocusChangeListener = View.OnFocusChangeListener { _, _ -> addSuggestionsToCities() }
+        // Governorate is a fixed list, matching the dropdown on the web app's registration form.
+        stateAutoComplete.setAdapter(ArrayAdapter(
+                requireContext(), android.R.layout.simple_dropdown_item_1line, resources.getStringArray(R.array.gaza_governorates)))
 
         // Check for cities available on searching
         cityAutoComplete.addTextChangedListener(object : TextWatcher {
@@ -725,22 +727,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                 Places.initialize(applicationContext, placesApiKey)
                 viewModel.placesClient = Places.createClient(this)
             }
-        }
-    }
-
-    private fun addSuggestionsToCities() {
-        var countryName = binding.countryCodeSpinner.selectedCountryName
-        countryName = countryName.replace("(", "")
-        countryName = countryName.replace(")", "")
-        countryName = countryName.replace(" ", "")
-        countryName = countryName.replace("-", "_")
-        countryName = countryName.replace(".", "")
-        countryName = countryName.replace("'", "")
-        val resourceId = resources.getIdentifier(countryName.toLowerCase(), "array", requireContext().packageName)
-        if (resourceId != 0) {
-            val states = resources.getStringArray(resourceId)
-            val stateAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, states)
-            binding.stateAutoComplete.setAdapter(stateAdapter)
         }
     }
 

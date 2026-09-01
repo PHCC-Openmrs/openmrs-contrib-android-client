@@ -324,9 +324,9 @@
     <string name="patient_details_birth_date_label">Birth date</string>
     <string name="patient_contact_info_label">Contact Information</string>
     <string name="patient_address_label">Address</string>
-    <string name="patient_city_label">City</string>
+    <string name="patient_city_label">Neighbourhood</string>
     <string name="patient_postal_label">Postal Code</string>
-    <string name="patient_state_label">State</string>
+    <string name="patient_state_label">Governorate</string>
     <string name="patient_country_label">Country</string>
     <string name="date_picker_title">Select Date of Birth</string>
 
