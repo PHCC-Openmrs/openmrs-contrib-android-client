@@ -29,6 +29,7 @@ import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 
 import org.jetbrains.annotations.NotNull;
+import org.openmrs.mobile.api.ConnectivityStateMonitor;
 import org.openmrs.mobile.services.AuthenticateCheckService;
 import org.openmrs.mobile.services.FormListService;
 
@@ -73,6 +74,8 @@ public class OpenMRS extends MultiDexApplication implements Configuration.Provid
         } catch (Exception e) {
             mLogger.e("Could not start AuthenticateCheckService from Application.onCreate(): " + e.getMessage());
         }
+
+        new ConnectivityStateMonitor(this).register();
     }
 
     @NotNull

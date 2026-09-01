@@ -89,6 +89,17 @@ class PatientValidator(private val patient: Patient,
             }
         }
 
+        // Validate National ID - required by the server alongside the OpenMRS ID
+        val nationalId = patient.getIdentifierByType(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID)?.identifier
+        if (nationalId.isNullOrBlank()) {
+            logger.w("Patient validation failed: National ID is empty")
+            return false
+        }
+        if (!Regex(ApplicationConstants.IdentifierSource.NATIONAL_ID_FORMAT_REGEX).matches(nationalId)) {
+            logger.w("Patient validation failed: National ID format invalid")
+            return false
+        }
+
         return true
     }
 }

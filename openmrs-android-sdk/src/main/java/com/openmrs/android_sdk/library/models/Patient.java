@@ -164,6 +164,24 @@ public class Patient extends Person implements Serializable {
     }
 
     /**
+     * Gets the identifier of a specific identifier type (e.g. National ID), regardless of its
+     * position in the list. Unlike {@link #getIdentifier()}, which assumes the primary/OpenMRS ID
+     * identifier is always first, this looks the identifier up by its type's uuid.
+     *
+     * @param identifierTypeUuid the uuid of the {@link IdentifierType} to look for
+     * @return the matching identifier, or null if the patient has none of that type
+     */
+    public PatientIdentifier getIdentifierByType(String identifierTypeUuid) {
+        for (PatientIdentifier patientIdentifier : identifiers) {
+            IdentifierType type = patientIdentifier.getIdentifierType();
+            if (type != null && identifierTypeUuid.equals(type.getUuid())) {
+                return patientIdentifier;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Is synced boolean.
      *
      * @return the boolean

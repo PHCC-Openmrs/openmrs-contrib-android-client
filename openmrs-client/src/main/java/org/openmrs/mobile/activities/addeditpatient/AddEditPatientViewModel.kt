@@ -12,6 +12,7 @@ import com.openmrs.android_sdk.library.models.OperationType
 import com.openmrs.android_sdk.library.models.OperationType.PatientRegistering
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.ResultType
+import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.COUNTRIES_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.PatientValidator
@@ -76,6 +77,23 @@ class AddEditPatientViewModel @Inject constructor(
         capturedPhotoFile = null
         dateHolder = null
         patient = Patient()
+    }
+
+    /**
+     * Gets the National ID value currently attached to the patient, if any.
+     */
+    fun getNationalId(): String? =
+            patient.getIdentifierByType(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID)?.identifier
+
+    /**
+     * Attaches (or replaces) the patient's National ID identifier.
+     */
+    fun setNationalId(value: String) {
+        val identifiers = patient.identifiers.filterNot {
+            it.identifierType?.uuid == ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID
+        }.toMutableList()
+        identifiers.add(patientRepository.buildNationalIdIdentifier(value))
+        patient.identifiers = identifiers
     }
 
     fun confirmPatient() {

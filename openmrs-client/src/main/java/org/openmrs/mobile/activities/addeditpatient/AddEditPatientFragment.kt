@@ -261,6 +261,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             binding.firstName.setText(name.givenName)
             binding.middlename.setText(name.middleName)
             binding.surname.setText(name.familyName)
+            binding.nationalId.setText(viewModel.getNationalId())
 
             if (notNull(birthdate) || notEmpty(birthdate)) {
                 viewModel.dateHolder = convertTimeString(birthdate)
@@ -386,6 +387,22 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         }
         logger.i("[UI-Input] PersonName object created. NameString: '${personName.nameString}', Middle property: '${personName.middleName}'")
         viewModel.patient.names = listOf(personName)
+
+        /* National ID */
+        if (isEmpty(nationalId)) {
+            textInputLayoutNationalId.isErrorEnabled = true
+            textInputLayoutNationalId.error = getString(R.string.national_id_empty_error)
+            scrollToTop()
+            isValid = false
+        } else if (!Regex(ApplicationConstants.IdentifierSource.NATIONAL_ID_FORMAT_REGEX).matches(getInput(nationalId).orEmpty())) {
+            textInputLayoutNationalId.isErrorEnabled = true
+            textInputLayoutNationalId.error = getString(R.string.national_id_invalid_error)
+            scrollToTop()
+            isValid = false
+        } else {
+            textInputLayoutNationalId.isErrorEnabled = false
+            viewModel.setNationalId(getInput(nationalId).orEmpty())
+        }
 
         /* Gender */
         val genderChoices = arrayOf(StringValue.MALE, StringValue.FEMALE)
@@ -816,6 +833,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         firstName.setText("")
         middlename.setText("")
         surname.setText("")
+        nationalId.setText("")
         dobEditText.setText("")
         estimatedYear.setText("")
         estimatedMonth.setText("")
@@ -832,6 +850,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         textInputLayoutFirstName.error = ""
         textInputLayoutMiddlename.error = ""
         textInputLayoutSurname.error = ""
+        textInputLayoutNationalId.error = ""
         textInputLayoutAddress.error = ""
         textInputLayoutAddress2.error = ""
         patientPhoto.setImageResource(R.drawable.ic_person_grey_500_48dp)
@@ -849,7 +868,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     fun isAnyFieldNotEmpty(): Boolean = with(binding) {
-        return !isEmpty(firstName) || !isEmpty(middlename) || !isEmpty(surname) ||
+        return !isEmpty(firstName) || !isEmpty(middlename) || !isEmpty(surname) || !isEmpty(nationalId) ||
                 !isEmpty(dobEditText) || !isEmpty(estimatedYear) || !isEmpty(estimatedMonth) ||
                 !isEmpty(addressOne) || !isEmpty(addressTwo) || !isEmpty(cityAutoComplete) ||
                 !isEmpty(stateAutoComplete) || !isEmpty(postalCode)

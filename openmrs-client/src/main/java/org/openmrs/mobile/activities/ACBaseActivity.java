@@ -63,6 +63,7 @@ import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
 import org.openmrs.mobile.R;
+import org.openmrs.mobile.api.ConnectivityStateMonitor;
 import org.openmrs.mobile.activities.community.contact.AboutActivity;
 import org.openmrs.mobile.activities.community.contact.ContactUsActivity;
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog;
@@ -207,8 +208,7 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 } else if (NetworkUtils.hasNetwork()) {
                     OpenmrsAndroid.setSyncState(true);
                     setSyncButtonState(true);
-                    Intent intent = new Intent("org.openmrs.mobile.intent.action.SYNC_PATIENTS");
-                    getApplicationContext().sendBroadcast(intent);
+                    ConnectivityStateMonitor.triggerSync(getApplicationContext());
                     ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.NOTICE, R.string.reconn_server);
                     if (mSnackbar != null) {
                         mSnackbar.dismiss();
