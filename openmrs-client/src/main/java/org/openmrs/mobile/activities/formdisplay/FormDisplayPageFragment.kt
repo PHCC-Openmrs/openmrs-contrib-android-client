@@ -43,6 +43,7 @@ import com.openmrs.android_sdk.library.models.Question
 import com.openmrs.android_sdk.library.models.Section
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_PAGE_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.DateField
 import com.openmrs.android_sdk.utilities.InputField
 import com.openmrs.android_sdk.utilities.RangeEditText
@@ -240,6 +241,9 @@ class FormDisplayPageFragment : BaseFragment() {
         sectionContainer.addView(generateTextView(getLabel(question), true))
 
         val inputField = viewModel.getOrCreateInputField(question.questionOptions!!.concept!!)
+        if (!inputField.hasValue) {
+            viewModel.autoFillAgeValue(question)?.let { inputField.value = it }
+        }
 
         val options = question.questionOptions!!
         val ed = RangeEditText(activity).apply {
@@ -304,6 +308,10 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnItemSelectedListener(spinner, selectOneField)
         } else {
+            viewModel.autoFillGenderAnswerIndex(question)?.let {
+                spinnerField.setAnswer(it)
+                spinner.setSelection(it)
+            }
             setOnItemSelectedListener(spinner, spinnerField)
             viewModel.selectOneFields.add(spinnerField)
         }
@@ -344,6 +352,10 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnCheckedChangeListener(radioGroup, selectOneField)
         } else {
+            viewModel.autoFillGenderAnswerIndex(question)?.let {
+                radioGroupField.setAnswer(it)
+                (radioGroup.getChildAt(it) as? RadioButton)?.isChecked = true
+            }
             setOnCheckedChangeListener(radioGroup, radioGroupField)
             viewModel.selectOneFields.add(radioGroupField)
         }
@@ -403,6 +415,10 @@ class FormDisplayPageFragment : BaseFragment() {
 
         val existingField = viewModel.findTextFieldById(textField.concept)
         val fieldToUse = existingField ?: textField.also { viewModel.textFields.add(it) }
+
+        if (fieldToUse.value.isNullOrBlank()) {
+            viewModel.autoFillTextValue(question)?.let { fieldToUse.value = it }
+        }
 
         val editText = EditText(activity).apply {
             hint = getLabel(question).toString()
@@ -572,10 +588,11 @@ class FormDisplayPageFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(page: Page, formFieldsWrapper: FormFieldsWrapper?) = FormDisplayPageFragment().apply {
+        fun newInstance(page: Page, formFieldsWrapper: FormFieldsWrapper?, patientId: Long) = FormDisplayPageFragment().apply {
             arguments = bundleOf(
                     FORM_PAGE_BUNDLE to page,
-                    FORM_FIELDS_BUNDLE to formFieldsWrapper
+                    FORM_FIELDS_BUNDLE to formFieldsWrapper,
+                    PATIENT_ID_BUNDLE to patientId
             )
         }
     }

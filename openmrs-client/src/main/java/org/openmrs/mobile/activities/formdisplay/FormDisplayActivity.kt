@@ -24,6 +24,7 @@ import com.openmrs.android_sdk.library.models.Page
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_LIST_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NAME
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VALUEREFERENCE
 import com.openmrs.android_sdk.utilities.FormUtils.getForm
 import com.openmrs.android_sdk.utilities.DateField
@@ -67,14 +68,16 @@ class FormDisplayActivity : ACBaseActivity() {
     private fun initViewComponents() {
         var pages: List<Page>? = null
         var formFieldsWrappers: List<FormFieldsWrapper>? = null
+        var patientId = 0L
         intent.extras?.let {
             val valueRef = it.getString(VALUEREFERENCE)!!
             val form = getForm(valueRef)
             pages = form.pages
             formFieldsWrappers = it.getSerializable(FORM_FIELDS_LIST_BUNDLE) as? List<FormFieldsWrapper>
+            patientId = it.getLong(PATIENT_ID_BUNDLE)
         }
 
-        val formPageAdapter = FormPageAdapter(supportFragmentManager, pages!!, formFieldsWrappers)
+        val formPageAdapter = FormPageAdapter(supportFragmentManager, pages!!, formFieldsWrappers, patientId)
         with(binding) {
             btnNext.setOnClickListener { viewPager.currentItem = viewPager.currentItem + 1 }
             btnSubmit.setOnClickListener { submitForm() }
