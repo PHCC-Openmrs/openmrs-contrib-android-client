@@ -45,8 +45,14 @@
     <string name="lname_invalid_error">Family name cannot contain symbols or numbers</string>
     <string name="dob_error">Date should be between %1$s and %2$s</string>
     <string name="reg_firstname_hint">First Name*</string>
-    <string name="reg_midname_hint">Middle Name</string>
+    <string name="reg_midname_hint">Middle Name*</string>
     <string name="reg_surname_hint">Family Name*</string>
+    <string name="reg_national_id_hint">National ID*</string>
+    <string name="reg_neighbourhood_hint">Neighbourhood*</string>
+    <string name="reg_governorate_hint">Governorate*</string>
+    <string name="national_id_empty_error">National ID is required</string>
+    <string name="national_id_invalid_error">National ID must start with 4, 7, 8 or 9 and be 9 digits</string>
+    <string name="national_id_checksum_error">Invalid National ID (checksum failed) - please re-check the number</string>
     <string name="reg_ques_name">Patient\’s Name</string>
     <string name="reg_ques_gender">Patient\'s gender*</string>
     <string name="reg_ques_dob">Patient\'s birth date*</string>
@@ -321,9 +327,9 @@
     <string name="patient_details_birth_date_label">Birth date</string>
     <string name="patient_contact_info_label">Contact Information</string>
     <string name="patient_address_label">Address</string>
-    <string name="patient_city_label">City</string>
+    <string name="patient_city_label">Neighbourhood</string>
     <string name="patient_postal_label">Postal Code</string>
-    <string name="patient_state_label">State</string>
+    <string name="patient_state_label">Governorate</string>
     <string name="patient_country_label">Country</string>
     <string name="date_picker_title">Select Date of Birth</string>
 

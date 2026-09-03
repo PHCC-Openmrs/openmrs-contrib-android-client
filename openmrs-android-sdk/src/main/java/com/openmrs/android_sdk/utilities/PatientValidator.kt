@@ -49,8 +49,11 @@ class PatientValidator(private val patient: Patient,
                 logger.w("Patient validation failed: givenName contains illegal characters")
                 return false
             }
-            // Middle name can be left empty
-            if (middleName != null && !validateText(middleName!!, ILLEGAL_CHARACTERS)) {
+            if (middleName.isNullOrBlank()) {
+                logger.w("Patient validation failed: middleName is empty")
+                return false
+            }
+            if (!validateText(middleName!!, ILLEGAL_CHARACTERS)) {
                 logger.w("Patient validation failed: middleName contains illegal characters")
                 return false
             }
@@ -87,6 +90,21 @@ class PatientValidator(private val patient: Patient,
                 logger.w("Patient validation failed: country '$country' not in list. List size: ${countriesList.size}")
                 // return false // Let it pass even if not in list for now to debug
             }
+        }
+
+        // Validate National ID - required by the server alongside the OpenMRS ID
+        val nationalId = patient.getIdentifierByType(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID)?.identifier
+        if (nationalId.isNullOrBlank()) {
+            logger.w("Patient validation failed: National ID is empty")
+            return false
+        }
+        if (!Regex(ApplicationConstants.IdentifierSource.NATIONAL_ID_FORMAT_REGEX).matches(nationalId)) {
+            logger.w("Patient validation failed: National ID format invalid")
+            return false
+        }
+        if (!StringUtils.isValidLuhn(nationalId)) {
+            logger.w("Patient validation failed: National ID fails Luhn checksum")
+            return false
         }
 
         return true

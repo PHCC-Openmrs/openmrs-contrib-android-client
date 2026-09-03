@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 8)
+        version = 9)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -168,6 +168,18 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     /**
+     * Adds the nationalId column, so a patient's National ID identifier (required by the server
+     * alongside the OpenMRS ID) can be persisted and reloaded with its own value, distinct from
+     * the existing flat `identifier` column which only ever held the OpenMRS ID.
+     */
+    private static final Migration MIGRATION_8_9 = new Migration(8, 9) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `patients` ADD COLUMN `nationalId` TEXT");
+        }
+    };
+
+    /**
      * Gets database.
      *
      * @param context the context
@@ -181,7 +193,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
                             .allowMainThreadQueries()
-                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

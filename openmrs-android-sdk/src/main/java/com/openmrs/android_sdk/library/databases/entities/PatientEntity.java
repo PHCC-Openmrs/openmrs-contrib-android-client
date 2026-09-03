@@ -16,6 +16,8 @@ public class PatientEntity extends Resource {
     private boolean synced;
     @ColumnInfo(name = "identifier")
     private String identifier;
+    @ColumnInfo(name = "nationalId")
+    private String nationalId;
     @ColumnInfo(name = "givenName")
     private String givenName;
     @ColumnInfo(name = "middleName")
@@ -73,6 +75,15 @@ public class PatientEntity extends Resource {
      */
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
+
+    /**
+     * Sets national id.
+     *
+     * @param nationalId the national id
+     */
+    public void setNationalId(String nationalId) {
+        this.nationalId = nationalId;
     }
 
     /**
@@ -244,6 +255,15 @@ public class PatientEntity extends Resource {
      */
     public String getIdentifier() {
         return identifier;
+    }
+
+    /**
+     * Gets national id.
+     *
+     * @return the national id
+     */
+    public String getNationalId() {
+        return nationalId;
     }
 
     /**

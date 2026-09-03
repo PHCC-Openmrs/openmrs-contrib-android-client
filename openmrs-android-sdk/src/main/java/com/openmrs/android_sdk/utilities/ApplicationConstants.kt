@@ -138,6 +138,12 @@ object ApplicationConstants {
     object IdentifierSource {
         const val DEFAULT_SOURCE_UUID = "8549f706-7e85-4c1d-9424-217d50a2988b"
         const val DEFAULT_IDENTIFIER_TYPE_UUID = "05a29f94-c0ed-11e2-94be-8c13b969e334"
+        const val NATIONAL_ID_IDENTIFIER_TYPE_UUID = "e7d4b9a1-6f3c-4d2e-9b8a-1c5f6e7d8a9b"
+        const val NATIONAL_ID_FORMAT_REGEX = "^[4789]\\d{8}$"
+    }
+
+    object PersonAttributeTypes {
+        const val PHONE_NUMBER_UUID = "14d4f066-15f5-102d-96e4-000c29c2a5d7"
     }
 
     object BundleKeys {

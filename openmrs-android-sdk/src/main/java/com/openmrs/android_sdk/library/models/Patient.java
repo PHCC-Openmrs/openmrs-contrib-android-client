@@ -164,6 +164,60 @@ public class Patient extends Person implements Serializable {
     }
 
     /**
+     * Gets the identifier of a specific identifier type (e.g. National ID), regardless of its
+     * position in the list. Unlike {@link #getIdentifier()}, which assumes the primary/OpenMRS ID
+     * identifier is always first, this looks the identifier up by its type's uuid.
+     *
+     * @param identifierTypeUuid the uuid of the {@link IdentifierType} to look for
+     * @return the matching identifier, or null if the patient has none of that type
+     */
+    public PatientIdentifier getIdentifierByType(String identifierTypeUuid) {
+        for (PatientIdentifier patientIdentifier : identifiers) {
+            IdentifierType type = patientIdentifier.getIdentifierType();
+            if (type != null && identifierTypeUuid.equals(type.getUuid())) {
+                return patientIdentifier;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Computes the patient's age in whole years from their birthdate, for auto-populating form
+     * fields. Tolerates both a plain date ({@code yyyy-MM-dd}) and a full ISO datetime string by
+     * only looking at the first 10 characters.
+     *
+     * @return the age in years, or null if birthdate is missing/unparseable
+     */
+    public Integer getAgeInYears() {
+        String birthdate = getBirthdate();
+        if (birthdate == null || birthdate.length() < 10) return null;
+        try {
+            org.joda.time.LocalDate dob = org.joda.time.format.DateTimeFormat.forPattern("yyyy-MM-dd")
+                    .parseLocalDate(birthdate.substring(0, 10));
+            return org.joda.time.Years.yearsBetween(dob, org.joda.time.LocalDate.now()).getYears();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the value of a person attribute of the given type (e.g. Phone Number), for
+     * auto-populating form fields.
+     *
+     * @param attributeTypeUuid the uuid of the {@link PersonAttributeType} to look for
+     * @return the attribute's value, or null if the patient has none of that type
+     */
+    public String getAttributeValue(String attributeTypeUuid) {
+        for (PersonAttribute attribute : getAttributes()) {
+            PersonAttributeType type = attribute.getAttributeType();
+            if (type != null && attributeTypeUuid.equals(type.getUuid())) {
+                return attribute.getValue();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Is synced boolean.
      *
      * @return the boolean

@@ -42,6 +42,7 @@ import com.openmrs.android_sdk.library.models.Encounter
 import com.openmrs.android_sdk.library.models.EncounterType
 import com.openmrs.android_sdk.library.models.Observation
 import com.openmrs.android_sdk.library.models.Patient
+import com.openmrs.android_sdk.library.models.IdentifierType
 import com.openmrs.android_sdk.library.models.PatientIdentifier
 import com.openmrs.android_sdk.library.models.PersonAddress
 import com.openmrs.android_sdk.library.models.PersonName
@@ -281,12 +282,27 @@ object AppDatabaseHelper {
         val patient = Patient(patientEntity.id, patientEntity.encounters, null)
         patient.display = patientEntity.display
         patient.uuid = patientEntity.uuid
-        val patientIdentifier = PatientIdentifier()
-        patientIdentifier.identifier = patientEntity.identifier
         if (patient.identifiers == null) {
             patient.identifiers = ArrayList()
         }
-        patient.identifiers.add(patientIdentifier)
+        if (!patientEntity.identifier.isNullOrEmpty()) {
+            val openmrsIdIdentifier = PatientIdentifier()
+            openmrsIdIdentifier.identifier = patientEntity.identifier
+            openmrsIdIdentifier.identifierType = IdentifierType("OpenMRS ID").apply {
+                uuid = ApplicationConstants.IdentifierSource.DEFAULT_IDENTIFIER_TYPE_UUID
+            }
+            openmrsIdIdentifier.preferred = true
+            patient.identifiers.add(openmrsIdIdentifier)
+        }
+        if (!patientEntity.nationalId.isNullOrEmpty()) {
+            val nationalIdIdentifier = PatientIdentifier()
+            nationalIdIdentifier.identifier = patientEntity.nationalId
+            nationalIdIdentifier.identifierType = IdentifierType("National ID").apply {
+                uuid = ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID
+            }
+            nationalIdIdentifier.preferred = false
+            patient.identifiers.add(nationalIdIdentifier)
+        }
         val personName = PersonName().apply {
             givenName = patientEntity.givenName
             middleName = patientEntity.middleName
@@ -339,13 +355,31 @@ object AppDatabaseHelper {
         
         val identifiers = patient.identifiers
         if (identifiers != null && !identifiers.isEmpty()) {
-            // Try to find the primary/preferred identifier or just the first one that has a string
-            val idObj = identifiers.find { it.preferred == true && it.identifier != null } 
-                       ?: identifiers.find { it.identifier != null }
-                       ?: identifiers[0]
-            
-            patientEntity.identifier = idObj.identifier
-            logger.i("[DB-Save] Patient Identifier list size: ${identifiers.size}, Selected: '${patientEntity.identifier}'")
+            // The OpenMRS ID and National ID are looked up by their identifier type's uuid, each
+            // into their own column, rather than collapsing the whole list into one flat "the
+            // identifier" value - a patient can (and, per current server config, must) have both.
+            val openmrsIdIdentifier = identifiers.find {
+                it.identifierType?.uuid == ApplicationConstants.IdentifierSource.DEFAULT_IDENTIFIER_TYPE_UUID
+            }
+            patientEntity.identifier = when {
+                openmrsIdIdentifier != null -> openmrsIdIdentifier.identifier
+                // No typed OpenMRS ID yet (e.g. not generated until syncPatient() runs). Only fall
+                // back to guessing "the" identifier for legacy/untyped data - if every identifier
+                // here already carries an explicit type (e.g. a National ID from the registration
+                // form), guessing would wrongly borrow that other identifier's value.
+                identifiers.none { it.identifierType != null } ->
+                    (identifiers.find { it.preferred == true && it.identifier != null }
+                        ?: identifiers.find { it.identifier != null }
+                        ?: identifiers[0]).identifier
+                else -> null
+            }
+
+            val nationalIdIdentifier = identifiers.find {
+                it.identifierType?.uuid == ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID
+            }
+            patientEntity.nationalId = nationalIdIdentifier?.identifier
+
+            logger.i("[DB-Save] Patient Identifier list size: ${identifiers.size}, OpenMRS ID: '${patientEntity.identifier}', National ID: '${patientEntity.nationalId}'")
         } else {
             logger.w("[DB-Save] Patient has NO identifiers!")
         }

@@ -116,4 +116,28 @@ object StringUtils {
         val charPattern = Pattern.compile(characters)
         return charPattern.matcher(toExamine as CharSequence).find()
     }
+
+    /**
+     * Validates a numeric string (e.g. National ID) against the Luhn checksum algorithm - the
+     * last digit is treated as the check digit for the digits preceding it.
+     *
+     * @param digits the numeric string to validate
+     * @return true if the digits pass the Luhn check, false if blank, non-numeric, or invalid
+     */
+    @JvmStatic
+    fun isValidLuhn(digits: String?): Boolean {
+        if (digits.isNullOrBlank() || !digits.all { it.isDigit() }) return false
+        var sum = 0
+        var alternate = false
+        for (i in digits.length - 1 downTo 0) {
+            var n = digits[i] - '0'
+            if (alternate) {
+                n *= 2
+                if (n > 9) n -= 9
+            }
+            sum += n
+            alternate = !alternate
+        }
+        return sum % 10 == 0
+    }
 }

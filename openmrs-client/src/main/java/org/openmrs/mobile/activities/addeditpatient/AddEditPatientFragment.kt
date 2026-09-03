@@ -261,6 +261,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             binding.firstName.setText(name.givenName)
             binding.middlename.setText(name.middleName)
             binding.surname.setText(name.familyName)
+            binding.nationalId.setText(viewModel.getNationalId())
 
             if (notNull(birthdate) || notEmpty(birthdate)) {
                 viewModel.dateHolder = convertTimeString(birthdate)
@@ -348,8 +349,13 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             textInputLayoutFirstName.isErrorEnabled = false
         }
 
-        // Middle name validation (can be empty)
-        if (!validateText(getInput(middlename), ILLEGAL_CHARACTERS)) {
+        // Middle name validation
+        if (isEmpty(middlename)) {
+            textInputLayoutMiddlename.isErrorEnabled = true
+            textInputLayoutMiddlename.error = getString(R.string.emptyerror)
+            scrollToTop()
+            isValid = false
+        } else if (!validateText(getInput(middlename), ILLEGAL_CHARACTERS)) {
             textInputLayoutMiddlename.isErrorEnabled = true
             textInputLayoutMiddlename.error = getString(R.string.midname_invalid_error)
             scrollToTop()
@@ -387,6 +393,27 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         logger.i("[UI-Input] PersonName object created. NameString: '${personName.nameString}', Middle property: '${personName.middleName}'")
         viewModel.patient.names = listOf(personName)
 
+        /* National ID */
+        if (isEmpty(nationalId)) {
+            textInputLayoutNationalId.isErrorEnabled = true
+            textInputLayoutNationalId.error = getString(R.string.national_id_empty_error)
+            scrollToTop()
+            isValid = false
+        } else if (!Regex(ApplicationConstants.IdentifierSource.NATIONAL_ID_FORMAT_REGEX).matches(getInput(nationalId).orEmpty())) {
+            textInputLayoutNationalId.isErrorEnabled = true
+            textInputLayoutNationalId.error = getString(R.string.national_id_invalid_error)
+            scrollToTop()
+            isValid = false
+        } else if (!com.openmrs.android_sdk.utilities.StringUtils.isValidLuhn(getInput(nationalId))) {
+            textInputLayoutNationalId.isErrorEnabled = true
+            textInputLayoutNationalId.error = getString(R.string.national_id_checksum_error)
+            scrollToTop()
+            isValid = false
+        } else {
+            textInputLayoutNationalId.isErrorEnabled = false
+            viewModel.setNationalId(getInput(nationalId).orEmpty())
+        }
+
         /* Gender */
         val genderChoices = arrayOf(StringValue.MALE, StringValue.FEMALE)
         val index = gender.indexOfChild(requireActivity().findViewById(gender.checkedRadioButtonId))
@@ -421,6 +448,24 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             addressError.makeGone()
             textInputLayoutAddress.isErrorEnabled = false
             textInputLayoutAddress2.isErrorEnabled = false
+        }
+
+        // Neighbourhood and Governorate are required by the server's address template.
+        if (isEmpty(cityAutoComplete)) {
+            textInputLayoutCity.isErrorEnabled = true
+            textInputLayoutCity.error = getString(R.string.emptyerror)
+            scrollToTop()
+            isValid = false
+        } else {
+            textInputLayoutCity.isErrorEnabled = false
+        }
+        if (isEmpty(stateAutoComplete)) {
+            textInputLayoutState.isErrorEnabled = true
+            textInputLayoutState.error = getString(R.string.emptyerror)
+            scrollToTop()
+            isValid = false
+        } else {
+            textInputLayoutState.isErrorEnabled = false
         }
 
         viewModel.patient.addresses = listOf(PersonAddress().apply {
@@ -591,7 +636,9 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             }
         }
 
-        stateAutoComplete.onFocusChangeListener = View.OnFocusChangeListener { _, _ -> addSuggestionsToCities() }
+        // Governorate is a fixed list, matching the dropdown on the web app's registration form.
+        stateAutoComplete.setAdapter(ArrayAdapter(
+                requireContext(), android.R.layout.simple_dropdown_item_1line, resources.getStringArray(R.array.gaza_governorates)))
 
         // Check for cities available on searching
         cityAutoComplete.addTextChangedListener(object : TextWatcher {
@@ -711,22 +758,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         }
     }
 
-    private fun addSuggestionsToCities() {
-        var countryName = binding.countryCodeSpinner.selectedCountryName
-        countryName = countryName.replace("(", "")
-        countryName = countryName.replace(")", "")
-        countryName = countryName.replace(" ", "")
-        countryName = countryName.replace("-", "_")
-        countryName = countryName.replace(".", "")
-        countryName = countryName.replace("'", "")
-        val resourceId = resources.getIdentifier(countryName.toLowerCase(), "array", requireContext().packageName)
-        if (resourceId != 0) {
-            val states = resources.getStringArray(resourceId)
-            val stateAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_dropdown_item_1line, states)
-            binding.stateAutoComplete.setAdapter(stateAdapter)
-        }
-    }
-
     override fun performFunction(position: Int) = when (position) {
         0 -> {
             // Capture photo
@@ -816,6 +847,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         firstName.setText("")
         middlename.setText("")
         surname.setText("")
+        nationalId.setText("")
         dobEditText.setText("")
         estimatedYear.setText("")
         estimatedMonth.setText("")
@@ -832,8 +864,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         textInputLayoutFirstName.error = ""
         textInputLayoutMiddlename.error = ""
         textInputLayoutSurname.error = ""
+        textInputLayoutNationalId.error = ""
         textInputLayoutAddress.error = ""
         textInputLayoutAddress2.error = ""
+        textInputLayoutCity.error = ""
+        textInputLayoutState.error = ""
         patientPhoto.setImageResource(R.drawable.ic_person_grey_500_48dp)
         viewModel.resetPatient()
     }
@@ -849,7 +884,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     fun isAnyFieldNotEmpty(): Boolean = with(binding) {
-        return !isEmpty(firstName) || !isEmpty(middlename) || !isEmpty(surname) ||
+        return !isEmpty(firstName) || !isEmpty(middlename) || !isEmpty(surname) || !isEmpty(nationalId) ||
                 !isEmpty(dobEditText) || !isEmpty(estimatedYear) || !isEmpty(estimatedMonth) ||
                 !isEmpty(addressOne) || !isEmpty(addressTwo) || !isEmpty(cityAutoComplete) ||
                 !isEmpty(stateAutoComplete) || !isEmpty(postalCode)

@@ -100,41 +100,49 @@ public class PatientRepository extends BaseRepository {
     public Observable<Patient> syncPatient(final Patient patient) {
         return AppDatabaseHelper.createObservableIO(() -> {
             try {
-                PatientIdentifier identifier = patient.getIdentifier();
-                if (identifier == null || identifier.getIdentifier() == null || identifier.getIdentifier().isEmpty()) {
-                    logger.i("Generating new identifier for patient...");
-                    final List<PatientIdentifier> identifiers = new ArrayList<>();
-                    identifier = new PatientIdentifier();
+                // Identifiers are built up from two independent sources: the OpenMRS ID, which
+                // this app always auto-generates via idgen, and any other identifiers already
+                // attached to the patient (e.g. a user-entered National ID from the registration
+                // form) - those are looked up by type rather than by list position, since the
+                // OpenMRS ID is no longer guaranteed to be the only (or first) identifier.
+                final List<PatientIdentifier> identifiers = new ArrayList<>(patient.getIdentifiers());
+                PatientIdentifier openmrsIdIdentifier = patient.getIdentifierByType(ApplicationConstants.IdentifierSource.DEFAULT_IDENTIFIER_TYPE_UUID);
 
-                    LocationEntity location = locationRepository.getLocation();
-                    if (location == null || location.getUuid() == null || location.getUuid().isEmpty()) {
-                        throw new IOException("Location UUID is required for registration. Please check your login location.");
-                    }
-                    identifier.setLocation(location);
+                LocationEntity location = locationRepository.getLocation();
+                if (location == null || location.getUuid() == null || location.getUuid().isEmpty()) {
+                    throw new IOException("Location UUID is required for registration. Please check your login location.");
+                }
 
+                if (openmrsIdIdentifier == null || openmrsIdIdentifier.getIdentifier() == null || openmrsIdIdentifier.getIdentifier().isEmpty()) {
+                    logger.i("Generating new OpenMRS ID for patient...");
                     String generatedId = getIdGenPatientIdentifier();
                     if (generatedId == null || generatedId.isEmpty()) {
                         throw new IOException("Failed to generate identifier from server");
                     }
-                    identifier.setIdentifier(generatedId);
-                    identifier.setIdentifierType(getPatientIdentifierType());
-                    identifier.setPreferred(true);
-                    identifiers.add(identifier);
-
-                    patient.setIdentifiers(identifiers);
-                    logger.i("Generated ID: " + generatedId);
+                    openmrsIdIdentifier = new PatientIdentifier();
+                    openmrsIdIdentifier.setIdentifier(generatedId);
+                    openmrsIdIdentifier.setIdentifierType(getPatientIdentifierType());
+                    openmrsIdIdentifier.setLocation(location);
+                    openmrsIdIdentifier.setPreferred(true);
+                    // Index 0 is treated elsewhere (e.g. Patient#getIdentifier) as the primary identifier.
+                    identifiers.add(0, openmrsIdIdentifier);
+                    logger.i("Generated OpenMRS ID: " + generatedId);
                 } else {
-                    // Ensure existing identifier has type and location (required for server sync)
-                    logger.i("Existing identifier found: " + identifier.getIdentifier() + ". Ensuring type and location are set.");
-                    if (identifier.getIdentifierType() == null) {
-                        identifier.setIdentifierType(getPatientIdentifierType());
+                    logger.i("Existing OpenMRS ID found: " + openmrsIdIdentifier.getIdentifier() + ". Ensuring type and location are set.");
+                    if (openmrsIdIdentifier.getLocation() == null) {
+                        openmrsIdIdentifier.setLocation(location);
                     }
-                    if (identifier.getLocation() == null) {
-                        LocationEntity location = locationRepository.getLocation();
-                        if (location != null) identifier.setLocation(location);
-                    }
-                    identifier.setPreferred(true);
+                    openmrsIdIdentifier.setPreferred(true);
                 }
+
+                // Any other identifiers (e.g. National ID) just need a location filled in if missing.
+                for (PatientIdentifier otherIdentifier : identifiers) {
+                    if (otherIdentifier != openmrsIdIdentifier && otherIdentifier.getLocation() == null) {
+                        otherIdentifier.setLocation(location);
+                    }
+                }
+
+                patient.setIdentifiers(identifiers);
 
                 logger.i("Using Birthdate: " + patient.getBirthdate());
 
@@ -160,10 +168,13 @@ public class PatientRepository extends BaseRepository {
                     logger.i("Server registration successful. UUID: " + returnedPatientDto.getUuid());
 
                     patient.setUuid(returnedPatientDto.getUuid());
-                    if (returnedPatientDto.getIdentifiers() != null && !returnedPatientDto.getIdentifiers().isEmpty()) {
-                        patient.setIdentifiers(returnedPatientDto.getIdentifiers());
-                        logger.i("Updated patient identifiers from server: " + patient.getIdentifier().getIdentifier());
-                    }
+                    // Deliberately NOT replacing patient.identifiers with returnedPatientDto's:
+                    // the create-patient response uses the default representation, whose
+                    // identifiers only carry {uuid, display, links} - no identifier value and no
+                    // identifierType - so overwriting here would wipe out the (correct, just-sent)
+                    // identifiers we already have, including their types, causing them to be
+                    // dropped on the next local save/reload. What we already hold is exactly what
+                    // the server just accepted, so it needs no updating.
 
                     if (patient.getPhoto() != null) {
                         uploadPatientPhoto(patient);
@@ -204,7 +215,7 @@ public class PatientRepository extends BaseRepository {
                                 return patient;
                             } else {
                                 logger.e("Duplicate ID found on server, but NAMES DO NOT MATCH. Server: " + serverPatient.getName().getNameString() + ", Local: " + patient.getName().getNameString());
-                                throw new Exception("Sync failed: The ID " + identifier + " is already assigned to a different patient on the server (" + serverPatient.getName().getNameString() + "). Please check your server's ID generator.");
+                                throw new Exception("Sync failed: The ID " + patientIdentifierStr + " is already assigned to a different patient on the server (" + serverPatient.getName().getNameString() + "). Please check your server's ID generator.");
                             }
                         }
                     }
@@ -452,6 +463,34 @@ else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
         identifierType.setUuid(ApplicationConstants.IdentifierSource.DEFAULT_IDENTIFIER_TYPE_UUID);
         identifierType.setDisplay("OpenMRS ID");
         return identifierType;
+    }
+
+    /**
+     * Gets the National ID identifier type (only has uuid), required by the server alongside the
+     * OpenMRS ID.
+     *
+     * @return the National ID identifier type
+     */
+    public IdentifierType getNationalIdIdentifierType() {
+        IdentifierType identifierType = new IdentifierType();
+        identifierType.setUuid(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID);
+        identifierType.setDisplay("National ID");
+        return identifierType;
+    }
+
+    /**
+     * Builds a National ID {@link PatientIdentifier} from a user-entered value, ready to be
+     * attached to a patient's identifier list before registration/update.
+     *
+     * @param nationalIdValue the National ID value entered on the registration form
+     * @return the National ID identifier
+     */
+    public PatientIdentifier buildNationalIdIdentifier(String nationalIdValue) {
+        PatientIdentifier identifier = new PatientIdentifier();
+        identifier.setIdentifier(nationalIdValue);
+        identifier.setIdentifierType(getNationalIdIdentifierType());
+        identifier.setPreferred(false);
+        return identifier;
     }
 
     /**

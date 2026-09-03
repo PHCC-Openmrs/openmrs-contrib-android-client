@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="gaza_governorates">
+        <item>North Gaza</item>
+        <item>Gaza</item>
+        <item>Deir al-Balah</item>
+        <item>Khan Yunis</item>
+        <item>Rafah</item>
+    </string-array>
+
     <string-array name="countries_array">
         <item>Afghanistan</item>
         <item>Albania</item>
