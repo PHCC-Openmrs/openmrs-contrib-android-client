@@ -16,6 +16,7 @@ import java.util.List;
 import dagger.hilt.android.AndroidEntryPoint;
 import android.app.IntentService;
 import android.content.Intent;
+import android.util.Log;
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.api.repository.EncounterRepository;
@@ -28,6 +29,7 @@ import com.openmrs.android_sdk.utilities.NetworkUtils;
  */
 @AndroidEntryPoint
 public class EncounterService extends IntentService {
+    public static final String ENCOUNTER_SERVICE_TAG = "ENCOUNTER_SERVICE";
 
     @Inject
     EncounterRepository encounterRepository;
@@ -48,9 +50,17 @@ public class EncounterService extends IntentService {
                 .getAllCreatedEncounters();
 
         for (final Encountercreate encounterCreate : encounterCreateList) {
-            if (!encounterCreate.getSynced()) {
-                encounterRepository.saveEncounter(encounterCreate).subscribe();
+            if (encounterCreate.getSynced()) {
+                continue;
             }
+            // Deliberately does not try to sync the encounter's visit here first: VisitService is
+            // the sole owner of syncing a visit. Doing it here too would race with VisitService's
+            // own attempt for the same visit (both running concurrently, unaware of each other)
+            // and can create a duplicate visit on the server. saveEncounter() below already
+            // handles an unsynced visit gracefully by just queuing for the next reconnect.
+            encounterRepository.saveEncounter(encounterCreate)
+                    .subscribe(result -> { }, throwable ->
+                            Log.e(ENCOUNTER_SERVICE_TAG, "Failed to sync encounter " + encounterCreate.getId(), throwable));
         }
     }
 }

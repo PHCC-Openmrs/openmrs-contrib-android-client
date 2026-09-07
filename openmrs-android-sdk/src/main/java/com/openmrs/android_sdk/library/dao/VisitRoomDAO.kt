@@ -150,4 +150,13 @@ interface VisitRoomDAO {
      */
     @Query("DELETE FROM visits WHERE patient_id = :patientID")
     fun deleteVisitsByPatientId(patientID: Long): Int
+
+    /**
+     * Gets visits that have not yet been confirmed by the server (started while offline, or
+     * before their patient was synced) - mirrors [PatientRoomDAO.getUnsyncedPatients].
+     *
+     * @return the unsynced visits
+     */
+    @Query("SELECT * FROM visits WHERE uuid IS NULL OR uuid = ''")
+    fun getUnsyncedVisits(): Single<List<VisitEntity>>
 }

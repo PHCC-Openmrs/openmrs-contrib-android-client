@@ -193,6 +193,9 @@
             android:name=".services.PatientService"
             android:enabled="true" />
         <service
+            android:name=".services.VisitService"
+            android:enabled="true" />
+        <service
             android:name=".services.EncounterService"
             android:enabled="true" />
         <service

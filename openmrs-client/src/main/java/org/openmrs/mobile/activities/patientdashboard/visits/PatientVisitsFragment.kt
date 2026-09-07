@@ -32,7 +32,6 @@ import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.library.models.Visit
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
-import com.openmrs.android_sdk.utilities.NetworkUtils.isOnline
 import com.openmrs.android_sdk.utilities.ToastUtil.error
 import com.openmrs.android_sdk.utilities.ToastUtil.notify
 import dagger.hilt.android.AndroidEntryPoint
@@ -101,7 +100,13 @@ class PatientVisitsFragment : BaseFragment() {
                     dismissCurrentDialog()
                     when (result.operationType) {
                         PatientVisitsFetching -> showVisitsList(result.data)
-                        PatientVisitStarting -> goToVisitDashboard(result.data[0].id!!)
+                        PatientVisitStarting -> {
+                            val visit = result.data[0]
+                            if (visit.uuid.isNullOrEmpty()) {
+                                notify(getString(R.string.visit_saved_offline))
+                            }
+                            goToVisitDashboard(visit.id!!)
+                        }
                         else -> {
                         }
                     }
@@ -151,8 +156,7 @@ class PatientVisitsFragment : BaseFragment() {
     }
 
     private fun showStartVisitStatus() {
-        if (!isOnline()) notify(getString(R.string.offline_mode_not_supported))
-        else if (viewModel.getPatient().isDeceased) {
+        if (viewModel.getPatient().isDeceased) {
             error(getString(R.string.cannot_start_visit_for_deceased))
         } else {
             viewModel.hasActiveVisit().observeOnce(viewLifecycleOwner, Observer { hasActiveVisit ->

@@ -33,6 +33,7 @@ import com.openmrs.android_sdk.library.dao.EncounterDAO;
 import com.openmrs.android_sdk.library.dao.LocationDAO;
 import com.openmrs.android_sdk.library.dao.VisitDAO;
 import com.openmrs.android_sdk.library.databases.AppDatabaseHelper;
+import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.models.Encounter;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.Results;
@@ -40,6 +41,7 @@ import com.openmrs.android_sdk.library.models.Visit;
 import com.openmrs.android_sdk.library.models.VisitType;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.DateUtils;
+import com.openmrs.android_sdk.utilities.NetworkUtils;
 
 
 /**
@@ -205,34 +207,90 @@ public class VisitRepository extends BaseRepository {
     /**
      * Start visit for a patient.
      *
+     * <p>Always saves the visit locally first (mirrors {@code PatientRepository#registerPatient}),
+     * so it's immediately usable - e.g. so a form can be filled in - even before, or without, the
+     * server confirming it. See {@link #syncStartedVisit} for when the server push actually
+     * happens.
+     *
      * @param patient the patient to start a visit for
-     * @return observable visit that has been started
+     * @return observable visit that has been started (locally, and on the server if possible)
      */
     public Observable<Visit> startVisit(final Patient patient) {
         return AppDatabaseHelper.createObservableIO(() -> {
-            final Visit visit = new Visit();
-            visit.setStartDatetime(DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT));
-            visit.setPatient(patient);
-            visit.setLocation(locationDAO.findLocationByName(OpenmrsAndroid.getLocation()));
+            try {
+                final Visit visit = new Visit();
+                visit.setStartDatetime(DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT));
+                visit.setPatient(patient);
 
-            VisitType visitType = new VisitType();
-            visitType.setUuid(OpenmrsAndroid.getVisitTypeUUID());
+                // findLocationByName can return null (only when the stored location name itself
+                // is null - see OpenmrsAndroid#getLocation); Visit.location is a non-null Kotlin
+                // property, so passing null through would throw. Fall back to a display-only
+                // LocationEntity, same as AppDatabaseHelper#convert(VisitEntity) already does.
+                String locationName = OpenmrsAndroid.getLocation();
+                LocationEntity location = locationDAO.findLocationByName(locationName);
+                if (location == null) {
+                    location = new LocationEntity(locationName == null ? "" : locationName);
+                }
+                visit.setLocation(location);
 
-            visit.setVisitType(visitType);
+                VisitType visitType = new VisitType();
+                visitType.setUuid(OpenmrsAndroid.getVisitTypeUUID());
+                visit.setVisitType(visitType);
 
-            Call<Visit> call = restApi.startVisit(visit);
-            Response<Visit> response = call.execute();
+                long visitId = visitDAO.saveNewVisitLocally(visit, patient.getId()).toBlocking().first();
+                visit.setId(visitId);
 
-            if (response.isSuccessful()) {
-                Visit newVisit = response.body();
-                long visitId = visitDAO.saveOrUpdate(newVisit, patient.getId()).toBlocking().first();
-                newVisit.setId(visitId);
-                return newVisit;
-            } else {
-                getLogger().e("Error starting a visit: " + response.message());
-                throw new Exception(response.message());
+                return syncStartedVisit(visit, patient);
+            } catch (Exception e) {
+                getLogger().e("Error saving visit locally: " + e.getMessage(), e);
+                throw e;
             }
         });
+    }
+
+    /**
+     * Pushes a visit that already exists locally (started offline, or before its patient was
+     * synced) to the server, and updates the local record on success. Safe to call repeatedly -
+     * e.g. by {@code VisitService} on every reconnect - until it succeeds: if we're offline, or
+     * the patient still has no server uuid to attach the visit to, the visit is returned
+     * unchanged rather than failing, so it stays queued for the next attempt.
+     *
+     * @param visit   a visit already saved locally (has a local id)
+     * @param patient the visit's patient - the visit is only pushed once this has a server uuid
+     * @return the visit, updated with a server uuid if the push succeeded, unchanged otherwise
+     */
+    public Visit syncStartedVisit(final Visit visit, final Patient patient) {
+        if (!NetworkUtils.isOnline() || !patient.isSynced()) {
+            return visit;
+        }
+        try {
+            visit.setPatient(patient);
+
+            // AppDatabaseHelper#convert(VisitEntity) reconstructs visitType.uuid from the local
+            // "visit_type" column, but that column only ever stores the visit type's *display*
+            // text (see convert(Visit): VisitEntity) - so a visit reloaded from the local DB (as
+            // happens here on every retry) never actually carries a real visit type uuid. Re-derive
+            // it from the app's configured visit type rather than trust the reloaded value.
+            if (visit.getVisitType() == null || visit.getVisitType().getUuid() == null
+                    || visit.getVisitType().getUuid().isEmpty()) {
+                VisitType visitType = new VisitType();
+                visitType.setUuid(OpenmrsAndroid.getVisitTypeUUID());
+                visit.setVisitType(visitType);
+            }
+
+            Response<Visit> response = restApi.startVisit(visit).execute();
+            if (response.isSuccessful() && response.body() != null) {
+                Visit syncedVisit = response.body();
+                syncedVisit.setId(visit.getId());
+                visitDAO.saveOrUpdate(syncedVisit, patient.getId()).toBlocking().first();
+                return syncedVisit;
+            } else {
+                getLogger().e("Error starting a visit: " + response.message());
+            }
+        } catch (Exception e) {
+            getLogger().e("Error starting a visit, will retry when back online: " + e.getMessage());
+        }
+        return visit;
     }
 
     /**

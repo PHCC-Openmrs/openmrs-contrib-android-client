@@ -44,8 +44,11 @@ class Visit : Resource() {
     @Expose
     var stopDatetime: String? = null
 
+    // Not lateinit: a Visit built locally rather than deserialized from a server response (the
+    // offline-first "start visit" flow) never has this set, and VisitDAO reads it unconditionally
+    // when saving - a lateinit var would throw there instead of just seeing an empty list.
     @Expose
-    lateinit var encounters: List<Encounter>
+    var encounters: List<Encounter> = emptyList()
 
     fun isActiveVisit() = stopDatetime.isNullOrEmpty()
 }

@@ -50,6 +50,11 @@ class EncounterRepository @Inject constructor(
                 return@Callable ResultType.EncounterSubmissionError
             }
 
+            // Both refreshed from the current DB state on every attempt (not just set once at
+            // form-fill time): if the form was filled before its patient/visit had synced, the
+            // stored uuids here would otherwise still be blank on a later retry, and the server
+            // rejects an encounter missing either one.
+            encounterCreate.patient = patient.uuid
             encounterCreate.visit = activeVisit.uuid
             if (encounterCreate.location == null) {
                 encounterCreate.location = OpenmrsAndroid.getLocation()
@@ -59,7 +64,12 @@ class EncounterRepository @Inject constructor(
                 encounterCreate.id = saveEncounterCreateToDB(encounterCreate).execute()
             }
 
-            if (patient.isSynced && NetworkUtils.isOnline()) {
+            // The visit itself may still be unsynced (started offline, or before the patient was
+            // synced) even though the patient and network are both ready - in that case its uuid
+            // is null, and submitting the encounter now would send a null visit reference to the
+            // server. Fall through to the local-queue branch instead; VisitService will give the
+            // visit a uuid once it syncs, and this encounter will be retried by EncounterService.
+            if (patient.isSynced && NetworkUtils.isOnline() && !activeVisit.uuid.isNullOrEmpty()) {
                 restApi.createEncounter(encounterCreate).execute().run {
                     if (isSuccessful) {
                         val encounter: Encounter = body()!!
@@ -160,6 +170,9 @@ else {
 
             val activeVisit = VisitDAO().getActiveVisitByPatientId(encounterCreate.patientId!!).execute()
                 ?: throw Exception("No active visit found for this patient locally.")
+            if (activeVisit.uuid.isNullOrEmpty()) {
+                throw Exception("This patient's active visit hasn't synced to the server yet. Please try again once you're back online.")
+            }
 
             encounterCreate.visit = activeVisit.uuid
             if (encounterCreate.location == null) {
@@ -230,24 +243,26 @@ else {
      * @return Observable<Encounter>
      */
     fun getAllEncountersByPatientUuidAndSaveLocally(uuid: String): Observable<List<Encounter>> {
-        val encounterList: MutableList<Encounter> = mutableListOf()
-        if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
+        return AppDatabaseHelper.createObservableIO(Callable {
+            val encounterList: MutableList<Encounter> = mutableListOf()
+            if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
 
-        restApi.getAllEncountersForPatientByPatientUuid(uuid).execute().run {
-            if (isSuccessful && this.body() != null) {
+            restApi.getAllEncountersForPatientByPatientUuid(uuid).execute().run {
+                if (isSuccessful && this.body() != null) {
 
-                val encounterResources: List<Resource> = this.body()!!.results
-                for (encounterResource in encounterResources) {
-                    val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
-                    encounterList.add(encounter)
+                    val encounterResources: List<Resource> = this.body()!!.results
+                    for (encounterResource in encounterResources) {
+                        val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
+                        encounterList.add(encounter)
+                    }
+                    encounterDAO.deleteAllStandaloneEncounters(uuid)      //delete previous list
+                    encounterDAO.saveStandaloneEncounters(encounterList) //save latest list
+                    return@Callable encounterList.toList()
+                } else {
+                    throw Exception("Get Encounters error: ${message()}")
                 }
-                encounterDAO.deleteAllStandaloneEncounters(uuid)      //delete previous list
-                encounterDAO.saveStandaloneEncounters(encounterList) //save latest list
-                return Observable.just(encounterList.toList())
-            } else {
-                throw Exception("Get Encounters error: ${message()}")
             }
-        }
+        })
     }
 
     /**
@@ -327,27 +342,27 @@ else {
         patient_uuid: String,
         encounterType_uuid: String
     ): Observable<List<Encounter>> {
+        return AppDatabaseHelper.createObservableIO(Callable {
+            val encounterList: MutableList<Encounter> = mutableListOf()
+            if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
 
-        val encounterList: MutableList<Encounter> = mutableListOf()
-        if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
+            restApi.getEncounterResourcesByEncounterType(patient_uuid, encounterType_uuid).execute().run {
 
-        restApi.getEncounterResourcesByEncounterType(patient_uuid, encounterType_uuid).execute().run {
+                    if (isSuccessful && this.body() != null) {
 
-                if (isSuccessful && this.body() != null) {
+                        val encounterResources: List<Resource> = this.body()!!.results
+                        for (encounterResource in encounterResources) {
+                            val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
+                            encounterList.add(encounter)
+                        }
 
-                    val encounterResources: List<Resource> = this.body()!!.results
-                    for (encounterResource in encounterResources) {
-                        val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
-                        encounterList.add(encounter)
+                        saveLocallyIfNotExist(encounterList)
+                        return@Callable encounterList.toList()
+                    } else {
+                        throw Exception("Get Encounters error: ${message()}")
                     }
-
-                    saveLocallyIfNotExist(encounterList)
-                    return Observable.just(encounterList.toList())
-                } else {
-                    throw Exception("Get Encounters error: ${message()}")
-                }
-        }
-
+            }
+        })
     }
 
     /**
@@ -364,28 +379,28 @@ else {
         patient_uuid: String,
         orderType_uuid: String
     ): Observable<List<Encounter>> {
+        return AppDatabaseHelper.createObservableIO(Callable {
+            val encounterList: MutableList<Encounter> = mutableListOf()
+            if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
 
-        val encounterList: MutableList<Encounter> = mutableListOf()
-        if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
+            restApi.getEncounterResourcesByOrderType(patient_uuid, orderType_uuid).execute()
+                .run {
 
-        restApi.getEncounterResourcesByOrderType(patient_uuid, orderType_uuid).execute()
-            .run {
+                    if (isSuccessful && this.body() != null) {
 
-                if (isSuccessful && this.body() != null) {
+                        val encounterResources: List<Resource> = this.body()!!.results
+                        for (encounterResource in encounterResources) {
+                            val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
+                            encounterList.add(encounter)
+                        }
 
-                    val encounterResources: List<Resource> = this.body()!!.results
-                    for (encounterResource in encounterResources) {
-                        val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
-                        encounterList.add(encounter)
+                        saveLocallyIfNotExist(encounterList)
+                        return@Callable encounterList.toList()
+                    } else {
+                        throw Exception("Get Encounters error: ${message()}")
                     }
-
-                    saveLocallyIfNotExist(encounterList)
-                    return Observable.just(encounterList.toList())
-                } else {
-                    throw Exception("Get Encounters error: ${message()}")
                 }
-            }
-
+        })
     }
 
     /**
@@ -402,28 +417,28 @@ else {
         patient_uuid: String,
         fromDate: String
     ): Observable<List<Encounter>> {
+        return AppDatabaseHelper.createObservableIO(Callable {
+            val encounterList: MutableList<Encounter> = mutableListOf()
+            if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
 
-        val encounterList: MutableList<Encounter> = mutableListOf()
-        if (!NetworkUtils.isOnline()) throw Exception("Must be online to fetch encounters")
+            restApi.getEncounterResourcesFromDate(patient_uuid, fromDate).execute()
+                .run {
 
-        restApi.getEncounterResourcesFromDate(patient_uuid, fromDate).execute()
-            .run {
+                    if (isSuccessful && this.body() != null) {
 
-                if (isSuccessful && this.body() != null) {
+                        val encounterResources: List<Resource> = this.body()!!.results
+                        for (encounterResource in encounterResources) {
+                            val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
+                            encounterList.add(encounter)
+                        }
 
-                    val encounterResources: List<Resource> = this.body()!!.results
-                    for (encounterResource in encounterResources) {
-                        val encounter = getEncounterByUuid(encounterResource.uuid!!).execute()
-                        encounterList.add(encounter)
+                        saveLocallyIfNotExist(encounterList)
+                        return@Callable encounterList.toList()
+                    } else {
+                        throw Exception("Get Encounters error: ${message()}")
                     }
-
-                    saveLocallyIfNotExist(encounterList)
-                    return Observable.just(encounterList.toList())
-                } else {
-                    throw Exception("Get Encounters error: ${message()}")
                 }
-            }
-
+        })
     }
 
     /**
