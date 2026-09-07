@@ -15,7 +15,7 @@
 
 <resources>
     <string name="app_name">OpenMRS Android Client</string>
-    <string name="organization_name" translatable="false">OpenMRS</string>
+    <string name="settings_app_name" translatable="false">Android Client</string>
     <string name="client_name" translatable="false">Client</string>
     <string name="action_settings">Settings</string>
     <string name="action_logout">Logout</string>
@@ -414,7 +414,7 @@
     <string name="charts_view_toolbar_title">Charts View</string>
 
     <!-- Image content description strings -->
-    <string name="openmrs_logo">OpenMRS logo</string>
+    <string name="openmrs_logo">CARE logo</string>
     <string name="toast_with_black_background">Toast with black background</string>
     <string name="edit_form">Edit form</string>
     <string name="patient_photo">Patient Photo</string>

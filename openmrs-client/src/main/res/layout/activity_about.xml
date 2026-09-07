@@ -25,34 +25,22 @@
 
         <ImageView
             android:id="@+id/openmrsLogo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="110dp"
+            android:layout_height="140dp"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="40dp"
             android:contentDescription="@string/openmrs_logo"
-            android:src="@drawable/ic_openmrs"
+            android:src="@drawable/care_logo"
             android:visibility="visible"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/organization_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/montserrat"
-            android:text="@string/organization_name"
-            android:textColor="?android:attr/textColorPrimary"
-            android:textSize="22sp"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/openmrsLogo" />
-
-        <TextView
             android:id="@+id/aboutOpenmrsTextView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toBottomOf="@id/organization_name"
+            app:layout_constraintTop_toBottomOf="@id/openmrsLogo"
             android:layout_marginTop="30dp"
             android:layout_marginLeft="35dp"
             android:layout_marginRight="35dp"

@@ -118,12 +118,12 @@
 
         <ImageView
             android:id="@+id/app_icon"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
+            android:layout_width="124dp"
+            android:layout_height="40dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin"
             android:layout_marginLeft="@dimen/activity_horizontal_margin"
-            android:layout_marginTop="@dimen/activity_vertical_margin"
-            app:srcCompat="@drawable/openmrs_action_logo"
+            android:layout_marginTop="24dp"
+            app:srcCompat="@drawable/care_toolbar_logo"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/view" />
 
@@ -134,7 +134,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginLeft="8dp"
             android:layout_marginTop="24dp"
-            android:text="@string/app_name"
+            android:text="@string/settings_app_name"
             android:textColor="?android:attr/textColorPrimary"
             app:layout_constraintStart_toEndOf="@+id/app_icon"
             app:layout_constraintTop_toBottomOf="@+id/view" />

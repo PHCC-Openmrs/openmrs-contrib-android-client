@@ -15,11 +15,12 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:orientation="vertical">
@@ -30,43 +31,23 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:indeterminate="true"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintVertical_chainStyle="packed"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/openmrsLogo" />
 
         <ImageView
             android:id="@+id/openmrsLogo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="96dp"
+            android:layout_height="120dp"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="30dp"
             android:contentDescription="@string/openmrs_logo"
-            app:srcCompat="@drawable/ic_openmrs"
+            app:srcCompat="@drawable/care_logo"
             android:visibility="visible"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/locationLoadingProgressBar" />
-
-        <TextView
-            android:id="@+id/organization_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/montserrat"
-            android:text="@string/organization_name"
-            android:textColor="@color/dark_grey_8x"
-            android:textSize="22sp"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/openmrsLogo" />
-
-        <TextView
-            android:id="@+id/client_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="@font/montserrat"
-            android:text="@string/client_name"
-            android:textSize="18sp"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/organization_name" />
+            app:layout_constraintTop_toBottomOf="@id/locationLoadingProgressBar"
+            app:layout_constraintBottom_toTopOf="@id/loginFormView" />
 
         <LinearLayout
             android:id="@+id/loginFormView"
@@ -76,7 +57,8 @@
             android:visibility="visible"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/client_name">
+            app:layout_constraintTop_toBottomOf="@id/openmrsLogo"
+            app:layout_constraintBottom_toTopOf="@id/loginLoading">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/textInputLayoutLoginURL"
@@ -280,7 +262,8 @@
             android:layout_marginBottom="10dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/loginFormView" />
+            app:layout_constraintTop_toBottomOf="@id/loginFormView"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

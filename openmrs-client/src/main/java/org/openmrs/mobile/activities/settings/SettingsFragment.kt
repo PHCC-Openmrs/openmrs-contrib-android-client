@@ -126,7 +126,7 @@ class SettingsFragment : BaseFragment() {
 
     private fun addBuildVersionInfo() {
         with(binding) {
-            appNameTextView.text = getString(R.string.app_name)
+            appNameTextView.text = getString(R.string.settings_app_name)
             versionTextView.text = viewModel.getBuildVersionInfo(requireContext())
         }
     }
