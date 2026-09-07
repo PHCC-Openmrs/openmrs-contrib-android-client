@@ -579,6 +579,7 @@
 
     <!--PatientDashboardVisits-->
     <string name="offline_mode_not_supported">Cannot start a patient visit manually in offline mode.</string>
+    <string name="visit_saved_offline">Visit started offline. It will sync automatically once you\'re back online.</string>
 
     <!--PatientRepository-->
     <string name="patient_cannot_be_synced_due_to_server_error_message">"Patient[ %1$i ] cannot be synced due to server error %2$s </string>

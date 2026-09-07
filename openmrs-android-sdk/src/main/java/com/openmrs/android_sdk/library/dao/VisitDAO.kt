@@ -66,15 +66,41 @@ class VisitDAO @Inject constructor() {
         })
     }
 
+    /**
+     * Saves a brand-new visit locally before the server has confirmed it (uuid may be null) -
+     * used by the offline-first "start visit" flow so a visit exists right away (e.g. so a form
+     * can be filled in) even if we're offline or the patient itself isn't synced yet. Always
+     * inserts a new row; unlike [saveOrUpdate], it never assumes a uuid is already present.
+     *
+     * @param visit     the visit to save, not yet saved locally
+     * @param patientId the patient id
+     * @return the observable local id of the newly saved visit
+     */
+    fun saveNewVisitLocally(visit: Visit, patientId: Long): Observable<Long> {
+        return createObservableIO(Callable { saveVisit(visit, patientId) })
+    }
+
+    /**
+     * Gets visits that have not yet been confirmed by the server - mirrors
+     * [PatientDAO.getUnSyncedPatients].
+     *
+     * @return the unsynced visits
+     */
+    fun getUnsyncedVisits(): List<Visit> {
+        return try {
+            visitRoomDAO.getUnsyncedVisits().blockingGet().map { convert(it) }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
     private fun saveVisit(visit: Visit, patientID: Long): Long {
         val encounterDAO = EncounterDAO()
         visit.patient = PatientDAO().findPatientByID(patientID)
         val visitEntity = convert(visit)
         val visitID = visitRoomDAO.addVisit(visitEntity)
-        if (visit.encounters != null) {
-            for (encounter in visit.encounters) {
-                encounterDAO.saveEncounter(encounter, visitID)
-            }
+        for (encounter in visit.encounters) {
+            encounterDAO.saveEncounter(encounter, visitID)
         }
         return visitID
     }
@@ -84,24 +110,22 @@ class VisitDAO @Inject constructor() {
         val observationDAO = ObservationDAO()
         visit.id = visitID
         visit.patient = PatientDAO().findPatientByID(patientID)
-        if (visit.encounters != null) {
-            for (encounter in visit.encounters) {
-                var encounterID = encounterDAO.getEncounterByUUID(encounter.uuid)
-                if (encounterID > 0) {
-                    encounterDAO.updateEncounter(encounterID, encounter, visitID)
-                } else {
-                    encounterID = encounterDAO.saveEncounter(encounter, visitID)
-                }
-                val oldObs = observationDAO.findObservationByEncounterID(encounterID)
-                for (obs in oldObs) {
+        for (encounter in visit.encounters) {
+            var encounterID = encounterDAO.getEncounterByUUID(encounter.uuid)
+            if (encounterID > 0) {
+                encounterDAO.updateEncounter(encounterID, encounter, visitID)
+            } else {
+                encounterID = encounterDAO.saveEncounter(encounter, visitID)
+            }
+            val oldObs = observationDAO.findObservationByEncounterID(encounterID)
+            for (obs in oldObs) {
+                val observationEntity = convert(obs, encounterID)
+                observationRoomDAO.deleteObservation(observationEntity)
+            }
+            if (encounter.observations != null) {
+                for (obs in encounter.observations) {
                     val observationEntity = convert(obs, encounterID)
-                    observationRoomDAO.deleteObservation(observationEntity)
-                }
-                if (encounter.observations != null) {
-                    for (obs in encounter.observations) {
-                        val observationEntity = convert(obs, encounterID)
-                        observationRoomDAO.addObservation(observationEntity)
-                    }
+                    observationRoomDAO.addObservation(observationEntity)
                 }
             }
         }

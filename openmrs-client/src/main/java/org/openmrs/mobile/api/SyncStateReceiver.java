@@ -19,6 +19,7 @@ import com.openmrs.android_sdk.utilities.ToastUtil;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.services.EncounterService;
 import org.openmrs.mobile.services.PatientService;
+import org.openmrs.mobile.services.VisitService;
 
 public class SyncStateReceiver extends BroadcastReceiver {
     @Override
@@ -26,6 +27,8 @@ public class SyncStateReceiver extends BroadcastReceiver {
         ToastUtil.notify(context.getString(R.string.patent_and_form_data_sync_resumed));
         Intent i = new Intent(context, PatientService.class);
         context.startService(i);
+        Intent iv = new Intent(context, VisitService.class);
+        context.startService(iv);
         Intent i1 = new Intent(context, EncounterService.class);
         context.startService(i1);
     }
