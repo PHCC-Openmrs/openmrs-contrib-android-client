@@ -235,7 +235,7 @@
     <string name="charts_view_toolbar_title">चार्ट देखें</string>
 
     <!-- Image content description strings -->
-    <string name="openmrs_logo">OpenMRS logo</string>
+    <string name="openmrs_logo">CARE logo</string>
     <string name="toast_with_black_background">काली पृष्ठभूमि वाला टोस्ट</string>
     <string name="edit_form">फॉर्म संपादित करें</string>
     <string name="patient_photo">रोगी फोटो</string>

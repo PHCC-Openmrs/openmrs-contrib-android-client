@@ -20,33 +20,24 @@
 
     <ImageView
         android:id="@+id/logo"
-        android:layout_width="150dp"
-        android:layout_height="150dp"
+        android:layout_width="144dp"
+        android:layout_height="180dp"
         android:layout_centerInParent="true"
         android:contentDescription="@string/openmrs_logo"
-        app:srcCompat="@drawable/ic_openmrs"
+        app:srcCompat="@drawable/care_logo"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/organization_name"
+        android:id="@+id/client_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:gravity="center"
-        android:textColor="?android:attr/textColorPrimary"
-        android:textSize="30sp"
-        app:layout_constraintTop_toBottomOf="@id/logo" />
-
-    <TextView
-        android:id="@+id/client_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
         android:textColor="@color/dark_grey_8x"
         android:textSize="21sp"
-        app:layout_constraintTop_toBottomOf="@id/organization_name" />
+        app:layout_constraintTop_toBottomOf="@id/logo" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

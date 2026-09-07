@@ -37,8 +37,6 @@ class SplashActivity : ACBaseActivity() {
 
         val typeface = Typeface.createFromAsset(assets, ApplicationConstants.TypeFacePathConstants.MONTSERRAT)
         with(binding) {
-            organizationName.typeface = typeface
-            organizationName.setText(R.string.organization_name)
             clientName.typeface = typeface
             clientName.setText(R.string.client_name)
         }
