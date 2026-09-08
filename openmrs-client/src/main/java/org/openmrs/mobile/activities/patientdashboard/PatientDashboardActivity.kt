@@ -105,7 +105,17 @@ class PatientDashboardActivity : ACBaseActivity() {
                     dismissCustomFragmentDialog()
                     when (result.operationType) {
                         PatientSynchronizing -> {
-                            ToastUtil.error(getString(R.string.synchronize_patient_error))
+                            // Specific, actionable failures (e.g. a duplicate identifier already
+                            // registered to another patient) carry a clean message worth showing
+                            // as-is; anything else (e.g. the raw server error body) falls back to
+                            // the generic message rather than leaking technical detail to the user.
+                            val message = result.throwable.message
+                            val displayMessage = if (!message.isNullOrBlank() && !message.startsWith("syncPatient server error:")) {
+                                message
+                            } else {
+                                getString(R.string.synchronize_patient_error)
+                            }
+                            ToastUtil.error(displayMessage)
                             initViewPager()
                         }
                         PatientDeleting -> ToastUtil.error(getString(R.string.delete_patient_error))

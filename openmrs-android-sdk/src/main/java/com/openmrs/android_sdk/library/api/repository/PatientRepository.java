@@ -193,14 +193,26 @@ public class PatientRepository extends BaseRepository {
                 } else {
                     String errorMsg = response.errorBody() != null ? response.errorBody().string() : response.message();
                     logger.e("syncPatient server error: " + errorMsg);
-                    
-                    if (errorMsg.contains("PatientIdentifier.error.duplicateIdentifier")) {
-                        logger.i("Duplicate identifier detected. Verifying server record...");
-                        String patientIdentifierStr = patient.getIdentifier().getIdentifier();
+
+                    // The server reports a duplicate identifier as a plain global error - e.g.
+                    // "Identifier 734567811 already in use by another patient" - rather than the
+                    // "PatientIdentifier.error.duplicateIdentifier" code some older/other OpenMRS
+                    // versions use, so both shapes are checked here. Whichever identifier the
+                    // message names (not necessarily the OpenMRS ID) is the one searched for below.
+                    java.util.regex.Matcher duplicateMatcher = java.util.regex.Pattern
+                            .compile("[Ii]dentifier ([^\"]+?) already in use by another patient")
+                            .matcher(errorMsg);
+                    boolean isDuplicateIdentifier = duplicateMatcher.find() || errorMsg.contains("PatientIdentifier.error.duplicateIdentifier");
+
+                    if (isDuplicateIdentifier) {
+                        String patientIdentifierStr = duplicateMatcher.groupCount() > 0 && duplicateMatcher.group(1) != null
+                                ? duplicateMatcher.group(1)
+                                : patient.getIdentifier().getIdentifier();
+                        logger.i("Duplicate identifier detected (" + patientIdentifierStr + "). Verifying server record...");
                         Response<Results<Patient>> searchResponse = restApi.getPatients(patientIdentifierStr, "full").execute();
                         if (searchResponse.isSuccessful() && searchResponse.body() != null && !searchResponse.body().getResults().isEmpty()) {
                             Patient serverPatient = searchResponse.body().getResults().get(0);
-                            
+
                             // Only link if names match to prevent incorrect merging due to server-side ID reuse
                             String serverGiven = (serverPatient.getName() != null && serverPatient.getName().getGivenName() != null) ? serverPatient.getName().getGivenName() : "";
                             String serverFamily = (serverPatient.getName() != null && serverPatient.getName().getFamilyName() != null) ? serverPatient.getName().getFamilyName() : "";
@@ -216,12 +228,19 @@ public class PatientRepository extends BaseRepository {
                                 patientDAO.updatePatient(patient.getId(), patient);
                                 return patient;
                             } else {
-                                logger.e("Duplicate ID found on server, but NAMES DO NOT MATCH. Server: " + serverPatient.getName().getNameString() + ", Local: " + patient.getName().getNameString());
-                                throw new Exception("Sync failed: The ID " + patientIdentifierStr + " is already assigned to a different patient on the server (" + serverPatient.getName().getNameString() + "). Please check your server's ID generator.");
+                                // Built from the already null-checked given/family names above (rather
+                                // than serverPatient.getName().getNameString()) since the "full" patient
+                                // search representation doesn't always populate a name sub-object.
+                                String serverDisplayName = (serverGiven + " " + serverFamily).trim();
+                                if (serverDisplayName.isEmpty()) {
+                                    serverDisplayName = serverPatient.getDisplay() != null ? serverPatient.getDisplay() : "another patient";
+                                }
+                                logger.e("Duplicate ID found on server, but NAMES DO NOT MATCH. Server: " + serverDisplayName + ", Local: " + (localGiven + " " + localFamily).trim());
+                                throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient (" + serverDisplayName + "). Please verify the ID and try again.");
                             }
                         }
-                    }
-else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
+                        throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient. Please verify the ID and try again.");
+                    } else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
                         logger.e("Sync failed: The logged-in user does not have permission to assign identifiers. Please check OpenMRS user privileges (Add Patient Identifier).");
                         throw new Exception("Sync failed: Insufficient privileges to register patient. Please contact your administrator.");
                     }
