@@ -103,28 +103,6 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
-                android:id="@+id/unknown_cardview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/photo_cardview">
-
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/unidentified_checkbox"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="12dp"
-                    android:fontFamily="@font/montserrat"
-                    android:text="@string/unidentified_patient"
-                    android:textColor="?android:attr/textColorPrimary"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-            </androidx.cardview.widget.CardView>
-
-            <androidx.cardview.widget.CardView
                 android:id="@+id/deceased_cardview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -132,7 +110,7 @@
                 android:visibility="gone"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/unknown_cardview">
+                app:layout_constraintTop_toBottomOf="@id/photo_cardview">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -209,54 +187,43 @@
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
-                        <LinearLayout
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/textInputLayoutFirstName"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:baselineAligned="false"
-                            android:weightSum="2">
+                            android:layout_marginTop="8dp">
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/textInputLayoutFirstName"
-                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                                android:layout_width="0dp"
+                            <EditText
+                                android:id="@+id/firstName"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1">
+                                android:focusable="true"
+                                android:hint="@string/reg_firstname_hint"
+                                android:imeOptions="actionNext"
+                                android:inputType="textPersonName|textCapWords"
+                                android:maxLines="1"
+                                android:textSize="14sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
 
-                                <EditText
-                                    android:id="@+id/firstName"
-                                    android:layout_width="fill_parent"
-                                    android:layout_height="wrap_content"
-                                    android:focusable="true"
-                                    android:hint="@string/reg_firstname_hint"
-                                    android:imeOptions="actionNext"
-                                    android:inputType="textPersonName|textCapWords"
-                                    android:maxLines="1"
-                                    android:textSize="14sp" />
-                            </com.google.android.material.textfield.TextInputLayout>
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/textInputLayoutMiddlename"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp">
 
-                            <com.google.android.material.textfield.TextInputLayout
-                                android:id="@+id/textInputLayoutMiddlename"
-                                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                                android:layout_width="0dp"
+                            <EditText
+                                android:id="@+id/middlename"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_marginLeft="8dp"
-                                android:layout_weight="1">
-
-                                <EditText
-                                    android:id="@+id/middlename"
-                                    android:layout_width="fill_parent"
-                                    android:layout_height="wrap_content"
-                                    android:focusable="true"
-                                    android:hint="@string/reg_midname_hint"
-                                    android:imeOptions="actionNext"
-                                    android:inputType="textPersonName|textCapWords"
-                                    android:maxLines="1"
-                                    android:textSize="14sp" />
-                            </com.google.android.material.textfield.TextInputLayout>
-
-                        </LinearLayout>
+                                android:focusable="true"
+                                android:hint="@string/reg_midname_hint"
+                                android:imeOptions="actionNext"
+                                android:inputType="textPersonName|textCapWords"
+                                android:maxLines="1"
+                                android:textSize="14sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/textInputLayoutSurname"
@@ -273,26 +240,6 @@
                                 android:hint="@string/reg_surname_hint"
                                 android:imeOptions="actionNext"
                                 android:inputType="textPersonName|textCapWords"
-                                android:maxLines="1"
-                                android:textSize="14sp" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            android:id="@+id/textInputLayoutNationalId"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp">
-
-                            <EditText
-                                android:id="@+id/nationalId"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:focusable="true"
-                                android:hint="@string/reg_national_id_hint"
-                                android:imeOptions="actionNext"
-                                android:inputType="number"
-                                android:maxLength="9"
                                 android:maxLines="1"
                                 android:textSize="14sp" />
                         </com.google.android.material.textfield.TextInputLayout>
@@ -341,6 +288,43 @@
                                 android:text="@string/female" />
 
                         </RadioGroup>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/linearLayout_patient_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/reg_patient_status_hint"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/textInputLayoutPatientStatus"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/patientStatusAutoComplete"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:focusable="true"
+                                android:hint="@string/reg_patient_status_hint"
+                                android:inputType="none"
+                                android:maxLines="1"
+                                android:paddingStart="12dp"
+                                android:paddingLeft="12dp"
+                                android:textSize="14sp" />
+
+                        </com.google.android.material.textfield.TextInputLayout>
 
                     </LinearLayout>
 
@@ -478,6 +462,42 @@
 
                     </LinearLayout>
 
+                    <LinearLayout
+                        android:id="@+id/linearLayoutNationalId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/reg_national_id_hint"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/textInputLayoutNationalId"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp">
+
+                            <EditText
+                                android:id="@+id/nationalId"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:focusable="true"
+                                android:hint="@string/reg_national_id_hint"
+                                android:imeOptions="actionNext"
+                                android:inputType="number"
+                                android:maxLength="9"
+                                android:maxLines="1"
+                                android:textSize="14sp" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                    </LinearLayout>
+
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
@@ -544,91 +564,6 @@
                             android:textSize="14sp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/textInputLayoutAddress2"
-                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp">
-
-                        <EditText
-                            android:id="@+id/addressTwo"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:focusable="true"
-                            android:hint="@string/addr2_hint"
-                            android:imeOptions="actionNext"
-                            android:inputType="textCapWords"
-                            android:maxLines="1"
-                            android:textSize="14sp" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:baselineAligned="false"
-                        android:orientation="horizontal"
-                        android:weightSum="2">
-
-                        <androidx.constraintlayout.widget.Guideline
-                            android:id="@+id/guideline"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            app:layout_constraintGuide_percent="0.5" />
-
-                        <LinearLayout
-                            android:id="@+id/country_picker_layout"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="center"
-                            android:layout_marginEnd="4dp"
-                            android:layout_marginRight="8dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/rectangle_transparent_box"
-                            android:orientation="vertical"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintLeft_toLeftOf="parent"
-                            app:layout_constraintRight_toLeftOf="@id/guideline"
-                            app:layout_constraintTop_toTopOf="parent">
-
-                            <com.hbb20.CountryCodePicker
-                                android:id="@+id/countryCodeSpinner"
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:gravity="center"
-                                app:ccpDialog_textColor="?android:attr/textColorPrimary"
-                                app:ccp_showFullName="true"
-                                app:ccp_showNameCode="false"
-                                app:ccp_showPhoneCode="false" />
-                        </LinearLayout>
-
-                        <EditText
-                            android:id="@+id/postalCode"
-                            android:layout_width="0dp"
-                            android:layout_height="0dp"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginLeft="8dp"
-                            android:background="@drawable/rectangle_transparent_box"
-                            android:digits="@string/alphanumeric_postal_code"
-                            android:focusable="true"
-                            android:hint="@string/patient_postal_label"
-                            android:imeOptions="actionDone"
-                            android:inputType="text"
-                            android:maxLines="1"
-                            android:paddingStart="14dp"
-                            android:paddingLeft="14dp"
-                            android:textColorHint="@color/dark_grey_8x"
-                            android:textSize="14sp"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintLeft_toRightOf="@id/guideline"
-                            app:layout_constraintRight_toRightOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            tools:ignore="RtlSymmetry" />
-
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -693,6 +628,26 @@
                         </com.google.android.material.textfield.TextInputLayout>
 
                     </LinearLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/textInputLayoutPhoneNumber"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp">
+
+                        <EditText
+                            android:id="@+id/phoneNumber"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="true"
+                            android:hint="@string/reg_phone_hint"
+                            android:imeOptions="actionNext"
+                            android:inputType="phone"
+                            android:maxLength="10"
+                            android:maxLines="1"
+                            android:textSize="14sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
 

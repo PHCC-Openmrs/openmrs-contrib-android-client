@@ -13,7 +13,6 @@ import com.openmrs.android_sdk.library.models.OperationType.PatientRegistering
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.utilities.ApplicationConstants
-import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.COUNTRIES_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.PatientValidator
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -44,11 +43,6 @@ class AddEditPatientViewModel @Inject constructor(
 
     lateinit var patient: Patient
         private set
-    var isPatientUnidentified = false
-        set(value) {
-            field = value
-            patientValidator.isPatientUnidentified = value
-        }
 
     var placesClient: PlacesClient? = null
     var dateHolder: DateTime? = null
@@ -65,11 +59,8 @@ class AddEditPatientViewModel @Inject constructor(
             resetPatient()
         }
 
-        // Get available countries picker list
-        val countriesList: List<String> = savedStateHandle.get(COUNTRIES_BUNDLE)!!
-
         // Initialize patient data validator
-        patientValidator = PatientValidator(patient, isPatientUnidentified, countriesList)
+        patientValidator = PatientValidator(patient)
     }
 
     fun resetPatient() {
@@ -96,6 +87,40 @@ class AddEditPatientViewModel @Inject constructor(
         patient.identifiers = identifiers
     }
 
+    /**
+     * Gets the Phone Number value currently attached to the patient, if any.
+     */
+    fun getPhoneNumber(): String? =
+            patient.getAttributeValue(ApplicationConstants.PersonAttributeTypes.PHONE_NUMBER_UUID)
+
+    /**
+     * Attaches (or replaces) the patient's Phone Number attribute. Optional - passing a blank
+     * value removes the attribute rather than attaching an empty one.
+     */
+    fun setPhoneNumber(value: String) = setAttribute(ApplicationConstants.PersonAttributeTypes.PHONE_NUMBER_UUID, value)
+
+    /**
+     * Gets the Patient Status (Resident/IDP) value currently attached to the patient, if any.
+     */
+    fun getPatientStatus(): String? =
+            patient.getAttributeValue(ApplicationConstants.PersonAttributeTypes.PATIENT_STATUS_UUID)
+
+    /**
+     * Attaches (or replaces) the patient's Patient Status attribute. Optional - passing a blank
+     * value removes the attribute rather than attaching an empty one.
+     */
+    fun setPatientStatus(value: String) = setAttribute(ApplicationConstants.PersonAttributeTypes.PATIENT_STATUS_UUID, value)
+
+    private fun setAttribute(attributeTypeUuid: String, value: String) {
+        val attributes = patient.attributes.filterNot {
+            it.attributeType?.uuid == attributeTypeUuid
+        }.toMutableList()
+        if (value.isNotBlank()) {
+            attributes.add(patientRepository.buildAttribute(attributeTypeUuid, value))
+        }
+        patient.attributes = attributes
+    }
+
     fun confirmPatient() {
         val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
         logger.i("Confirm patient called")
@@ -112,11 +137,6 @@ class AddEditPatientViewModel @Inject constructor(
         logger.i("Fetch similar patients called")
         if (!patientValidator.validate()) {
             logger.w("Patient validation failed in fetchSimilarPatients")
-            return
-        }
-        if (isPatientUnidentified) {
-            logger.i("Patient is unidentified, skipping similar patients check")
-            _similarPatientsLiveData.value = emptyList()
             return
         }
         setLoading(OperationType.PatientSearching)

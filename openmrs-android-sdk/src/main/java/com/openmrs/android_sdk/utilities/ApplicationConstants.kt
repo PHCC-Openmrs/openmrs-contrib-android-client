@@ -144,6 +144,19 @@ object ApplicationConstants {
 
     object PersonAttributeTypes {
         const val PHONE_NUMBER_UUID = "14d4f066-15f5-102d-96e4-000c29c2a5d7"
+        const val PATIENT_STATUS_UUID = "c980ebc9-ce83-4954-9249-96cad71b8b1e"
+    }
+
+    /**
+     * Patient Status is a coded (concept-backed) person attribute - the server expects its value
+     * to be one of these concept uuids, not the display label, matching how the web app's
+     * registration form submits it.
+     */
+    object PatientStatusAnswers {
+        const val RESIDENT_LABEL = "Resident"
+        const val RESIDENT_UUID = "7ff64150-c85a-427e-898a-c213d44d8a52"
+        const val IDP_LABEL = "IDP"
+        const val IDP_UUID = "93356930-08f0-4a87-a2a5-b6cbfdae963c"
     }
 
     object BundleKeys {

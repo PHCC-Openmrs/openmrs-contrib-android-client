@@ -24,6 +24,7 @@ import androidx.lifecycle.Observer
 import com.openmrs.android_sdk.library.models.OperationType.PatientFetching
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.Result
+import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.DateUtils.convertTime
 import com.openmrs.android_sdk.utilities.StringUtils.notEmpty
@@ -112,17 +113,36 @@ class PatientDetailsFragment : BaseFragment() {
                 patientDetailsBirthDate.text = convertTime(longTime)
             }
             patient.address?.let {
-                addressDetailsStreet.text = it.addressString
+                if (notNull(it.address1) && notEmpty(it.address1)) {
+                    addressDetailsStreet.text = it.address1
+                } else {
+                    addressDetailsStreet.makeGone()
+                }
                 showAddressDetailsViewElement(addressDetailsStateLabel, addressDetailsState, it.stateProvince)
                 showAddressDetailsViewElement(addressDetailsCountryLabel, addressDetailsCountry, it.country)
                 showAddressDetailsViewElement(addressDetailsPostalCodeLabel, addressDetailsPostalCode, it.postalCode)
                 showAddressDetailsViewElement(addressDetailsCityLabel, addressDetailsCity, it.cityVillage)
             }
+            val nationalId = patient.getIdentifierByType(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID)?.identifier
+            showAddressDetailsViewElement(patientDetailsNationalIdLabel, patientDetailsNationalId, nationalId)
+
+            val phoneNumber = patient.getAttributeValue(ApplicationConstants.PersonAttributeTypes.PHONE_NUMBER_UUID)
+            showAddressDetailsViewElement(patientDetailsPhoneNumberLabel, patientDetailsPhoneNumber, phoneNumber)
+
+            val patientStatusUuid = patient.getAttributeValue(ApplicationConstants.PersonAttributeTypes.PATIENT_STATUS_UUID)
+            showAddressDetailsViewElement(patientDetailsStatusLabel, patientDetailsStatus, patientStatusLabelForUuid(patientStatusUuid))
+
             if (patient.isDeceased) {
                 deceasedView.makeVisible()
                 deceasedView.text = getString(R.string.marked_patient_deceased_successfully, patient.causeOfDeath.display)
             }
         }
+    }
+
+    private fun patientStatusLabelForUuid(uuid: String?): String? = when (uuid) {
+        ApplicationConstants.PatientStatusAnswers.RESIDENT_UUID -> ApplicationConstants.PatientStatusAnswers.RESIDENT_LABEL
+        ApplicationConstants.PatientStatusAnswers.IDP_UUID -> ApplicationConstants.PatientStatusAnswers.IDP_LABEL
+        else -> null
     }
 
     private fun showAddressDetailsViewElement(detailsViewLabel: TextView, detailsView: TextView, detailsText: String?) {

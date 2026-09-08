@@ -14,7 +14,6 @@
 package com.openmrs.android_sdk.library.models.typeConverters
 
 import androidx.room.TypeConverter
-import com.openmrs.android_sdk.library.models.PersonAddress
 import com.openmrs.android_sdk.library.models.PersonAttribute
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
@@ -24,11 +23,12 @@ import java.lang.reflect.Modifier
 object PersonAttributeConverter : Serializable {
     @TypeConverter
     fun fromString(value: String?): List<PersonAttribute> {
-        val listType = object : TypeToken<List<PersonAddress?>?>() {}.type
+        if (value.isNullOrEmpty()) return emptyList()
+        val listType = object : TypeToken<List<PersonAttribute?>?>() {}.type
         val builder = GsonBuilder()
         builder.excludeFieldsWithModifiers(Modifier.FINAL, Modifier.TRANSIENT, Modifier.STATIC)
         val gson = builder.create()
-        return gson.fromJson(value, listType)
+        return gson.fromJson(value, listType) ?: emptyList()
     }
 
     @TypeConverter

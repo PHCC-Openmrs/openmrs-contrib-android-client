@@ -8,14 +8,9 @@ import org.openmrs.mobile.test.ACUnitTestBase
 
 class PatientValidatorTest : ACUnitTestBase() {
 
-    private val countries = listOf("country1", "country2", "country3")
-
     @Test
     fun `validate patient missing first name`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { name.givenName = null },
-                isPatientUnidentified = false,
-                countriesList = countries)
+        val validator = PatientValidator(createValidPatient().apply { name.givenName = null })
 
         val isValid = validator.validate()
 
@@ -24,10 +19,7 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient invalid first name`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { name.givenName = INVALID_NAME_1 },
-                isPatientUnidentified = false,
-                countriesList = countries)
+        val validator = PatientValidator(createValidPatient().apply { name.givenName = INVALID_NAME_1 })
 
         val isValid = validator.validate()
 
@@ -36,11 +28,7 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient invalid middle name`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { name.middleName = INVALID_NAME_2 },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+        val validator = PatientValidator(createValidPatient().apply { name.middleName = INVALID_NAME_2 })
 
         val isValid = validator.validate()
 
@@ -49,11 +37,7 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient missing family name`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { name.familyName = null },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+        val validator = PatientValidator(createValidPatient().apply { name.familyName = null })
 
         val isValid = validator.validate()
 
@@ -62,11 +46,7 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient with invalid family name`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { name.familyName = INVALID_NAME_3 },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+        val validator = PatientValidator(createValidPatient().apply { name.familyName = INVALID_NAME_3 })
 
         val isValid = validator.validate()
 
@@ -75,11 +55,7 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient missing gender`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { gender = null },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+        val validator = PatientValidator(createValidPatient().apply { gender = null })
 
         val isValid = validator.validate()
 
@@ -88,11 +64,7 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient missing birthdate`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { birthdate = null },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+        val validator = PatientValidator(createValidPatient().apply { birthdate = null })
 
         val isValid = validator.validate()
 
@@ -101,36 +73,11 @@ class PatientValidatorTest : ACUnitTestBase() {
 
     @Test
     fun `validate patient invalid address`() {
-        val validator1 = PatientValidator(
-                createValidPatient().apply { addresses = emptyList() },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+        val validator1 = PatientValidator(createValidPatient().apply { addresses = emptyList() })
         val validator2 = PatientValidator(
-                createValidPatient().apply { addresses = listOf(createPersonAddress(1).apply { address1 = INVALID_ADDRESS_1 }) },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
-        val validator3 = PatientValidator(
-                createValidPatient().apply { addresses = listOf(createPersonAddress(1).apply { address2 = INVALID_ADDRESS_2 }) },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
+                createValidPatient().apply { addresses = listOf(createPersonAddress(1).apply { address1 = INVALID_ADDRESS_1 }) })
 
-        val isValid = validator1.validate() && validator2.validate() && validator3.validate()
-
-        assertFalse(isValid)
-    }
-
-    @Test
-    fun `validate patient invalid country`() {
-        val validator = PatientValidator(
-                createValidPatient().apply { address.country = INVALID_COUNTRY },
-                isPatientUnidentified = false,
-                countriesList = countries
-        )
-
-        val isValid = validator.validate()
+        val isValid = validator1.validate() && validator2.validate()
 
         assertFalse(isValid)
     }
@@ -142,7 +89,5 @@ class PatientValidatorTest : ACUnitTestBase() {
         private const val INVALID_NAME_2 = "John@Doe"
         private const val INVALID_NAME_3 = "Em*%ile"
         private const val INVALID_ADDRESS_1 = "Washington street ^%123"
-        private const val INVALID_ADDRESS_2 = "Door $164"
-        private const val INVALID_COUNTRY = "No country"
     }
 }
