@@ -51,6 +51,14 @@ class Encountercreate : Serializable {
     @Expose
     var encounterType: String? = null
 
+    // Captured once, at form-fill time (same as each observation's own obsDatetime) - without
+    // this, the server has no encounter-level date in the request at all and defaults it to
+    // "now", i.e. whenever this gets synced rather than when it was actually filled in.
+    @ColumnInfo(name = "encounterDatetime")
+    @SerializedName("encounterDatetime")
+    @Expose
+    var encounterDatetime: String? = null
+
     @ColumnInfo(name = "formname")
     var formname: String? = null
 

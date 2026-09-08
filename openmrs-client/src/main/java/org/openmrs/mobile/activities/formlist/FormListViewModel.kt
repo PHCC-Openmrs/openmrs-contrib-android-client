@@ -145,7 +145,11 @@ class FormListViewModel @Inject constructor(
      * than the JSON itself (this is what O3 detects and resolves via a `clobdata/{uuid}` call).
      * Without this resolution these forms silently vanish from the list, since their
      * valueReference never looks like JSON. Resolved values are cached back onto the resource
-     * so repeated lookups (encounter-name resolution, click-to-open) don't refetch.
+     * so repeated lookups (encounter-name resolution, click-to-open) don't refetch, AND persisted
+     * back to the local DB (not just in memory) - otherwise the form would still vanish the next
+     * time this runs while offline (e.g. a later app session with a fresh in-memory copy), since
+     * there'd be nothing cached to fall back on and the clobdata fetch itself requires a network
+     * call that fails offline.
      */
     private fun resolveFormFieldsJson(formResource: FormResourceEntity): String? {
         // Some forms carry both a "JSON schema" (clobdata) resource and a plain "json" one, and
@@ -168,6 +172,12 @@ class FormListViewModel @Inject constructor(
                 val resolved = formRepository.fetchClobData(value)?.trim()
                 if (!resolved.isNullOrBlank() && resolved.startsWith("{") && resolved.endsWith("}")) {
                     resource.valueReference = resolved
+                    try {
+                        formRepository.updateFormResource(formResource)
+                    } catch (e: Exception) {
+                        // Not fatal - resolution still succeeded for this session via the
+                        // in-memory update above, it just won't survive to the next one.
+                    }
                     return resolved
                 }
             }

@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 9)
+        version = 10)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -180,6 +180,19 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     /**
+     * Adds the encounterDatetime column, so a form's encounter carries the time it was actually
+     * filled in - captured once at fill time, same as each observation's own obsDatetime - rather
+     * than having no encounter-level date in the request at all, which the server was defaulting
+     * to "now" (i.e. whenever it happened to sync, not when it was filled in).
+     */
+    private static final Migration MIGRATION_9_10 = new Migration(9, 10) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `encountercreate` ADD COLUMN `encounterDatetime` TEXT");
+        }
+    };
+
+    /**
      * Gets database.
      *
      * @param context the context
@@ -193,7 +206,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
                             .allowMainThreadQueries()
-                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9)
+                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

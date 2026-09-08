@@ -25,6 +25,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.ENCOUNT
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NAME
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.DateField
+import com.openmrs.android_sdk.utilities.DateUtils
 import com.openmrs.android_sdk.utilities.InputField
 import com.openmrs.android_sdk.utilities.SelectMultipleField
 import com.openmrs.android_sdk.utilities.SelectOneField
@@ -64,6 +65,14 @@ class FormDisplayMainViewModel @Inject constructor(
         val enc = Encountercreate()
         enc.patientId = patientId
         enc.formname = encounterTypeName ?: formName
+        // Captured now, at fill/submit time - same moment as each observation's own obsDatetime -
+        // so an offline-filled form keeps the time it was actually filled in rather than the
+        // server defaulting it to whenever the encounter eventually gets synced. Must carry an
+        // explicit timezone offset (unlike obsDatetime's bare LocalDateTime, which has none): the
+        // server otherwise has to guess a timezone for this string when comparing it against "now"
+        // to enforce Encounter.datetimeShouldBeBeforeCurrent, and can easily guess wrong and reject
+        // an offline submission as being "in the future".
+        enc.encounterDatetime = DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT)
         enc.observations = createObservationsFromInputFields(inputFields) +
                 createObservationsFromRadioGroupFields(radioGroupFields) +
                 createObservationsFromCheckboxFields(checkboxFields) +

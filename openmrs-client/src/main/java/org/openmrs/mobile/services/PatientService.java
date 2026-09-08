@@ -60,52 +60,60 @@ public class PatientService extends IntentService {
     @Override
     protected void onHandleIntent(Intent intent) {
         Log.i(PATIENT_SERVICE_TAG, "PatientService started");
-        if (!NetworkUtils.isOnline()) {
-            Log.w(PATIENT_SERVICE_TAG, "No internet connection, sync postponed");
-            return;
-        }
-
-        List<Patient> patientList = patientDAO.getUnSyncedPatients();
-        if (patientList.isEmpty()) {
-            Log.i(PATIENT_SERVICE_TAG, "No unsynced patients found");
-            return;
-        }
-
-        Log.i(PATIENT_SERVICE_TAG, "Found " + patientList.size() + " unsynced patients. Checking server capabilities...");
-        
-        boolean isRegistrationCorePresent = false;
         try {
-            Response<Results<Module>> moduleResp = restApi.getModules(ApplicationConstants.API.FULL).execute();
-            if (moduleResp.isSuccessful() && moduleResp.body() != null) {
-                isRegistrationCorePresent = ModuleUtils.isRegistrationCore1_7orAbove(moduleResp.body().getResults());
+            if (!NetworkUtils.isOnline()) {
+                Log.w(PATIENT_SERVICE_TAG, "No internet connection, sync postponed");
+                return;
             }
-        } catch (IOException e) {
-            Log.e(PATIENT_SERVICE_TAG, "Error fetching modules, defaulting to local similarity check", e);
-        }
 
-        PatientAndMatchesWrapper patientAndMatchesWrapper = new PatientAndMatchesWrapper();
-        for (Patient patient : patientList) {
-            String patientName = (patient.getName() != null) ? patient.getName().getNameString() : "ID " + patient.getId();
-            Log.i(PATIENT_SERVICE_TAG, "Processing patient: " + patientName);
+            List<Patient> patientList = patientDAO.getUnSyncedPatients();
+            if (patientList.isEmpty()) {
+                Log.i(PATIENT_SERVICE_TAG, "No unsynced patients found");
+                return;
+            }
 
+            Log.i(PATIENT_SERVICE_TAG, "Found " + patientList.size() + " unsynced patients. Checking server capabilities...");
+
+            boolean isRegistrationCorePresent = false;
             try {
-                if (isRegistrationCorePresent) {
-                    syncPatientWithServerSimilarityCheck(patient, patientAndMatchesWrapper);
-                } else {
-                    syncPatientWithLocalSimilarityCheck(patient, patientAndMatchesWrapper);
+                Response<Results<Module>> moduleResp = restApi.getModules(ApplicationConstants.API.FULL).execute();
+                if (moduleResp.isSuccessful() && moduleResp.body() != null) {
+                    isRegistrationCorePresent = ModuleUtils.isRegistrationCore1_7orAbove(moduleResp.body().getResults());
                 }
-            } catch (Exception e) {
-                Log.e(PATIENT_SERVICE_TAG, "Failed to sync patient " + patientName, e);
+            } catch (IOException e) {
+                Log.e(PATIENT_SERVICE_TAG, "Error fetching modules, defaulting to local similarity check", e);
             }
-        }
 
-        if (!patientAndMatchesWrapper.getMatchingPatients().isEmpty()) {
-            Log.i(PATIENT_SERVICE_TAG, "Found potential duplicates on server, showing MatchingPatientsActivity");
-            Intent intent1 = new Intent(getApplicationContext(), MatchingPatientsActivity.class);
-            intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent1.putExtra(ApplicationConstants.BundleKeys.CALCULATED_LOCALLY, calculatedLocally);
-            intent1.putExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES, patientAndMatchesWrapper);
-            startActivity(intent1);
+            PatientAndMatchesWrapper patientAndMatchesWrapper = new PatientAndMatchesWrapper();
+            for (Patient patient : patientList) {
+                String patientName = (patient.getName() != null) ? patient.getName().getNameString() : "ID " + patient.getId();
+                Log.i(PATIENT_SERVICE_TAG, "Processing patient: " + patientName);
+
+                try {
+                    if (isRegistrationCorePresent) {
+                        syncPatientWithServerSimilarityCheck(patient, patientAndMatchesWrapper);
+                    } else {
+                        syncPatientWithLocalSimilarityCheck(patient, patientAndMatchesWrapper);
+                    }
+                } catch (Exception e) {
+                    Log.e(PATIENT_SERVICE_TAG, "Failed to sync patient " + patientName, e);
+                }
+            }
+
+            if (!patientAndMatchesWrapper.getMatchingPatients().isEmpty()) {
+                Log.i(PATIENT_SERVICE_TAG, "Found potential duplicates on server, showing MatchingPatientsActivity");
+                Intent intent1 = new Intent(getApplicationContext(), MatchingPatientsActivity.class);
+                intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent1.putExtra(ApplicationConstants.BundleKeys.CALCULATED_LOCALLY, calculatedLocally);
+                intent1.putExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES, patientAndMatchesWrapper);
+                startActivity(intent1);
+            }
+        } finally {
+            // Chain straight into VisitService so a single reconnect/manual-sync trigger cascades
+            // through the whole patient -> visit -> encounter dependency chain by itself, instead
+            // of needing a separate trigger per stage (VisitService itself is a no-op if there's
+            // nothing to sync, or if we're offline, or if a patient it depends on isn't synced yet).
+            startService(new Intent(this, VisitService.class));
         }
     }
 
