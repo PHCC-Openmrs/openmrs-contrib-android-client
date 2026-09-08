@@ -187,7 +187,7 @@ class PatientAllergyFragment : BaseFragment(), OnLongPressListener, onInputSelec
 
     private fun openUpdateAllergy() {
         Intent(activity, AddEditAllergyActivity::class.java).apply {
-            putExtra(PATIENT_ID_BUNDLE, viewModel.getPatient().id.toString())
+            putExtra(PATIENT_ID_BUNDLE, viewModel.getPatient().id!!)
             putExtra(ALLERGY_UUID, selectedAllergy!!.uuid)
             startActivity(this)
         }
