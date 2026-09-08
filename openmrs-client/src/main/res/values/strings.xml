@@ -48,6 +48,7 @@
     <string name="reg_midname_hint">Middle Name*</string>
     <string name="reg_surname_hint">Family Name*</string>
     <string name="reg_national_id_hint">National ID*</string>
+    <string name="patient_national_id_label">National ID</string>
     <string name="reg_neighbourhood_hint">Neighbourhood*</string>
     <string name="reg_governorate_hint">Governorate*</string>
     <string name="national_id_empty_error">National ID is required</string>
@@ -58,8 +59,11 @@
     <string name="reg_ques_dob">Patient\'s birth date*</string>
     <string name="label_or">OR</string>
     <string name="reg_ques_address">Address</string>
-    <string name="addr1_hint">Address Line 1*</string>
+    <string name="addr1_hint">Full Address</string>
     <string name="addr2_hint">Address Line 2</string>
+    <string name="reg_phone_hint">Phone Number</string>
+    <string name="reg_patient_status_hint">Patient Status</string>
+    <string name="phone_invalid_error">Phone number must be exactly 10 digits</string>
     <string name="addr_invalid_error">Address cannot contain invalid characters</string>
     <string name="atleastone">Fill at least one address field</string>
     <string name="male">Male</string>

@@ -3,8 +3,14 @@ package com.openmrs.android_sdk.library.databases.entities;
 import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
+import androidx.room.TypeConverters;
 
+import com.openmrs.android_sdk.library.models.PersonAttribute;
 import com.openmrs.android_sdk.library.models.Resource;
+import com.openmrs.android_sdk.library.models.typeConverters.PersonAttributeConverter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The type Patient entity.
@@ -52,6 +58,9 @@ public class PatientEntity extends Resource {
     private String deceased;
     @ColumnInfo(name = "encounters")
     private String encounters;
+    @TypeConverters(PersonAttributeConverter.class)
+    @ColumnInfo(name = "attributes")
+    private List<PersonAttribute> attributes = new ArrayList<>();
 
     /**
      * Instantiates a new Patient entity.
@@ -417,5 +426,23 @@ public class PatientEntity extends Resource {
      */
     public String getEncounters() {
         return encounters;
+    }
+
+    /**
+     * Sets attributes.
+     *
+     * @param attributes the attributes
+     */
+    public void setAttributes(List<PersonAttribute> attributes) {
+        this.attributes = attributes;
+    }
+
+    /**
+     * Gets attributes.
+     *
+     * @return the attributes
+     */
+    public List<PersonAttribute> getAttributes() {
+        return attributes;
     }
 }

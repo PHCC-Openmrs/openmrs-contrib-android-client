@@ -326,6 +326,7 @@ object AppDatabaseHelper {
         personAddress.stateProvince = patientEntity.state
         personAddress.cityVillage = patientEntity.city
         patient.addresses.add(personAddress)
+        patient.attributes = patientEntity.attributes ?: ArrayList()
         if (patientEntity.causeOfDeath != null) {
             patient.causeOfDeath = Resource(ApplicationConstants.EMPTY_STRING, patientEntity.causeOfDeath, ArrayList(), 0)
         }
@@ -412,6 +413,7 @@ object AppDatabaseHelper {
         }
         patientEntity.encounters = patient.encounters
         patientEntity.deceased = (patient.isDeceased ?: false).toString()
+        patientEntity.attributes = patient.attributes ?: ArrayList()
         return patientEntity
     }
 

@@ -56,6 +56,8 @@ import com.openmrs.android_sdk.library.models.IdentifierType;
 import com.openmrs.android_sdk.library.models.Module;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.PatientDto;
+import com.openmrs.android_sdk.library.models.PersonAttribute;
+import com.openmrs.android_sdk.library.models.PersonAttributeType;
 import com.openmrs.android_sdk.library.models.PatientDtoUpdate;
 import com.openmrs.android_sdk.library.models.PatientIdentifier;
 import com.openmrs.android_sdk.library.models.PatientPhoto;
@@ -491,6 +493,23 @@ else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
         identifier.setIdentifierType(getNationalIdIdentifierType());
         identifier.setPreferred(false);
         return identifier;
+    }
+
+    /**
+     * Builds a {@link PersonAttribute} (e.g. Phone Number, Patient Status) from a user-entered
+     * value, ready to be attached to a patient's attribute list before registration/update.
+     *
+     * @param attributeTypeUuid the uuid of the {@link PersonAttributeType} this value is for
+     * @param value             the attribute value entered on the registration form
+     * @return the person attribute
+     */
+    public PersonAttribute buildAttribute(String attributeTypeUuid, String value) {
+        PersonAttributeType attributeType = new PersonAttributeType();
+        attributeType.setUuid(attributeTypeUuid);
+        PersonAttribute attribute = new PersonAttribute();
+        attribute.setAttributeType(attributeType);
+        attribute.setValue(value);
+        return attribute;
     }
 
     /**

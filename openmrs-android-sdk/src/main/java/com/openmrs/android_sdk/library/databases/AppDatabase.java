@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 10)
+        version = 11)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -193,6 +193,18 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     /**
+     * Adds the attributes column, so person attributes (e.g. Phone Number, Patient Status) set
+     * during registration/edit actually persist locally instead of being silently dropped on
+     * every local save - the PatientEntity model carried no column for them at all before this.
+     */
+    private static final Migration MIGRATION_10_11 = new Migration(10, 11) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `patients` ADD COLUMN `attributes` TEXT");
+        }
+    };
+
+    /**
      * Gets database.
      *
      * @param context the context
@@ -206,7 +218,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
                             .allowMainThreadQueries()
-                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10)
+                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

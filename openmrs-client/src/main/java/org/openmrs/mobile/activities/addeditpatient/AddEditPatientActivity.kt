@@ -40,11 +40,9 @@ class AddEditPatientActivity : ACBaseActivity() {
         val patientBundle = savedInstanceState ?: intent.extras
         val patientID = patientBundle?.get(ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE) as Long?
 
-        val countries = resources.getStringArray(R.array.countries_array).asList()
-
         // Create fragment
         addEditPatientFragment = supportFragmentManager.findFragmentById(R.id.patientInfoContentFrame) as AddEditPatientFragment?
-        addEditPatientFragment = addEditPatientFragment ?: newInstance(patientID, countries)
+        addEditPatientFragment = addEditPatientFragment ?: newInstance(patientID)
 
         if (!addEditPatientFragment!!.isActive) {
             addFragmentToActivity(supportFragmentManager, addEditPatientFragment!!, R.id.patientInfoContentFrame)

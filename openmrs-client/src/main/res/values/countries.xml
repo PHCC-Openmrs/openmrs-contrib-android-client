@@ -8,6 +8,11 @@
         <item>Rafah</item>
     </string-array>
 
+    <string-array name="patient_status_options">
+        <item>Resident</item>
+        <item>IDP</item>
+    </string-array>
+
     <string-array name="countries_array">
         <item>Afghanistan</item>
         <item>Albania</item>

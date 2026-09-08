@@ -117,6 +117,68 @@
             app:layout_constraintTop_toBottomOf="@+id/patientDetailsBirthDateLabel"
             tools:ignore="RtlSymmetry" />
 
+        <TextView
+            android:id="@+id/patientDetailsNationalIdLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="24dp"
+            android:paddingStart="10dp"
+            android:paddingLeft="10dp"
+            android:text="@string/patient_national_id_label"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="18sp"
+            app:layout_constraintStart_toEndOf="@+id/patientPhotoCardView"
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsBirthDate"
+            tools:ignore="RtlSymmetry" />
+
+        <TextView
+            android:id="@+id/patientDetailsNationalId"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/montserrat"
+            android:paddingStart="10dp"
+            android:paddingLeft="10dp"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@+id/patientPhotoCardView"
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsNationalIdLabel"
+            tools:ignore="RtlSymmetry" />
+
+        <TextView
+            android:id="@+id/patientDetailsStatusLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="24dp"
+            android:paddingStart="10dp"
+            android:paddingLeft="10dp"
+            android:text="@string/reg_patient_status_hint"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="18sp"
+            app:layout_constraintStart_toEndOf="@+id/patientPhotoCardView"
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsNationalId"
+            tools:ignore="RtlSymmetry" />
+
+        <TextView
+            android:id="@+id/patientDetailsStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/montserrat"
+            android:paddingStart="10dp"
+            android:paddingLeft="10dp"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@+id/patientPhotoCardView"
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsStatusLabel"
+            tools:ignore="RtlSymmetry" />
+
         <View
             android:id="@+id/view3"
             android:layout_width="0dp"
@@ -126,7 +188,7 @@
             android:background="@drawable/rectangle_shape_with_primary_text_color"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/patientDetailsBirthDate" />
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsStatus" />
 
         <TextView
             android:id="@+id/patientDetailsAddressLabel"
@@ -246,6 +308,29 @@
             app:layout_constraintStart_toStartOf="@+id/addressDetailsPostalCode"
             app:layout_constraintTop_toBottomOf="@+id/addressDetailsState" />
 
+        <TextView
+            android:id="@+id/patientDetailsPhoneNumberLabel"
+            style="@style/TextLabel.Bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/montserrat"
+            android:text="@string/reg_phone_hint"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@+id/patientPhotoCardView"
+            app:layout_constraintTop_toBottomOf="@+id/addressDetailsCountryLabel" />
+
+        <TextView
+            android:id="@+id/patientDetailsPhoneNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:fontFamily="@font/montserrat"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@+id/patientDetailsPhoneNumberLabel"
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsPhoneNumberLabel" />
+
         <View
             android:layout_width="0dp"
             android:layout_height="1dp"
@@ -255,7 +340,7 @@
             android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/addressDetailsCountry" />
+            app:layout_constraintTop_toBottomOf="@+id/patientDetailsPhoneNumber" />
 
         <androidx.constraintlayout.widget.Guideline
             android:id="@+id/guideline"

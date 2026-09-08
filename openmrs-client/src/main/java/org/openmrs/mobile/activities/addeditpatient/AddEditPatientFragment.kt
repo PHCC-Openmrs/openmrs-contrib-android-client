@@ -63,7 +63,6 @@ import com.openmrs.android_sdk.library.models.PersonName
 import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.utilities.ApplicationConstants
-import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.COUNTRIES_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.URI_IMAGE
 import com.openmrs.android_sdk.utilities.DateUtils
@@ -96,7 +95,6 @@ import org.openmrs.mobile.databinding.FragmentPatientInfoBinding
 import org.openmrs.mobile.listeners.watcher.PatientBirthdateValidatorWatcher
 import org.openmrs.mobile.utilities.ImageUtils
 import org.openmrs.mobile.utilities.ViewUtils.getInput
-import org.openmrs.mobile.utilities.ViewUtils.isCountryCodePickerEmpty
 import org.openmrs.mobile.utilities.ViewUtils.isEmpty
 import org.openmrs.mobile.utilities.makeGone
 import org.openmrs.mobile.utilities.makeVisible
@@ -253,8 +251,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             // Change to Update Patient Form
             requireActivity().title = getString(R.string.action_update_patient_data)
 
-            // No need for un-identification option once the patient is registered
-            binding.unidentifiedCheckbox.makeGone()
             // Show deceased option only when patient is registered
             binding.deceasedCardview.makeVisible()
 
@@ -274,10 +270,10 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                 binding.gender.check(R.id.female)
             }
             binding.addressOne.setText(address.address1)
-            binding.addressTwo.setText(address.address2)
             binding.cityAutoComplete.setText(address.cityVillage)
             binding.stateAutoComplete.setText(address.stateProvince)
-            binding.postalCode.setText(address.postalCode)
+            binding.phoneNumber.setText(viewModel.getPhoneNumber())
+            binding.patientStatusAutoComplete.setText(patientStatusLabelForUuid(viewModel.getPatientStatus()), false)
             if (photo != null) binding.patientPhoto.setImageBitmap(resizedPhoto)
 
             binding.deceasedCheckbox.isChecked = isDeceased
@@ -287,50 +283,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     private fun validateFormInputsAndUpdateViewModel(): Boolean = with(binding) {
         val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
         var isValid = true
-        viewModel.isPatientUnidentified = unidentifiedCheckbox.isChecked
         viewModel.patient.isDeceased = deceasedCheckbox.isChecked
-
-        if (unidentifiedCheckbox.isChecked) {
-            /* Names */
-            viewModel.patient.names = listOf(PersonName().apply {
-                familyName = getString(R.string.unidentified_patient_name)
-                givenName = getString(R.string.unidentified_patient_name)
-                preferred = true
-            })
-
-            /* Address */
-            viewModel.patient.addresses = emptyList()
-
-            /* Birth date */
-            if (isBlank(getInput(estimatedYear)) && isBlank(getInput(estimatedMonth))) {
-                dobError.text = getString(R.string.dob_error_for_unidentified)
-                dobError.makeVisible()
-                scrollToTop()
-                isValid = false
-            } else {
-                dobError.makeGone()
-                viewModel.patient.birthdateEstimated = true
-                val yearDiff = if (isEmpty(estimatedYear)) 0 else estimatedYear.text.toString().toInt()
-                val monthDiff = if (isEmpty(estimatedMonth)) 0 else estimatedMonth.text.toString().toInt()
-                viewModel.dateHolder = getDateTimeFromDifference(yearDiff, monthDiff)
-                viewModel.patient.birthdate = DateTimeFormat.forPattern(DateUtils.OPEN_MRS_REQUEST_PATIENT_FORMAT).print(viewModel.dateHolder)
-            }
-
-            /* Gender */
-            val genderChoices = arrayOf(StringValue.MALE, StringValue.FEMALE)
-            val index = gender.indexOfChild(requireActivity().findViewById(gender.checkedRadioButtonId))
-            if (index == -1) {
-                gendererror.makeVisible()
-                viewModel.patient.gender = null
-                scrollToTop()
-                isValid = false
-            } else {
-                gendererror.makeGone()
-                viewModel.patient.gender = genderChoices[index]
-            }
-
-            return isValid
-        }
 
         /* Names */
 
@@ -427,27 +380,33 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             viewModel.patient.gender = genderChoices[index]
         }
 
-        /* Addresses */
-        if (isEmpty(addressOne) && isEmpty(addressTwo) || isCountryCodePickerEmpty(countryCodeSpinner)) {
-            addressError.makeVisible()
-            addressError.text = getString(R.string.atleastone)
-            textInputLayoutAddress.error = getString(R.string.atleastone)
+        /* Patient Status - optional, matches the web app's registration form. Patient Status is a
+           coded attribute: the server expects the answer's concept uuid, not its display label. */
+        viewModel.setPatientStatus(patientStatusUuidForLabel(getInput(patientStatusAutoComplete)))
+
+        /* Phone Number - optional, matches the web app's registration form. If provided, must be
+           exactly 10 digits (same rule the web app enforces). */
+        if (!isEmpty(phoneNumber) && getInput(phoneNumber).orEmpty().length != 10) {
+            textInputLayoutPhoneNumber.isErrorEnabled = true
+            textInputLayoutPhoneNumber.error = getString(R.string.phone_invalid_error)
             scrollToTop()
             isValid = false
-        } else if (!validateText(getInput(addressOne), ILLEGAL_ADDRESS_CHARACTERS)
-                || !validateText(getInput(addressTwo), ILLEGAL_ADDRESS_CHARACTERS)) {
+        } else {
+            textInputLayoutPhoneNumber.isErrorEnabled = false
+            viewModel.setPhoneNumber(getInput(phoneNumber).orEmpty())
+        }
+
+        /* Full Address - optional, matching the web app; Neighbourhood/Governorate below are the
+           actually-required address fields. */
+        if (!isEmpty(addressOne) && !validateText(getInput(addressOne), ILLEGAL_ADDRESS_CHARACTERS)) {
             addressError.makeVisible()
             addressError.text = getString(R.string.addr_invalid_error)
+            textInputLayoutAddress.error = getString(R.string.addr_invalid_error)
             scrollToTop()
             isValid = false
-            if (!validateText(getInput(addressOne), ILLEGAL_ADDRESS_CHARACTERS)) textInputLayoutAddress.error = getString(R.string.addr_invalid_error)
-            else textInputLayoutAddress.isErrorEnabled = false
-            if (!validateText(getInput(addressTwo), ILLEGAL_ADDRESS_CHARACTERS)) textInputLayoutAddress2.error = getString(R.string.addr_invalid_error)
-            else textInputLayoutAddress2.isErrorEnabled = false
         } else {
             addressError.makeGone()
             textInputLayoutAddress.isErrorEnabled = false
-            textInputLayoutAddress2.isErrorEnabled = false
         }
 
         // Neighbourhood and Governorate are required by the server's address template.
@@ -470,10 +429,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
 
         viewModel.patient.addresses = listOf(PersonAddress().apply {
             address1 = getInput(addressOne)
-            address2 = getInput(addressTwo)
             cityVillage = getInput(cityAutoComplete)
-            postalCode = getInput(this@with.postalCode)
-            country = countryCodeSpinner.selectedCountryName
             stateProvince = getInput(stateAutoComplete)
             preferred = true
         })
@@ -540,20 +496,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     private fun setupViewsListeners() = with(binding) {
-        unidentifiedCheckbox.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                linearLayoutName.makeGone()
-                constraintLayoutDOB.makeGone()
-                linearLayoutContactInfo.makeGone()
-                viewModel.isPatientUnidentified = true
-            } else {
-                linearLayoutName.makeVisible()
-                constraintLayoutDOB.makeVisible()
-                linearLayoutContactInfo.makeVisible()
-                viewModel.isPatientUnidentified = false
-            }
-        }
-
         gender.setOnCheckedChangeListener { _, _ -> gendererror.makeGone() }
 
         dobEditText.addTextChangedListener(object : TextWatcher {
@@ -640,6 +582,10 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         stateAutoComplete.setAdapter(ArrayAdapter(
                 requireContext(), android.R.layout.simple_dropdown_item_1line, resources.getStringArray(R.array.gaza_governorates)))
 
+        // Patient Status (Resident/IDP), matching the dropdown on the web app's registration form.
+        patientStatusAutoComplete.setAdapter(ArrayAdapter(
+                requireContext(), android.R.layout.simple_dropdown_item_1line, resources.getStringArray(R.array.patient_status_options)))
+
         // Check for cities available on searching
         cityAutoComplete.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
@@ -648,7 +594,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                 val cityList = mutableListOf<String>()
                 val token = AutocompleteSessionToken.newInstance()
                 val request = FindAutocompletePredictionsRequest.builder()
-                        .setCountry(countryCodeSpinner.selectedCountryNameCode.toLowerCase())
                         .setTypeFilter(TypeFilter.CITIES)
                         .setSessionToken(token)
                         .setQuery(cityAutoComplete.text.toString())
@@ -852,11 +797,10 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         estimatedYear.setText("")
         estimatedMonth.setText("")
         addressOne.setText("")
-        addressTwo.setText("")
-        countryCodeSpinner.resetToDefaultCountry()
         cityAutoComplete.setText("")
         stateAutoComplete.setText("")
-        postalCode.setText("")
+        phoneNumber.setText("")
+        patientStatusAutoComplete.setText("")
         gender.clearCheck()
         dobError.text = ""
         gendererror.makeGone()
@@ -866,11 +810,32 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         textInputLayoutSurname.error = ""
         textInputLayoutNationalId.error = ""
         textInputLayoutAddress.error = ""
-        textInputLayoutAddress2.error = ""
         textInputLayoutCity.error = ""
         textInputLayoutState.error = ""
+        textInputLayoutPhoneNumber.error = ""
         patientPhoto.setImageResource(R.drawable.ic_person_grey_500_48dp)
         viewModel.resetPatient()
+    }
+
+    /**
+     * Maps the Patient Status dropdown's selected label to the concept uuid the server expects
+     * (Patient Status is a coded attribute), matching how the web app's registration form submits
+     * it. Returns an empty string for a blank/unrecognized selection.
+     */
+    private fun patientStatusUuidForLabel(label: String?): String = when (label) {
+        ApplicationConstants.PatientStatusAnswers.RESIDENT_LABEL -> ApplicationConstants.PatientStatusAnswers.RESIDENT_UUID
+        ApplicationConstants.PatientStatusAnswers.IDP_LABEL -> ApplicationConstants.PatientStatusAnswers.IDP_UUID
+        else -> ""
+    }
+
+    /**
+     * The inverse of [patientStatusUuidForLabel] - maps a previously-saved concept uuid back to
+     * its display label, for showing an existing patient's Patient Status in the dropdown.
+     */
+    private fun patientStatusLabelForUuid(uuid: String?): String = when (uuid) {
+        ApplicationConstants.PatientStatusAnswers.RESIDENT_UUID -> ApplicationConstants.PatientStatusAnswers.RESIDENT_LABEL
+        ApplicationConstants.PatientStatusAnswers.IDP_UUID -> ApplicationConstants.PatientStatusAnswers.IDP_LABEL
+        else -> ""
     }
 
     private fun scrollToTop() = binding.run { scrollView.smoothScrollTo(0, scrollView.paddingTop) }
@@ -886,8 +851,9 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     fun isAnyFieldNotEmpty(): Boolean = with(binding) {
         return !isEmpty(firstName) || !isEmpty(middlename) || !isEmpty(surname) || !isEmpty(nationalId) ||
                 !isEmpty(dobEditText) || !isEmpty(estimatedYear) || !isEmpty(estimatedMonth) ||
-                !isEmpty(addressOne) || !isEmpty(addressTwo) || !isEmpty(cityAutoComplete) ||
-                !isEmpty(stateAutoComplete) || !isEmpty(postalCode)
+                !isEmpty(addressOne) || !isEmpty(cityAutoComplete) ||
+                !isEmpty(stateAutoComplete) || !isEmpty(phoneNumber) ||
+                !isEmpty(patientStatusAutoComplete)
     }
 
 
@@ -966,11 +932,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     companion object {
-        fun newInstance(patientID: Long?, countries: List<String>) = AddEditPatientFragment().apply {
-            arguments = bundleOf(
-                    Pair(PATIENT_ID_BUNDLE, patientID),
-                    Pair(COUNTRIES_BUNDLE, countries)
-            )
+        fun newInstance(patientID: Long?) = AddEditPatientFragment().apply {
+            arguments = bundleOf(Pair(PATIENT_ID_BUNDLE, patientID))
         }
     }
 }
