@@ -16,6 +16,7 @@ package com.openmrs.android_sdk.library.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Update
 import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity
 
 /**
@@ -63,4 +64,12 @@ interface FormResourceDAO {
      */
     @Insert
     fun addFormResource(formResourceEntity: FormResourceEntity)
+
+    /**
+     * Update form resource.
+     *
+     * @param formResourceEntity the form resource entity
+     */
+    @Update
+    fun updateFormResource(formResourceEntity: FormResourceEntity)
 }

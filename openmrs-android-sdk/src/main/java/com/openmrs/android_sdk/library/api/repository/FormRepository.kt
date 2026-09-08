@@ -75,6 +75,19 @@ class FormRepository @Inject constructor() : BaseRepository() {
     }
 
     /**
+     * Persists a form resource that was mutated in memory (e.g. after [fetchClobData] resolved
+     * one of its resources' valueReference) - without this, a resolved clobdata value is lost the
+     * moment this object is garbage collected, and has to be re-fetched from the network (or, if
+     * offline by then, is simply unavailable) on every subsequent app session.
+     *
+     * @param formResourceEntity the form resource entity to persist, with its resources already
+     *   updated in memory
+     */
+    fun updateFormResource(formResourceEntity: FormResourceEntity) {
+        db.formResourceDAO().updateFormResource(formResourceEntity)
+    }
+
+    /**
      * Creates a form.
      *
      * @param uuid UUID of the form resource

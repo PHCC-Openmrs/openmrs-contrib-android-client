@@ -43,32 +43,39 @@ public class VisitService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        if (!NetworkUtils.isOnline()) {
-            Log.w(VISIT_SERVICE_TAG, "No internet connection, sync postponed");
-            return;
-        }
-
-        List<Visit> unsyncedVisits = visitDAO.getUnsyncedVisits();
-        if (unsyncedVisits.isEmpty()) {
-            return;
-        }
-
-        Log.i(VISIT_SERVICE_TAG, "Found " + unsyncedVisits.size() + " unsynced visit(s)");
-        for (Visit visit : unsyncedVisits) {
-            try {
-                Patient patient = visit.getPatient();
-                if (patient == null || patient.getId() == null || !patient.isSynced()) {
-                    // PatientService is the sole owner of syncing a patient - syncing it here too
-                    // would race with PatientService's own attempt for the same patient (both
-                    // running concurrently, unaware of each other) and can produce a duplicate
-                    // registration attempt on the server. Just wait for the next reconnect, by
-                    // which point PatientService should have synced it.
-                    continue;
-                }
-                visitRepository.syncStartedVisit(visit, patient);
-            } catch (Exception e) {
-                Log.e(VISIT_SERVICE_TAG, "Failed to sync visit " + visit.getId(), e);
+        try {
+            if (!NetworkUtils.isOnline()) {
+                Log.w(VISIT_SERVICE_TAG, "No internet connection, sync postponed");
+                return;
             }
+
+            List<Visit> unsyncedVisits = visitDAO.getUnsyncedVisits();
+            if (unsyncedVisits.isEmpty()) {
+                return;
+            }
+
+            Log.i(VISIT_SERVICE_TAG, "Found " + unsyncedVisits.size() + " unsynced visit(s)");
+            for (Visit visit : unsyncedVisits) {
+                try {
+                    Patient patient = visit.getPatient();
+                    if (patient == null || patient.getId() == null || !patient.isSynced()) {
+                        // Since this only ever runs after PatientService's own sync attempt has
+                        // already fully completed (see the chained startService call below, and
+                        // the matching one in PatientService), a patient still unsynced at this
+                        // point genuinely failed to sync (e.g. a server error) rather than just
+                        // being mid-flight - nothing more to do for this visit until that's
+                        // resolved and the chain runs again.
+                        continue;
+                    }
+                    visitRepository.syncStartedVisit(visit, patient);
+                } catch (Exception e) {
+                    Log.e(VISIT_SERVICE_TAG, "Failed to sync visit " + visit.getId(), e);
+                }
+            }
+        } finally {
+            // Chain straight into EncounterService, same reasoning as PatientService chaining into
+            // this service: one trigger should cascade through the whole dependency chain.
+            startService(new Intent(this, EncounterService.class));
         }
     }
 }
