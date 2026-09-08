@@ -598,14 +598,13 @@
     <string name="hiv_unknown">Unknown</string>
 
     <!-- Contact Activity -->
-    <string name="helpdesk_mail" translatable="false">helpdesk@openmrs.com</string>
-    <string name="go_to_forum">Forum</string>
-    <string name="go_to_irc">IRC</string>
-    <string name="open">Go to</string>
-    <string name="email_us">Email us</string>
+    <string name="helpdesk_mail" translatable="false">ahmad.ouda@care.org</string>
+    <string name="email_us">Email CARE Digital Officer</string>
+    <string name="contact_ahmed_name">Ahmed Ouda</string>
+    <string name="contact_ahmed_phone" translatable="false">+970 592 011 840</string>
+    <string name="contact_hotline_name">CARE Hotline</string>
+    <string name="contact_hotline_phone" translatable="false">180 080 0010</string>
     <string name="help_message">Our Team will try our best to help you. Please reach out to us by using the services above.</string>
-    <string name="contact_forum_url" translatable="false">https://talk.openmrs.org/</string>
-    <string name="contact_irc_url" translatable="false">https://wiki.openmrs.org/display/IRC/Home</string>
     <string name="contact_us">Contact Us</string>
     <string name="no_mailing_client_found">There are no email clients installed.</string>
     <string name="contact_us_or">OR</string>

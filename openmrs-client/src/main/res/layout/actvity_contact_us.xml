@@ -91,7 +91,7 @@
             app:layout_constraintTop_toBottomOf="@id/emailLayout" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/forumLayout"
+            android:id="@+id/ahmedPhoneLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="34dp"
@@ -106,10 +106,10 @@
             app:layout_constraintTop_toBottomOf="@id/contact_or">
 
             <TextView
-                android:id="@+id/goto_forum_text"
+                android:id="@+id/ahmed_phone_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/open"
+                android:text="@string/contact_ahmed_name"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 app:layout_constraintLeft_toLeftOf="parent"
@@ -117,22 +117,21 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/goto_forum_link"
+                android:id="@+id/ahmed_phone_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/roboto_medium"
-                android:text="@string/go_to_forum"
-                android:textAllCaps="true"
+                android:text="@string/contact_ahmed_phone"
                 android:textColor="@color/white"
-                android:textSize="22sp"
+                android:textSize="18sp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/goto_forum_text" />
+                app:layout_constraintTop_toBottomOf="@id/ahmed_phone_name" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/ircLayout"
+            android:id="@+id/hotlinePhoneLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
@@ -147,10 +146,10 @@
             app:layout_constraintTop_toBottomOf="@id/contact_or">
 
             <TextView
-                android:id="@+id/goto_irc_text"
+                android:id="@+id/hotline_phone_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/open"
+                android:text="@string/contact_hotline_name"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 app:layout_constraintLeft_toLeftOf="parent"
@@ -158,16 +157,16 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/goto_irc_link"
+                android:id="@+id/hotline_phone_number"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/roboto_medium"
-                android:text="@string/go_to_irc"
+                android:text="@string/contact_hotline_phone"
                 android:textColor="@color/white"
-                android:textSize="22sp"
+                android:textSize="18sp"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/goto_irc_text" />
+                app:layout_constraintTop_toBottomOf="@id/hotline_phone_name" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -183,7 +182,7 @@
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ircLayout" />
+            app:layout_constraintTop_toBottomOf="@id/hotlinePhoneLayout" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

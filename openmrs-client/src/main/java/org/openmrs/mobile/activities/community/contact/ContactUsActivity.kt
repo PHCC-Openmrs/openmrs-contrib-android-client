@@ -55,14 +55,16 @@ class ContactUsActivity : ACBaseActivity() {
             }
         }
 
-        binding.forumLayout.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.contact_forum_url)))
-            startActivity(intent)
+        binding.ahmedPhoneLayout.setOnClickListener {
+            val dialIntent = Intent(Intent.ACTION_DIAL)
+            dialIntent.data = Uri.parse("tel:" + binding.ahmedPhoneNumber.text.toString())
+            startActivity(dialIntent)
         }
 
-        binding.ircLayout.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.contact_irc_url)))
-            startActivity(intent)
+        binding.hotlinePhoneLayout.setOnClickListener {
+            val dialIntent = Intent(Intent.ACTION_DIAL)
+            dialIntent.data = Uri.parse("tel:" + binding.hotlinePhoneNumber.text.toString())
+            startActivity(dialIntent)
         }
     }
 
