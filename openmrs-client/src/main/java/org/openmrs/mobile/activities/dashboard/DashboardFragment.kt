@@ -82,9 +82,10 @@ class DashboardFragment : BaseFragment(), View.OnClickListener {
             TutorialStep({ captureVitalsView }, getString(R.string.dashboard_forms_icon_label),
                     getString(R.string.showcase_form_entry), R.style.CustomShowcaseTheme, false,
                     hasAnyPrivilege(ADD_ENCOUNTERS, FORM_ENTRY)),
+            // Manage Providers tile is hidden on the dashboard for now.
             TutorialStep({ dashboardProviderManagementView }, getString(R.string.action_provider_management),
                     getString(R.string.showcase_manage_providers), R.style.CustomShowcaseThemeExit, false,
-                    hasPrivilege(GET_PROVIDERS))
+                    false)
         )
     }
 
@@ -157,7 +158,8 @@ class DashboardFragment : BaseFragment(), View.OnClickListener {
                 activeVisitsCardView to hasPrivilege(GET_VISITS),
                 registerPatientCardView to hasPrivilege(ADD_PATIENTS),
                 formEntryCardView to hasAnyPrivilege(ADD_ENCOUNTERS, FORM_ENTRY),
-                manageProviderCardView to hasPrivilege(GET_PROVIDERS)
+                // Manage Providers tile is hidden on the dashboard for now.
+                manageProviderCardView to false
         )
 
         // Detach every tile from wherever it currently sits (its placeholder slot, or a row
