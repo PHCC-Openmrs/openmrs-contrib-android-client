@@ -36,7 +36,6 @@ object ApplicationConstants {
     const val DEFAULT_BCRYPT_ROUND = 8
     const val SPLASH_TIMER = 3500
     const val PACKAGE_NAME = "org.openmrs.mobile"
-    const val USER_GUIDE = "https://openmrs.github.io/openmrs-android-client-user-guide/getting-started.html"
     const val MESSAGE_RFC_822 = "message/rfc822"
     const val FLAG = "flag"
     const val ERROR = "error"

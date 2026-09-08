@@ -240,18 +240,6 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
-            <TextView
-                android:id="@+id/aboutUsTextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginHorizontal="25dp"
-                android:layout_marginVertical="30dp"
-                android:fontFamily="@font/montserrat"
-                android:text="@string/get_started_with_our_user_guide"
-                android:textColor="@color/color_accent"
-                android:textSize="16sp" />
-
         </LinearLayout>
 
         <ProgressBar
