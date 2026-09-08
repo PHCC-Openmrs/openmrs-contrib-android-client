@@ -544,7 +544,6 @@
     <string name="intro_manage_desc">You can manage providers using our app.</string>
     <string name="intro_location_desc">You can change your location at a simple click.</string>
     <string name="intro_settings_desc">Try out our dark mode feature.\nExciting? Let\'s get started.</string>
-    <string name="get_started_with_our_user_guide">Get started with our user guide</string>
 
     <!--AuthenticateCheck service-->
     <string name="authenticate_check_service_error_response_message">Error in Authenticate Check Service Response</string>

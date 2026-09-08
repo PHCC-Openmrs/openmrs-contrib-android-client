@@ -219,7 +219,6 @@ class LoginFragment : BaseFragment() {
                     false)
         }
         forgotPass.setOnClickListener { startActivity(Intent(context, ContactUsActivity::class.java)) }
-        aboutUsTextView.setOnClickListener { openAboutPage() }
     }
 
     private fun setSyncButtonState(syncEnabled: Boolean) {
@@ -402,13 +401,6 @@ class LoginFragment : BaseFragment() {
         val view = activity?.currentFocus ?: View(activity)
         val inputMethodManager = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
-    }
-
-    private fun openAboutPage() {
-        val userGuideUrl = ApplicationConstants.USER_GUIDE
-        val intent = Intent(Intent.ACTION_VIEW)
-        intent.data = Uri.parse(userGuideUrl)
-        startActivity(intent)
     }
 
     private fun finishLoginActivity() = requireActivity().finish()
