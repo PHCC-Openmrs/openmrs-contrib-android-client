@@ -29,6 +29,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.repository.FormRepository;
 import com.openmrs.android_sdk.library.dao.ConceptRoomDAO;
 import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.databases.entities.ConceptEntity;
@@ -41,12 +42,16 @@ import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.settings.SettingsActivity;
 import org.openmrs.mobile.application.OpenMRS;
 
+import rx.schedulers.Schedulers;
+
 @AndroidEntryPoint
 public class ConceptDownloadService extends Service {
     private int downloadedConcepts;
     private int maxConceptsInOneQuery = 100;
     @Inject
     RestApi service;
+    @Inject
+    FormRepository formRepository;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -54,6 +59,7 @@ public class ConceptDownloadService extends Service {
             showNotification(downloadedConcepts);
             startDownload();
             downloadConcepts(downloadedConcepts);
+            resolveFormSchemasForOfflineUse();
         } else if (intent.getAction().equals(
                 ApplicationConstants.ServiceActions.STOP_CONCEPT_DOWNLOAD_ACTION)) {
             stopForeground(true);
@@ -160,6 +166,20 @@ public class ConceptDownloadService extends Service {
                 stopSelf();
             }
         });
+    }
+
+    /**
+     * Runs alongside the concept download so that tapping "Download Concepts" while online also
+     * primes every form for offline use - some servers store a form's schema out-of-line as clob
+     * data, which otherwise only gets fetched (and cached) the first time a user happens to open
+     * that specific form while online, silently leaving it unusable offline until then. Runs
+     * independently of the concept download's own progress/lifecycle since it targets a
+     * different set of data and its failure shouldn't affect concept downloading or vice versa.
+     */
+    private void resolveFormSchemasForOfflineUse() {
+        formRepository.resolveAllFormSchemas()
+                .subscribeOn(Schedulers.io())
+                .subscribe(result -> { }, throwable -> { });
     }
 
     private void sendProgressBroadcast() {

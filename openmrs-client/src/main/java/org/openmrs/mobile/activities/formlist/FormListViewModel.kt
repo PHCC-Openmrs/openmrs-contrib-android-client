@@ -140,50 +140,12 @@ class FormListViewModel @Inject constructor(
         formResource.uuid?.startsWith(VIRTUAL_FORM_UUID_PREFIX) == true
 
     /**
-     * Resolves a form's "json"/"JSON schema" resource value. Some OpenMRS servers store this
-     * value out-of-line as clob data, in which case valueReference is just a bare UUID rather
-     * than the JSON itself (this is what O3 detects and resolves via a `clobdata/{uuid}` call).
-     * Without this resolution these forms silently vanish from the list, since their
-     * valueReference never looks like JSON. Resolved values are cached back onto the resource
-     * so repeated lookups (encounter-name resolution, click-to-open) don't refetch, AND persisted
-     * back to the local DB (not just in memory) - otherwise the form would still vanish the next
-     * time this runs while offline (e.g. a later app session with a fresh in-memory copy), since
-     * there'd be nothing cached to fall back on and the clobdata fetch itself requires a network
-     * call that fails offline.
+     * Resolves a form's "json"/"JSON schema" resource value, including clobdata-backed schemas
+     * that need a network fetch. See [FormRepository.resolveFormFieldsJson] for why some servers
+     * store this out-of-line.
      */
-    private fun resolveFormFieldsJson(formResource: FormResourceEntity): String? {
-        // Some forms carry both a "JSON schema" (clobdata) resource and a plain "json" one, and
-        // they aren't always the same content - a form can have a stale/placeholder "json"
-        // resource left over from testing while the real, current schema only lives in the
-        // clobdata-backed "JSON schema" resource. Always try "JSON schema" first regardless of
-        // the order the server returns resources in, falling back to "json" only if it's absent
-        // or fails to resolve, rather than trusting API resource order to pick the right one.
-        val orderedResources = formResource.resources.sortedByDescending { it.name == "JSON schema" }
-        for (resource in orderedResources) {
-            if (resource.name != "json" && resource.name != "JSON schema") continue
-            val value = resource.valueReference?.trim() ?: continue
-            if (value.isBlank()) continue
-
-            if (value.startsWith("{") && value.endsWith("}")) {
-                return value
-            }
-
-            if (CLOBDATA_UUID_REGEX.matches(value)) {
-                val resolved = formRepository.fetchClobData(value)?.trim()
-                if (!resolved.isNullOrBlank() && resolved.startsWith("{") && resolved.endsWith("}")) {
-                    resource.valueReference = resolved
-                    try {
-                        formRepository.updateFormResource(formResource)
-                    } catch (e: Exception) {
-                        // Not fatal - resolution still succeeded for this session via the
-                        // in-memory update above, it just won't survive to the next one.
-                    }
-                    return resolved
-                }
-            }
-        }
-        return null
-    }
+    private fun resolveFormFieldsJson(formResource: FormResourceEntity): String? =
+        formRepository.resolveFormFieldsJson(formResource)
 
     /**
      * Resolves a form's encounter name: from its JSON schema's "encounter" field if present,
@@ -281,7 +243,5 @@ class FormListViewModel @Inject constructor(
     companion object {
         private const val VIRTUAL_FORM_UUID_PREFIX = "virtual-"
         private val FORMS_REQUIRING_ENCOUNTER_ROLE = setOf(EncounterType.ADMISSION, EncounterType.VISIT_NOTE)
-        private val CLOBDATA_UUID_REGEX =
-            Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
     }
 }
