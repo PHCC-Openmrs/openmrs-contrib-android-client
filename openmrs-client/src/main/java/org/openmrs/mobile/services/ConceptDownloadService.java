@@ -29,6 +29,7 @@ import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.repository.FormRepository;
 import com.openmrs.android_sdk.library.dao.ConceptRoomDAO;
 import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.databases.entities.ConceptEntity;
@@ -41,19 +42,33 @@ import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.settings.SettingsActivity;
 import org.openmrs.mobile.application.OpenMRS;
 
+import rx.schedulers.Schedulers;
+
 @AndroidEntryPoint
 public class ConceptDownloadService extends Service {
     private int downloadedConcepts;
     private int maxConceptsInOneQuery = 100;
+    // Concept downloading and form schema resolution run concurrently but independently (they
+    // touch unrelated data, and one failing shouldn't affect the other) - these track whether
+    // each has finished, so the service stays alive (and its foreground notification visible)
+    // until both are done, rather than stopping - and losing its claim on the process - the
+    // moment whichever one happens to finish first does.
+    private volatile boolean conceptsDownloadFinished = false;
+    private volatile boolean formSchemasResolved = false;
     @Inject
     RestApi service;
+    @Inject
+    FormRepository formRepository;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent.getAction().equals(ApplicationConstants.ServiceActions.START_CONCEPT_DOWNLOAD_ACTION)) {
+            conceptsDownloadFinished = false;
+            formSchemasResolved = false;
             showNotification(downloadedConcepts);
             startDownload();
             downloadConcepts(downloadedConcepts);
+            resolveFormSchemasForOfflineUse();
         } else if (intent.getAction().equals(
                 ApplicationConstants.ServiceActions.STOP_CONCEPT_DOWNLOAD_ACTION)) {
             stopForeground(true);
@@ -148,18 +163,50 @@ public class ConceptDownloadService extends Service {
                         }
                     }
                     if (!isNextPage) {
-                        stopSelf();
+                        finishConceptsDownload();
                     }
                 } else {
-                    stopSelf();
+                    finishConceptsDownload();
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<Results<ConceptEntity>> call, @NonNull Throwable t) {
-                stopSelf();
+                finishConceptsDownload();
             }
         });
+    }
+
+    private void finishConceptsDownload() {
+        conceptsDownloadFinished = true;
+        stopIfBothFinished();
+    }
+
+    private void finishFormSchemaResolution() {
+        formSchemasResolved = true;
+        stopIfBothFinished();
+    }
+
+    private void stopIfBothFinished() {
+        if (conceptsDownloadFinished && formSchemasResolved) {
+            stopSelf();
+        }
+    }
+
+    /**
+     * Runs alongside the concept download so that tapping "Download Concepts" while online also
+     * primes every form for offline use - some servers store a form's schema out-of-line as clob
+     * data, which otherwise only gets fetched (and cached) the first time a user happens to open
+     * that specific form while online, silently leaving it unusable offline until then. Targets a
+     * different set of data than the concept download, so a failure here doesn't affect it (or
+     * vice versa) - but the service must not stop (see [stopIfBothFinished]) until this finishes
+     * too, or the process could lose its foreground-service standing (and get killed) while these
+     * per-form network calls are still in flight.
+     */
+    private void resolveFormSchemasForOfflineUse() {
+        formRepository.resolveAllFormSchemas()
+                .subscribeOn(Schedulers.io())
+                .subscribe(result -> finishFormSchemaResolution(), throwable -> finishFormSchemaResolution());
     }
 
     private void sendProgressBroadcast() {
