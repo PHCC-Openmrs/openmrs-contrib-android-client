@@ -248,6 +248,10 @@ object ApplicationConstants {
         const val KEY_DARK_MODE = "key_dark_mode"
     }
 
+    object AutoDeleteSyncedPatients {
+        const val KEY_AUTO_DELETE_SYNCED_PATIENTS = "key_auto_delete_synced_patients"
+    }
+
     object OpenMRSlanguage {
         const val KEY_LANGUAGE_MODE = "key_language_mode"
         val LANGUAGE_LIST = arrayOf("English", "हिन्दी")

@@ -61,6 +61,8 @@ public class PatientEntity extends Resource {
     @TypeConverters(PersonAttributeConverter.class)
     @ColumnInfo(name = "attributes")
     private List<PersonAttribute> attributes = new ArrayList<>();
+    @ColumnInfo(name = "identityLinkedOnly", defaultValue = "0")
+    private boolean identityLinkedOnly;
 
     /**
      * Instantiates a new Patient entity.
@@ -444,5 +446,13 @@ public class PatientEntity extends Resource {
      */
     public List<PersonAttribute> getAttributes() {
         return attributes;
+    }
+
+    public boolean isIdentityLinkedOnly() {
+        return identityLinkedOnly;
+    }
+
+    public void setIdentityLinkedOnly(boolean identityLinkedOnly) {
+        this.identityLinkedOnly = identityLinkedOnly;
     }
 }
