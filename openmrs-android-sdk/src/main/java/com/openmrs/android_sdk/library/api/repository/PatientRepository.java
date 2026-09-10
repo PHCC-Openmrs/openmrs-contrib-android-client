@@ -314,7 +314,21 @@ public class PatientRepository extends BaseRepository {
      */
     public Observable<ResultType> updatePatient(final Patient patient) {
         return AppDatabaseHelper.createObservableIO(() -> {
+            // A patient can already have a local row (isUpdatePatient) yet still have no uuid, if
+            // their original registration was saved locally but never actually created on the
+            // server - most commonly because it failed with a duplicate identifier. Editing such a
+            // patient (e.g. to correct that identifier) must retry it as a create via syncPatient()
+            // - a PUT to /patient/{uuid} below can't work with a null uuid, and would otherwise
+            // fail immediately online, or, offline, get queued as a worker that retries forever
+            // without ever reaching the server.
+            boolean isPreviouslySynced = patient.isSynced();
+
             if (NetworkUtils.isOnline()) {
+                if (!isPreviouslySynced) {
+                    syncPatient(patient).single().toBlocking().first();
+                    return ResultType.PatientUpdateSuccess;
+                }
+
                 Call<PatientDto> call = restApi.updatePatient(
                         patient.getUpdatedPatientDto(), patient.getUuid(), "full");
                 Response<PatientDto> response = call.execute();
@@ -335,9 +349,15 @@ public class PatientRepository extends BaseRepository {
             } else {
                 patientDAO.updatePatient(patient.getId(), patient);
 
-                Data data = new Data.Builder().putString(PRIMARY_KEY_ID, patient.getId().toString()).build();
-                Constraints constraints = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
-                getWorkManager().enqueue(new OneTimeWorkRequest.Builder(UpdatePatientWorker.class).setConstraints(constraints).setInputData(data).build());
+                if (isPreviouslySynced) {
+                    Data data = new Data.Builder().putString(PRIMARY_KEY_ID, patient.getId().toString()).build();
+                    Constraints constraints = new Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build();
+                    getWorkManager().enqueue(new OneTimeWorkRequest.Builder(UpdatePatientWorker.class).setConstraints(constraints).setInputData(data).build());
+                }
+                // else: this patient was never synced - it's already picked up by the existing
+                // unsynced-patient registration retry path (PatientService, run on connectivity
+                // restore or manual Synchronize), which calls syncPatient() by uuid-null lookup, so
+                // no separate PUT-based worker is needed (or would even work) here.
 
                 return ResultType.PatientUpdateLocalSuccess;
             }
