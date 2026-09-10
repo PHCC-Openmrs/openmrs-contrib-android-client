@@ -43,6 +43,7 @@ import org.openmrs.mobile.application.OpenMRS
 import org.openmrs.mobile.bundle.CustomDialogBundle
 import org.openmrs.mobile.databinding.FragmentLoginBinding
 import org.openmrs.mobile.listeners.watcher.LoginValidatorWatcher
+import org.openmrs.mobile.services.ConceptDownloadService
 import org.openmrs.mobile.services.FormListService
 import org.openmrs.mobile.utilities.URLValidator
 import org.openmrs.mobile.utilities.ViewUtils.isEmpty
@@ -97,6 +98,7 @@ class LoginFragment : BaseFragment() {
                         }
                         ResultType.LoginSuccess -> {
                             onUserAuthenticated()
+                            startConceptDownloadIfNeeded()
                             finishLoginActivity()
                         }
                         ResultType.LoginInvalidCredentials -> {
@@ -307,6 +309,23 @@ class LoginFragment : BaseFragment() {
         if (isActivityNotNull) {
             val i = Intent(context, FormListService::class.java)
             requireActivity().startService(i)
+        }
+    }
+
+    /**
+     * Kicks off the same "Download Concepts" action normally started manually from Settings -
+     * right after a successful ONLINE login, so a device is primed for offline use (concept
+     * dictionary + every form's schema) from the start, rather than depending on the user
+     * remembering to visit Settings before their first time losing connectivity. Only runs when
+     * nothing has been downloaded yet (a genuinely fresh device/install) - matches the same
+     * "conceptsCount == 0" gate Settings itself uses to decide whether the button should be
+     * enabled, so this never triggers a redundant re-download on ordinary subsequent logins.
+     */
+    private fun startConceptDownloadIfNeeded() {
+        if (isActivityNotNull && viewModel.hasNoConceptsDownloaded()) {
+            Intent(activity, ConceptDownloadService::class.java)
+                    .apply { action = ApplicationConstants.ServiceActions.START_CONCEPT_DOWNLOAD_ACTION }
+                    .let { activity?.startService(it) }
         }
     }
 
