@@ -36,6 +36,9 @@ class AddEditPatientViewModel @Inject constructor(
     private val _patientUpdateLiveData = MutableLiveData<ResultType>()
     val patientUpdateLiveData: LiveData<ResultType> get() = _patientUpdateLiveData
 
+    private val _duplicateNationalIdLiveData = MutableLiveData<Patient?>()
+    val duplicateNationalIdLiveData: LiveData<Patient?> get() = _duplicateNationalIdLiveData
+
     var patientValidator: PatientValidator
 
     var isUpdatePatient = false
@@ -130,6 +133,34 @@ class AddEditPatientViewModel @Inject constructor(
         }
         if (isUpdatePatient) updatePatient()
         else registerPatient()
+    }
+
+    /**
+     * Checks whether the National ID just entered already belongs to a patient this device
+     * already knows about (previously registered offline, or downloaded for offline use) - a
+     * check that's only meaningful/possible locally, since there's no way to ask the server about
+     * it while offline. Emits the matching local patient via [duplicateNationalIdLiveData], or
+     * null if there's no local duplicate. When editing an existing patient, excludes that same
+     * patient's own row from matching itself.
+     */
+    fun checkLocalDuplicateNationalId() {
+        val nationalId = getNationalId()
+        if (nationalId.isNullOrBlank()) {
+            _duplicateNationalIdLiveData.value = null
+            return
+        }
+        addSubscription(patientRepository.findLocalPatientsByIdentifier(
+                ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID, nationalId)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        { matches ->
+                            _duplicateNationalIdLiveData.value = matches.firstOrNull { candidate ->
+                                !isUpdatePatient || candidate.id != patient.id
+                            }
+                        },
+                        { _duplicateNationalIdLiveData.value = null }
+                )
+        )
     }
 
     fun fetchSimilarPatients() {

@@ -50,9 +50,18 @@ class PatientDetailsFragment : BaseFragment() {
         _binding = FragmentPatientDetailsBinding.inflate(inflater, null, false)
 
         setupObserver()
-        fetchPatientDetails()
 
         return binding.root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-reads the patient from the local DB every time this tab becomes visible again -
+        // notably, when returning from AddEditPatientActivity after saving an edit. The pager
+        // hosting this fragment keeps it alive across tab switches, so onCreateView() only runs
+        // once; without this, an offline edit (which only writes to Room, with no network
+        // round-trip to trigger a re-render) would never show up here.
+        fetchPatientDetails()
     }
 
     private fun setupObserver() {

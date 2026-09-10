@@ -32,6 +32,7 @@ import com.openmrs.android_sdk.utilities.NetworkUtils
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
+import org.openmrs.mobile.api.ConnectivityStateMonitor
 import org.openmrs.mobile.activities.ACBaseActivity
 import org.openmrs.mobile.activities.addeditallergy.AddEditAllergyActivity
 import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity
@@ -129,8 +130,17 @@ class PatientDashboardActivity : ACBaseActivity() {
     }
 
     private fun syncPatient() {
-        if (NetworkUtils.isOnline()) viewModel.syncPatientData()
-        else ToastUtil.notify(getString(R.string.synchronize_patient_network_error))
+        if (NetworkUtils.isOnline()) {
+            viewModel.syncPatientData()
+            // syncPatientData() only pushes/pulls this patient's own record - it never touches
+            // pending visits or encounters (offline-filled forms), which are only ever flushed by
+            // the PatientService -> VisitService -> EncounterService chain kicked off here. Without
+            // this, "Synchronize" looked like it worked (the patient record synced) while a form
+            // filled offline for that patient stayed stuck on the device indefinitely.
+            ConnectivityStateMonitor.triggerSync(applicationContext)
+        } else {
+            ToastUtil.notify(getString(R.string.synchronize_patient_network_error))
+        }
     }
 
     fun deletePatient() {
