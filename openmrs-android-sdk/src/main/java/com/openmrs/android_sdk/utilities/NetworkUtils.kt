@@ -15,7 +15,6 @@ package com.openmrs.android_sdk.utilities
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.preference.PreferenceManager
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 
 object NetworkUtils {
@@ -27,22 +26,21 @@ object NetworkUtils {
     }
 
     /**
-     * True when the user hasn't manually disabled sync (the toolbar sync toggle) AND the device
-     * currently has real network connectivity - always recomputed live from [hasNetwork].
+     * True when the user hasn't manually disabled sync ([OpenmrsAndroid.getSyncState], an
+     * in-memory, session-scoped toggle) AND the device currently has real network connectivity -
+     * always recomputed live from [hasNetwork].
      *
-     * This used to also PERSIST "false" to SharedPreferences the first time it observed no
-     * connectivity, then trusted that stale value forever after without ever re-checking real
-     * connectivity - so a single transient offline moment anywhere in the app (any background
-     * sync attempt, on any screen) could silently and permanently disable ALL later sync
-     * (patients, visits, encounters/forms, allergies, providers, observations...) even once the
-     * device reconnected, until the user happened to manually toggle the sync icon. A read-only
-     * connectivity check must never have that kind of persistent side effect - the manual toggle
-     * itself is still written explicitly via [com.openmrs.android_sdk.library.OpenmrsAndroid.setSyncState].
+     * This used to read a SharedPreferences-persisted flag and, on top of that, PERSIST "false"
+     * itself the first time it observed no connectivity - trusting that stale value forever after
+     * without ever re-checking real connectivity, across app restarts and updates. A single
+     * transient offline moment anywhere in the app (any background sync attempt, on any screen)
+     * could silently and permanently disable ALL later sync (patients, visits, encounters/forms,
+     * allergies, providers, observations...) even once the device reconnected, with no way to
+     * notice why short of manually toggling the sync icon. A read-only connectivity check must
+     * never have that kind of persistent side effect.
      */
     @JvmStatic
     fun isOnline(): Boolean {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(OpenmrsAndroid.getInstance())
-        val toggle = prefs.getBoolean("sync", true)
-        return toggle && hasNetwork()
+        return OpenmrsAndroid.getSyncState() && hasNetwork()
     }
 }

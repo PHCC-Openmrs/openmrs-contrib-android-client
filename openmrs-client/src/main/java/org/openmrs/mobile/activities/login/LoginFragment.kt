@@ -18,16 +18,15 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
-import android.preference.PreferenceManager
 import android.text.Html
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import androidx.core.content.edit
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.google.android.material.snackbar.Snackbar
+import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
 import com.openmrs.android_sdk.library.models.OperationType
 import com.openmrs.android_sdk.library.models.Result
@@ -174,11 +173,8 @@ class LoginFragment : BaseFragment() {
 
     private fun initListeners() = with(binding) {
         loginSyncButton.setOnClickListener {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance())
-            val syncState = prefs.getBoolean("sync", true)
-            PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance()).edit {
-                putBoolean("sync", !syncState)
-            }
+            val syncState = OpenmrsAndroid.getSyncState()
+            OpenmrsAndroid.setSyncState(!syncState)
             setSyncButtonState(!syncState)
         }
         loginValidatorWatcher = LoginValidatorWatcher(loginUrlField, loginUsernameField,
@@ -407,9 +403,7 @@ class LoginFragment : BaseFragment() {
 
     override fun onResume() {
         super.onResume()
-        val syncState = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance())
-                .getBoolean("sync", true)
-        setSyncButtonState(syncState)
+        setSyncButtonState(OpenmrsAndroid.getSyncState())
         hideUrlLoadingAnimation()
     }
 

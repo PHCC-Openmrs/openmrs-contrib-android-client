@@ -90,14 +90,35 @@ class PatientDashboardMainViewModel @Inject constructor(
     }
 
     private fun syncAllData(patientToSync: Patient) {
-        syncDetails(patientToSync.uuid!!)
+        syncDetails(patientToSync)
         syncVisits(patientToSync)
         syncAllergies(patientToSync)
         syncVitals(patientToSync.uuid!!)
     }
 
-    private fun syncDetails(uuid: String) {
+    /**
+     * Pushes any locally-pending edit for this patient (e.g. one made while offline, still queued
+     * for UpdatePatientWorker to eventually pick up) BEFORE pulling from the server. Pulling first
+     * would unconditionally overwrite the local record with the server's still-stale copy (see
+     * [pullPatientDetails]), silently destroying the local edit before it ever reached the server
+     * - which made this screen's own auto-sync-on-open (and the "Synchronize" action, which calls
+     * the same method) actively work against the fix that's supposed to deliver a pending offline
+     * edit: simply reopening the dashboard to check whether it synced could wipe it out first.
+     * Still pulls even if the push itself fails, so the screen at least reflects current server
+     * truth rather than getting stuck.
+     */
+    private fun syncDetails(patientToSync: Patient) {
         runningSyncs++
+        addSubscription(patientRepository.updatePatient(patientToSync)
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        { pullPatientDetails(patientToSync.uuid!!) },
+                        { pullPatientDetails(patientToSync.uuid!!) }
+                )
+        )
+    }
+
+    private fun pullPatientDetails(uuid: String) {
         addSubscription(patientRepository.downloadPatientByUuid(uuid)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(

@@ -15,19 +15,17 @@
 package org.openmrs.mobile.activities.matchingpatients;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.Menu;
 
 import androidx.appcompat.widget.Toolbar;
 
+import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
-import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.databinding.ActivityMatchingPatientsBinding;
 import org.openmrs.mobile.utilities.PatientAndMatchesWrapper;
 
@@ -76,9 +74,6 @@ public class MatchingPatientsActivity extends ACBaseActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(OpenMRS.getInstance());
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putBoolean("sync", false);
-        editor.apply();
+        OpenmrsAndroid.setSyncState(false);
     }
 }
