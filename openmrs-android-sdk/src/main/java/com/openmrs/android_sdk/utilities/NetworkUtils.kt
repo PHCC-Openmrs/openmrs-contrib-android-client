@@ -26,21 +26,23 @@ object NetworkUtils {
         return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
     }
 
+    /**
+     * True when the user hasn't manually disabled sync (the toolbar sync toggle) AND the device
+     * currently has real network connectivity - always recomputed live from [hasNetwork].
+     *
+     * This used to also PERSIST "false" to SharedPreferences the first time it observed no
+     * connectivity, then trusted that stale value forever after without ever re-checking real
+     * connectivity - so a single transient offline moment anywhere in the app (any background
+     * sync attempt, on any screen) could silently and permanently disable ALL later sync
+     * (patients, visits, encounters/forms, allergies, providers, observations...) even once the
+     * device reconnected, until the user happened to manually toggle the sync icon. A read-only
+     * connectivity check must never have that kind of persistent side effect - the manual toggle
+     * itself is still written explicitly via [com.openmrs.android_sdk.library.OpenmrsAndroid.setSyncState].
+     */
     @JvmStatic
     fun isOnline(): Boolean {
         val prefs = PreferenceManager.getDefaultSharedPreferences(OpenmrsAndroid.getInstance())
         val toggle = prefs.getBoolean("sync", true)
-        return if (toggle) {
-            val connectivityManager = OpenmrsAndroid.getInstance()?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val activeNetworkInfo = connectivityManager.activeNetworkInfo
-            val isConnected = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
-            return if (isConnected) true
-            else {
-                val editor = prefs.edit()
-                editor.putBoolean("sync", false)
-                editor.apply()
-                false
-            }
-        } else false
+        return toggle && hasNetwork()
     }
 }
