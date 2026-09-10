@@ -56,6 +56,7 @@ import com.openmrs.android_sdk.library.models.IdentifierType;
 import com.openmrs.android_sdk.library.models.Module;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.PatientDto;
+import com.openmrs.android_sdk.library.models.Person;
 import com.openmrs.android_sdk.library.models.PersonAttribute;
 import com.openmrs.android_sdk.library.models.PersonAttributeType;
 import com.openmrs.android_sdk.library.models.PatientDtoUpdate;
@@ -209,31 +210,37 @@ public class PatientRepository extends BaseRepository {
                                 ? duplicateMatcher.group(1)
                                 : patient.getIdentifier().getIdentifier();
                         logger.i("Duplicate identifier detected (" + patientIdentifierStr + "). Verifying server record...");
-                        Response<Results<Patient>> searchResponse = restApi.getPatients(patientIdentifierStr, "full").execute();
+                        // Deliberately searching via getPatientsDto()/PatientDto here, not the plain
+                        // getPatients()/Patient model: a "full" patient representation nests name,
+                        // gender, birthdate etc. under a "person" sub-object, which PatientDto (a
+                        // dedicated person field) maps correctly but Patient does not - Patient
+                        // expects those fields flattened at the top level, so going through it left
+                        // serverPatient.getName() always null here, making the name-match check below
+                        // always fail (even for a duplicate registration of the exact same person) and
+                        // wrongly report it as belonging to "another patient".
+                        Response<Results<PatientDto>> searchResponse = restApi.getPatientsDto(patientIdentifierStr, "full").execute();
                         if (searchResponse.isSuccessful() && searchResponse.body() != null && !searchResponse.body().getResults().isEmpty()) {
-                            Patient serverPatient = searchResponse.body().getResults().get(0);
+                            PatientDto serverPatientDto = searchResponse.body().getResults().get(0);
+                            Person serverPerson = serverPatientDto.getPerson();
 
                             // Only link if names match to prevent incorrect merging due to server-side ID reuse
-                            String serverGiven = (serverPatient.getName() != null && serverPatient.getName().getGivenName() != null) ? serverPatient.getName().getGivenName() : "";
-                            String serverFamily = (serverPatient.getName() != null && serverPatient.getName().getFamilyName() != null) ? serverPatient.getName().getFamilyName() : "";
+                            String serverGiven = (serverPerson != null && serverPerson.getName() != null && serverPerson.getName().getGivenName() != null) ? serverPerson.getName().getGivenName() : "";
+                            String serverFamily = (serverPerson != null && serverPerson.getName() != null && serverPerson.getName().getFamilyName() != null) ? serverPerson.getName().getFamilyName() : "";
                             String localGiven = (patient.getName() != null && patient.getName().getGivenName() != null) ? patient.getName().getGivenName() : "";
                             String localFamily = (patient.getName() != null && patient.getName().getFamilyName() != null) ? patient.getName().getFamilyName() : "";
 
                             if (serverGiven.equalsIgnoreCase(localGiven) && serverFamily.equalsIgnoreCase(localFamily)) {
-                                logger.i("Names match. Linking local patient to existing server record (UUID: " + serverPatient.getUuid() + ")");
-                                patient.setUuid(serverPatient.getUuid());
-                                if (serverPatient.getIdentifiers() != null && !serverPatient.getIdentifiers().isEmpty()) {
-                                    patient.setIdentifiers(serverPatient.getIdentifiers());
+                                logger.i("Names match. Linking local patient to existing server record (UUID: " + serverPatientDto.getUuid() + ")");
+                                patient.setUuid(serverPatientDto.getUuid());
+                                if (serverPatientDto.getIdentifiers() != null && !serverPatientDto.getIdentifiers().isEmpty()) {
+                                    patient.setIdentifiers(serverPatientDto.getIdentifiers());
                                 }
                                 patientDAO.updatePatient(patient.getId(), patient);
                                 return patient;
                             } else {
-                                // Built from the already null-checked given/family names above (rather
-                                // than serverPatient.getName().getNameString()) since the "full" patient
-                                // search representation doesn't always populate a name sub-object.
                                 String serverDisplayName = (serverGiven + " " + serverFamily).trim();
                                 if (serverDisplayName.isEmpty()) {
-                                    serverDisplayName = serverPatient.getDisplay() != null ? serverPatient.getDisplay() : "another patient";
+                                    serverDisplayName = "another patient";
                                 }
                                 logger.e("Duplicate ID found on server, but NAMES DO NOT MATCH. Server: " + serverDisplayName + ", Local: " + (localGiven + " " + localFamily).trim());
                                 throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient (" + serverDisplayName + "). Please verify the ID and try again.");
