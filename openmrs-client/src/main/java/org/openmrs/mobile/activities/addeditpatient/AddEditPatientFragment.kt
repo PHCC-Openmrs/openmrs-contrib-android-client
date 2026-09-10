@@ -199,13 +199,58 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                 showSimilarPatientsDialog(similarPatients, viewModel.patient)
             }
         })
+        viewModel.duplicateNationalIdLiveData.observe(viewLifecycleOwner, Observer { duplicate ->
+            hideLoading()
+            if (duplicate != null) {
+                showDuplicateNationalIdDialog(duplicate)
+            } else if (!viewModel.isUpdatePatient) {
+                viewModel.fetchSimilarPatients()
+            } else {
+                proceedWithUpdate()
+            }
+        })
     }
 
-    private fun findSimilarPatients() {
-        if (validateFormInputsAndUpdateViewModel()) {
-            viewModel.fetchSimilarPatients()
+    /**
+     * Warns and blocks submission when the just-entered National ID already belongs to a patient
+     * this DEVICE already knows about (previously registered offline or downloaded for offline
+     * use) - this is checkable purely locally, unlike a genuinely new duplicate on the server
+     * (which can only be detected once online, at sync time). Catching it here, before submit,
+     * avoids the two-different-local-patients-same-ID situation entirely rather than only
+     * resolving it after the fact during sync.
+     */
+    private fun showDuplicateNationalIdDialog(duplicate: Patient) {
+        AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
+                .setTitle(R.string.duplicate_national_id_dialog_title)
+                .setMessage(getString(R.string.duplicate_national_id_dialog_message, duplicate.name.nameString))
+                .setCancelable(true)
+                .setPositiveButton(R.string.duplicate_national_id_dialog_view_existing) { _, _ ->
+                    Intent(requireActivity(), PatientDashboardActivity::class.java)
+                            .putExtra(PATIENT_ID_BUNDLE, duplicate.id)
+                            .apply { startActivity(this) }
+                    finishActivity()
+                }
+                .setNegativeButton(R.string.dialog_button_cancel, null)
+                .show()
+    }
+
+    private fun proceedWithUpdate() = with(viewModel) {
+        if (patient.isDeceased && !patient.causeOfDeath.uuid.isNullOrEmpty()) {
+            alertDialog = AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
+                    .setTitle(R.string.mark_patient_deceased)
+                    .setMessage(R.string.mark_patient_deceased_notice)
+                    .setCancelable(false)
+                    .setPositiveButton(R.string.mark_patient_deceased_proceed) { _, _ ->
+                        alertDialog?.cancel()
+                        updatePatient()
+                    }
+                    .setNegativeButton(R.string.dialog_button_cancel) { _, _ ->
+                        alertDialog?.cancel()
+                    }
+                    .create()
+            alertDialog?.show()
         } else {
-            ToastUtil.error(getString(R.string.invalid_inputs))
+            updatePatient()
         }
     }
 
@@ -762,30 +807,16 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                 .show()
     }
 
-    private fun submitAction() = with(viewModel) {
-        // New patient registering
-        if (!isUpdatePatient) {
-            findSimilarPatients()
-            return@with
+    private fun submitAction() {
+        if (!validateFormInputsAndUpdateViewModel()) {
+            ToastUtil.error(getString(R.string.invalid_inputs))
+            return
         }
-        // Existing patient updating
-        if (patient.isDeceased && !patient.causeOfDeath.uuid.isNullOrEmpty()) {
-            alertDialog = AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
-                    .setTitle(R.string.mark_patient_deceased)
-                    .setMessage(R.string.mark_patient_deceased_notice)
-                    .setCancelable(false)
-                    .setPositiveButton(R.string.mark_patient_deceased_proceed) { _, _ ->
-                        alertDialog?.cancel()
-                        updatePatient()
-                    }
-                    .setNegativeButton(R.string.dialog_button_cancel) { _, _ ->
-                        alertDialog?.cancel()
-                    }
-                    .create()
-            alertDialog?.show()
-        } else {
-            updatePatient()
-        }
+        // Checked before registering/updating - handled by duplicateNationalIdLiveData's observer
+        // in setupObservers(), which either warns about a local duplicate or proceeds to the
+        // normal register/update flow.
+        showLoading()
+        viewModel.checkLocalDuplicateNationalId()
     }
 
     private fun resetAction() = with(binding) {

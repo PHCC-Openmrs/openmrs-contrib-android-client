@@ -613,6 +613,41 @@ public class PatientRepository extends BaseRepository {
     }
 
     /**
+     * Finds locally-stored patients (previously registered offline, or downloaded for offline
+     * use) that already carry the given identifier value under the given identifier type - e.g.
+     * checking a just-entered National ID against every patient this device already knows about.
+     * Purely a local DB scan, so it works fully offline, unlike server-side duplicate detection
+     * (only possible once online, at sync time).
+     *
+     * @param identifierTypeUuid the identifier type to match (e.g. National ID)
+     * @param identifierValue    the identifier value to match
+     * @return observable list of locally-stored patients carrying a matching identifier
+     */
+    public Observable<List<Patient>> findLocalPatientsByIdentifier(final String identifierTypeUuid, final String identifierValue) {
+        return AppDatabaseHelper.createObservableIO(() -> {
+            List<Patient> matches = new ArrayList<>();
+            if (identifierValue == null || identifierValue.trim().isEmpty()) {
+                return matches;
+            }
+            String trimmedValue = identifierValue.trim();
+            List<Patient> localPatients = patientDAO.getAllPatients().toBlocking().first();
+            for (Patient candidate : localPatients) {
+                if (candidate.getIdentifiers() == null) continue;
+                for (PatientIdentifier identifier : candidate.getIdentifiers()) {
+                    if (identifier.getIdentifierType() != null
+                            && identifierTypeUuid.equals(identifier.getIdentifierType().getUuid())
+                            && identifier.getIdentifier() != null
+                            && identifier.getIdentifier().trim().equalsIgnoreCase(trimmedValue)) {
+                        matches.add(candidate);
+                        break;
+                    }
+                }
+            }
+            return matches;
+        });
+    }
+
+    /**
      * Fetches similar patients by different strategies:
      * <br> 1. Fetch similar patients from server directly using an API.
      * <br> 2. Fetch patients with similar names, then compare their other similarities locally.
