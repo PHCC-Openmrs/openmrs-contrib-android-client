@@ -54,28 +54,32 @@ class PatientDashboardPagerAdapter(private val fm: FragmentManager,
      * included since reaching this screen already required Get Patients. Fails open: while
      * privilege data hasn't been fetched yet, every tab is included exactly as before this check
      * existed.
+     *
+     * Allergy/Diagnosis/Vitals/Charts/Appointments/Medications/Orders are hidden from the UI per
+     * product request - condition forced to false rather than deleted so the privilege-gated
+     * logic and tab plumbing stay intact if they're re-enabled later.
      */
     private val visibleTabs: List<TabSpec> = buildList {
         add(TabSpec(TabType.DETAILS, R.string.patient_scroll_tab_details_label))
-        if (PrivilegeUtils.hasPrivilege(GET_ALLERGIES)) {
+        if (false && PrivilegeUtils.hasPrivilege(GET_ALLERGIES)) {
             add(TabSpec(TabType.ALLERGY, R.string.patient_scroll_tab_allergy_label))
         }
-        if (PrivilegeUtils.hasPrivilege(GET_DIAGNOSES)) {
+        if (false && PrivilegeUtils.hasPrivilege(GET_DIAGNOSES)) {
             add(TabSpec(TabType.DIAGNOSIS, R.string.patient_scroll_tab_diagnosis_label))
         }
         if (PrivilegeUtils.hasPrivilege(GET_VISITS)) {
             add(TabSpec(TabType.VISITS, R.string.patient_scroll_tab_visits_label))
         }
-        if (PrivilegeUtils.hasPrivilege(GET_OBSERVATIONS)) {
+        if (false && PrivilegeUtils.hasPrivilege(GET_OBSERVATIONS)) {
             add(TabSpec(TabType.VITALS, R.string.patient_scroll_tab_vitals_label))
         }
-        if (PrivilegeUtils.hasAnyPrivilege(GET_ENCOUNTERS, GET_OBSERVATIONS)) {
+        if (false && PrivilegeUtils.hasAnyPrivilege(GET_ENCOUNTERS, GET_OBSERVATIONS)) {
             add(TabSpec(TabType.CHARTS, R.string.patient_scroll_tab_charts_label))
         }
-        if (PrivilegeUtils.hasPrivilege(VIEW_APPOINTMENTS)) {
+        if (false && PrivilegeUtils.hasPrivilege(VIEW_APPOINTMENTS)) {
             add(TabSpec(TabType.APPOINTMENTS, R.string.patient_scroll_tab_appointments_label))
         }
-        if (PrivilegeUtils.hasPrivilege(GET_ORDERS)) {
+        if (false && PrivilegeUtils.hasPrivilege(GET_ORDERS)) {
             add(TabSpec(TabType.MEDICATIONS, R.string.patient_scroll_tab_medications_label))
             add(TabSpec(TabType.ORDERS, R.string.patient_scroll_tab_orders_label))
         }

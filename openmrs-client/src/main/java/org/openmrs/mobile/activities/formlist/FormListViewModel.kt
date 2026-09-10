@@ -86,8 +86,16 @@ class FormListViewModel @Inject constructor(
                         }
                     }
 
+                    // Only Health Promotion Session and IYCF Session forms should appear in the
+                    // form entry menu per product request - every other form is filtered out here
+                    // rather than removed from the source list so it can be re-enabled later.
+                    val allowedForms = visibleForms.filter { formResource ->
+                        val name = formResource.name?.trim()?.lowercase() ?: return@filter false
+                        ALLOWED_FORM_NAMES.any { allowed -> name.contains(allowed) }
+                    }
+
                     formResourceList.clear()
-                    formResourceList.addAll(visibleForms)
+                    formResourceList.addAll(allowedForms)
 
                     val forms = ArrayList<String>(formResourceList.size)
                     for (form in formResourceList) forms += form.name!!
@@ -243,5 +251,6 @@ class FormListViewModel @Inject constructor(
     companion object {
         private const val VIRTUAL_FORM_UUID_PREFIX = "virtual-"
         private val FORMS_REQUIRING_ENCOUNTER_ROLE = setOf(EncounterType.ADMISSION, EncounterType.VISIT_NOTE)
+        private val ALLOWED_FORM_NAMES = setOf("health promotion session", "iycf session")
     }
 }

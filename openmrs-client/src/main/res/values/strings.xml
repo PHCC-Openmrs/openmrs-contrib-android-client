@@ -67,6 +67,7 @@
     <string name="reg_phone_hint">Phone Number</string>
     <string name="reg_patient_status_hint">Patient Status</string>
     <string name="phone_invalid_error">Phone number must be exactly 10 digits</string>
+    <string name="phone_numeric_only_error">Only numbers are allowed</string>
     <string name="addr_invalid_error">Address cannot contain invalid characters</string>
     <string name="atleastone">Fill at least one address field</string>
     <string name="male">Male</string>
