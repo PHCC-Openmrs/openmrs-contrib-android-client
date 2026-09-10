@@ -12,6 +12,7 @@ import rx.Observable
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_PAGE_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID
 import com.openmrs.android_sdk.utilities.ApplicationConstants.PersonAttributeTypes.PHONE_NUMBER_UUID
 import com.openmrs.android_sdk.utilities.DateField
 import com.openmrs.android_sdk.utilities.InputField
@@ -107,6 +108,7 @@ class FormDisplayPageViewModel @Inject constructor(
         val active = patient ?: return null
         return when {
             PARTICIPANT_NAME_PATTERN.containsMatchIn(label) -> active.name?.nameString
+            ID_PATTERN.containsMatchIn(label) -> active.getIdentifierByType(NATIONAL_ID_IDENTIFIER_TYPE_UUID)?.identifier
             PHONE_PATTERN.containsMatchIn(label) -> active.getAttributeValue(PHONE_NUMBER_UUID)
             else -> null
         }
@@ -136,6 +138,19 @@ class FormDisplayPageViewModel @Inject constructor(
         return index.takeIf { it >= 0 }
     }
 
+    /**
+     * True when [question]'s label identifies it as a patient-demographic field (name, age,
+     * gender, or national ID) - these are auto-populated from the patient record above and must
+     * be locked against manual editing rather than left free-text, per product requirement.
+     */
+    fun isFixedPatientField(question: Question): Boolean {
+        val label = question.label ?: return false
+        return PARTICIPANT_NAME_PATTERN.containsMatchIn(label) ||
+            ID_PATTERN.containsMatchIn(label) ||
+            AGE_PATTERN.containsMatchIn(label) ||
+            GENDER_PATTERN.containsMatchIn(label)
+    }
+
     private fun matchesGender(answer: Answer, genderCode: String): Boolean {
         val answerLabel = (answer.label ?: answer.concept ?: "").trim()
         return when (genderCode.uppercase()) {
@@ -146,9 +161,13 @@ class FormDisplayPageViewModel @Inject constructor(
     }
 
     companion object {
-        private val PARTICIPANT_NAME_PATTERN = Regex("participant.*name|patient.*name", RegexOption.IGNORE_CASE)
+        // Caregiver name is included because in the IYCF form the "caregiver" is the patient
+        // themself, so that field must resolve to the patient's own name like participant/patient
+        // name fields do.
+        private val PARTICIPANT_NAME_PATTERN = Regex("participant.*name|patient.*name|caregiver.*name", RegexOption.IGNORE_CASE)
         private val GENDER_PATTERN = Regex("\\bgender\\b|\\bsex\\b", RegexOption.IGNORE_CASE)
         private val AGE_PATTERN = Regex("\\bage\\b", RegexOption.IGNORE_CASE)
         private val PHONE_PATTERN = Regex("phone|mobile", RegexOption.IGNORE_CASE)
+        private val ID_PATTERN = Regex("national.*id|id\\s*number|\\bidentifier\\b", RegexOption.IGNORE_CASE)
     }
 }

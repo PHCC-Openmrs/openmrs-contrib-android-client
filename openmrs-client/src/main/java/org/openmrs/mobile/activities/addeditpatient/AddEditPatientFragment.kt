@@ -27,6 +27,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.StrictMode
 import android.text.Editable
+import android.text.InputFilter
 import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
@@ -430,8 +431,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         viewModel.setPatientStatus(patientStatusUuidForLabel(getInput(patientStatusAutoComplete)))
 
         /* Phone Number - optional, matches the web app's registration form. If provided, must be
-           exactly 10 digits (same rule the web app enforces). */
-        if (!isEmpty(phoneNumber) && getInput(phoneNumber).orEmpty().length != 10) {
+           exactly 10 digits, numeric only (same rule the web app enforces). */
+        if (!isEmpty(phoneNumber) && !getInput(phoneNumber).orEmpty().matches(Regex("\\d{10}"))) {
             textInputLayoutPhoneNumber.isErrorEnabled = true
             textInputLayoutPhoneNumber.error = getString(R.string.phone_invalid_error)
             scrollToTop()
@@ -599,6 +600,28 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             estimatedMonth.addTextChangedListener(it)
             estimatedYear.addTextChangedListener(it)
         }
+
+        // Reject non-digit characters as they're typed/pasted (rather than relying only on
+        // android:digits, which silently drops them) and prompt the user why nothing appeared.
+        phoneNumber.filters = phoneNumber.filters + InputFilter { source, start, end, _, _, _ ->
+            val filtered = source.subSequence(start, end).filterIndexed { _, c -> c.isDigit() }
+            if (filtered.length != end - start) {
+                textInputLayoutPhoneNumber.isErrorEnabled = true
+                textInputLayoutPhoneNumber.error = getString(R.string.phone_numeric_only_error)
+                filtered
+            } else {
+                null
+            }
+        }
+        phoneNumber.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable) {
+                if (s.toString().all { it.isDigit() }) {
+                    textInputLayoutPhoneNumber.isErrorEnabled = false
+                }
+            }
+        })
 
         capturePhoto.setOnClickListener {
             val dialogList = mutableListOf(

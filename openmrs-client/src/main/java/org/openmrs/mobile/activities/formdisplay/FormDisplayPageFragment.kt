@@ -268,6 +268,11 @@ class FormDisplayPageFragment : BaseFragment() {
             ed.setText(inputField.value.toString())
             ed.setSelection(ed.length())
         }
+        if (viewModel.isFixedPatientField(question)) {
+            ed.isEnabled = false
+            ed.isFocusable = false
+            ed.setTextColor(Color.BLACK)
+        }
         sectionContainer.addView(ed, lp)
         setOnTextChangedListener(ed, inputField)
     }
@@ -315,6 +320,11 @@ class FormDisplayPageFragment : BaseFragment() {
             setOnItemSelectedListener(spinner, spinnerField)
             viewModel.selectOneFields.add(spinnerField)
         }
+
+        if (viewModel.isFixedPatientField(question)) {
+            spinner.isEnabled = false
+            spinner.post { (spinner.selectedView as? TextView)?.setTextColor(Color.BLACK) }
+        }
     }
 
     private fun createAndAttachSelectQuestionRadioButton(question: Question, sectionContainer: LinearLayout) {
@@ -358,6 +368,14 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnCheckedChangeListener(radioGroup, radioGroupField)
             viewModel.selectOneFields.add(radioGroupField)
+        }
+
+        if (viewModel.isFixedPatientField(question)) {
+            for (i in 0 until radioGroup.childCount) {
+                val child = radioGroup.getChildAt(i)
+                child.isEnabled = false
+                (child as? RadioButton)?.setTextColor(Color.BLACK)
+            }
         }
     }
 
@@ -438,6 +456,10 @@ class FormDisplayPageFragment : BaseFragment() {
                     fieldToUse.value = s.toString()
                 }
             })
+            if (viewModel.isFixedPatientField(question)) {
+                isEnabled = false
+                setTextColor(Color.BLACK)
+            }
         }
         sectionContainer.addView(editText)
     }
