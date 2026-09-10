@@ -15,7 +15,6 @@ package com.openmrs.android_sdk.utilities
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.preference.PreferenceManager
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 
 object NetworkUtils {
@@ -26,21 +25,22 @@ object NetworkUtils {
         return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
     }
 
+    /**
+     * True when the user hasn't manually disabled sync ([OpenmrsAndroid.getSyncState], an
+     * in-memory, session-scoped toggle) AND the device currently has real network connectivity -
+     * always recomputed live from [hasNetwork].
+     *
+     * This used to read a SharedPreferences-persisted flag and, on top of that, PERSIST "false"
+     * itself the first time it observed no connectivity - trusting that stale value forever after
+     * without ever re-checking real connectivity, across app restarts and updates. A single
+     * transient offline moment anywhere in the app (any background sync attempt, on any screen)
+     * could silently and permanently disable ALL later sync (patients, visits, encounters/forms,
+     * allergies, providers, observations...) even once the device reconnected, with no way to
+     * notice why short of manually toggling the sync icon. A read-only connectivity check must
+     * never have that kind of persistent side effect.
+     */
     @JvmStatic
     fun isOnline(): Boolean {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(OpenmrsAndroid.getInstance())
-        val toggle = prefs.getBoolean("sync", true)
-        return if (toggle) {
-            val connectivityManager = OpenmrsAndroid.getInstance()?.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-            val activeNetworkInfo = connectivityManager.activeNetworkInfo
-            val isConnected = activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting
-            return if (isConnected) true
-            else {
-                val editor = prefs.edit()
-                editor.putBoolean("sync", false)
-                editor.apply()
-                false
-            }
-        } else false
+        return OpenmrsAndroid.getSyncState() && hasNetwork()
     }
 }

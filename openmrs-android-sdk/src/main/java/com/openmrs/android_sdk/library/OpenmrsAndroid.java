@@ -362,13 +362,26 @@ public class OpenmrsAndroid {
     }
 
     /**
+     * Whether the user has manually paused sync (via the toolbar/login sync toggle). Held
+     * in-memory only, for the current process lifetime - deliberately NOT persisted to disk.
+     *
+     * This used to be a SharedPreferences boolean ("sync") that several unrelated code paths
+     * wrote to for different reasons (this manual toggle, a connectivity-restored auto-reset, and
+     * a "pause sync" side effect of backing out of the matching-patients screen) - any of which
+     * could leave a stale "false" saved across app restarts (or app updates) with no way for the
+     * user to know why sync had silently stopped working, since nothing but the toggle itself
+     * ever explains its own state. Scoping it to the process instead means every fresh app launch
+     * starts with sync enabled by default, and a manual pause never outlives the session that set it.
+     */
+    private static volatile boolean syncEnabled = true;
+
+    /**
      * Gets sync state.
      *
      * @return the sync state
      */
     public static boolean getSyncState() {
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(instance);
-        return prefs.getBoolean("sync", true);
+        return syncEnabled;
     }
 
 
@@ -378,10 +391,7 @@ public class OpenmrsAndroid {
      * @param enabled the enabled
      */
     public static void setSyncState(boolean enabled) {
-        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(instance);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putBoolean("sync", enabled);
-        editor.apply();
+        syncEnabled = enabled;
     }
 
     /**
