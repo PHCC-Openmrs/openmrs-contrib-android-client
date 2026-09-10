@@ -56,7 +56,6 @@ import com.openmrs.android_sdk.library.models.IdentifierType;
 import com.openmrs.android_sdk.library.models.Module;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.PatientDto;
-import com.openmrs.android_sdk.library.models.Person;
 import com.openmrs.android_sdk.library.models.PersonAttribute;
 import com.openmrs.android_sdk.library.models.PersonAttributeType;
 import com.openmrs.android_sdk.library.models.PatientDtoUpdate;
@@ -69,6 +68,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.ModuleUtils;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.PatientComparator;
+import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
 /**
@@ -190,6 +190,7 @@ public class PatientRepository extends BaseRepository {
                         addEncounters(patient);
                     }
 
+                    SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
                     return patient;
                 } else {
                     String errorMsg = response.errorBody() != null ? response.errorBody().string() : response.message();
@@ -210,41 +211,46 @@ public class PatientRepository extends BaseRepository {
                                 ? duplicateMatcher.group(1)
                                 : patient.getIdentifier().getIdentifier();
                         logger.i("Duplicate identifier detected (" + patientIdentifierStr + "). Verifying server record...");
-                        // Deliberately searching via getPatientsDto()/PatientDto here, not the plain
-                        // getPatients()/Patient model: a "full" patient representation nests name,
-                        // gender, birthdate etc. under a "person" sub-object, which PatientDto (a
-                        // dedicated person field) maps correctly but Patient does not - Patient
-                        // expects those fields flattened at the top level, so going through it left
-                        // serverPatient.getName() always null here, making the name-match check below
-                        // always fail (even for a duplicate registration of the exact same person) and
-                        // wrongly report it as belonging to "another patient".
+                        // Linked purely by identifier, not by name: names entered on a field
+                        // registration form can legitimately differ from the server's record
+                        // (spelling/translation/transliteration, nicknames, missing middle names),
+                        // and the server's National ID is the one value a field worker can be
+                        // expected to have gotten right. The search itself (?q=<identifier>) can
+                        // return multiple loosely-matching results though, so this still verifies
+                        // the matched patient's OWN identifiers contain an exact match for the
+                        // identifier in question - it doesn't just trust the first search result.
                         Response<Results<PatientDto>> searchResponse = restApi.getPatientsDto(patientIdentifierStr, "full").execute();
-                        if (searchResponse.isSuccessful() && searchResponse.body() != null && !searchResponse.body().getResults().isEmpty()) {
-                            PatientDto serverPatientDto = searchResponse.body().getResults().get(0);
-                            Person serverPerson = serverPatientDto.getPerson();
-
-                            // Only link if names match to prevent incorrect merging due to server-side ID reuse
-                            String serverGiven = (serverPerson != null && serverPerson.getName() != null && serverPerson.getName().getGivenName() != null) ? serverPerson.getName().getGivenName() : "";
-                            String serverFamily = (serverPerson != null && serverPerson.getName() != null && serverPerson.getName().getFamilyName() != null) ? serverPerson.getName().getFamilyName() : "";
-                            String localGiven = (patient.getName() != null && patient.getName().getGivenName() != null) ? patient.getName().getGivenName() : "";
-                            String localFamily = (patient.getName() != null && patient.getName().getFamilyName() != null) ? patient.getName().getFamilyName() : "";
-
-                            if (serverGiven.equalsIgnoreCase(localGiven) && serverFamily.equalsIgnoreCase(localFamily)) {
-                                logger.i("Names match. Linking local patient to existing server record (UUID: " + serverPatientDto.getUuid() + ")");
-                                patient.setUuid(serverPatientDto.getUuid());
-                                if (serverPatientDto.getIdentifiers() != null && !serverPatientDto.getIdentifiers().isEmpty()) {
-                                    patient.setIdentifiers(serverPatientDto.getIdentifiers());
+                        PatientDto matchedPatientDto = null;
+                        if (searchResponse.isSuccessful() && searchResponse.body() != null) {
+                            for (PatientDto candidate : searchResponse.body().getResults()) {
+                                if (candidate.getIdentifiers() == null) continue;
+                                for (PatientIdentifier candidateIdentifier : candidate.getIdentifiers()) {
+                                    if (candidateIdentifier.getIdentifier() != null
+                                            && candidateIdentifier.getIdentifier().trim().equalsIgnoreCase(patientIdentifierStr.trim())) {
+                                        matchedPatientDto = candidate;
+                                        break;
+                                    }
                                 }
-                                patientDAO.updatePatient(patient.getId(), patient);
-                                return patient;
-                            } else {
-                                String serverDisplayName = (serverGiven + " " + serverFamily).trim();
-                                if (serverDisplayName.isEmpty()) {
-                                    serverDisplayName = "another patient";
-                                }
-                                logger.e("Duplicate ID found on server, but NAMES DO NOT MATCH. Server: " + serverDisplayName + ", Local: " + (localGiven + " " + localFamily).trim());
-                                throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient (" + serverDisplayName + "). Please verify the ID and try again.");
+                                if (matchedPatientDto != null) break;
                             }
+                        }
+
+                        if (matchedPatientDto != null) {
+                            logger.i("Identifier match confirmed. Linking local patient to existing server record (UUID: " + matchedPatientDto.getUuid() + ")");
+                            patient.setUuid(matchedPatientDto.getUuid());
+                            if (matchedPatientDto.getIdentifiers() != null && !matchedPatientDto.getIdentifiers().isEmpty()) {
+                                patient.setIdentifiers(matchedPatientDto.getIdentifiers());
+                            }
+                            // This local row's OTHER demographic fields (name, address, phone,
+                            // patient status, etc.) are just whatever was needed to pass validation
+                            // on this registration form - not a trustworthy description of the real
+                            // patient - so flag it: the automatic dashboard sync must never push
+                            // them over the real patient's data, only pull. A deliberate edit later
+                            // clears this (see PatientRepository#updatePatient).
+                            patient.setIdentityLinkedOnly(true);
+                            patientDAO.updatePatient(patient.getId(), patient);
+                            SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
+                            return patient;
                         }
                         throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient. Please verify the ID and try again.");
                     } else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
@@ -336,6 +342,14 @@ public class PatientRepository extends BaseRepository {
                     return ResultType.PatientUpdateSuccess;
                 }
 
+                // A deliberate edit-and-submit of an already-synced patient is a genuine,
+                // intentional description of them from now on - even if their identity had
+                // previously been established via syncPatient()'s duplicate-merge path, that no
+                // longer applies once the user has explicitly reviewed and resubmitted their
+                // details, so the automatic dashboard sync can trust (and push) this data going
+                // forward.
+                patient.setIdentityLinkedOnly(false);
+
                 Call<PatientDto> call = restApi.updatePatient(
                         patient.getUpdatedPatientDto(), patient.getUuid(), "full");
                 Response<PatientDto> response = call.execute();
@@ -349,11 +363,13 @@ public class PatientRepository extends BaseRepository {
 
                     patientDAO.updatePatient(patient.getId(), patient);
 
+                    SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
                     return ResultType.PatientUpdateSuccess;
                 } else {
                     throw new Exception("updatePatient error: " + response.message());
                 }
             } else {
+                patient.setIdentityLinkedOnly(false);
                 patientDAO.updatePatient(patient.getId(), patient);
 
                 if (isPreviouslySynced) {

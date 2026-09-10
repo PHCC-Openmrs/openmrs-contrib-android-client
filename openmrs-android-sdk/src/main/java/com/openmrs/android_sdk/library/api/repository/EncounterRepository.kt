@@ -18,6 +18,7 @@ import com.openmrs.android_sdk.library.models.ConceptClass
 import com.openmrs.android_sdk.library.models.Resource
 import com.openmrs.android_sdk.library.databases.entities.StandaloneEncounterEntity
 import com.openmrs.android_sdk.utilities.NetworkUtils
+import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil
 import com.openmrs.android_sdk.utilities.execute
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
@@ -137,6 +138,7 @@ class EncounterRepository @Inject constructor(
 
                         updateEncounterCreate(encounterCreate.apply { synced = true }).execute()
 
+                        SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(encounterCreate.patientId)
                         return@Callable ResultType.EncounterSubmissionSuccess
                     }
 else {

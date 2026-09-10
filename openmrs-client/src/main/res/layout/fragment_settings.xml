@@ -253,6 +253,21 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:targetApi="lollipop" />
 
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/auto_delete_synced_patients_switch"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginBottom="@dimen/margin_short"
+            android:background="@color/dark_grey_6x"
+            android:paddingStart="20dp"
+            android:paddingLeft="20dp"
+            android:paddingEnd="16dp"
+            android:paddingRight="16dp"
+            android:text="@string/label_auto_delete_synced_patients"
+            android:textSize="18sp"
+            app:layout_constraintTop_toBottomOf="@id/dark_mode_switch"
+            tools:targetApi="lollipop" />
+
         <TextView
             android:id="@+id/language_header"
             android:layout_width="0dp"
@@ -295,7 +310,7 @@
             android:text="@string/apply"
             app:layout_constraintLeft_toLeftOf="@id/concepts_download_button"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/dark_mode_switch"
+            app:layout_constraintTop_toBottomOf="@id/auto_delete_synced_patients_switch"
             tools:targetApi="lollipop" />
 
 

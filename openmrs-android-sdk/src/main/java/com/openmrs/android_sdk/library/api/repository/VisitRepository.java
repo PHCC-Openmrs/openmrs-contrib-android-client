@@ -42,6 +42,7 @@ import com.openmrs.android_sdk.library.models.VisitType;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.DateUtils;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
+import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil;
 
 
 /**
@@ -283,6 +284,7 @@ public class VisitRepository extends BaseRepository {
                 Visit syncedVisit = response.body();
                 syncedVisit.setId(visit.getId());
                 visitDAO.saveOrUpdate(syncedVisit, patient.getId()).toBlocking().first();
+                SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
                 return syncedVisit;
             } else {
                 getLogger().e("Error starting a visit: " + response.message());

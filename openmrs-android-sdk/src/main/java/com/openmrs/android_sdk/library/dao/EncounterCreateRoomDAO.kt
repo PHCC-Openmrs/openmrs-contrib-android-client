@@ -50,4 +50,19 @@ interface EncounterCreateRoomDAO {
      */
     @Query("Select * FROM encountercreate WHERE _id =:id")
     fun getCreatedEncountersByID(id: Long): Encountercreate
+
+    /**
+     * Gets every locally-created encounter for a specific patient (by local row id), regardless
+     * of sync state - used to check whether a patient still has any unsynced form data before
+     * their local footprint can be safely auto-deleted.
+     */
+    @Query("SELECT * FROM encountercreate WHERE patientid = :patientId")
+    fun getCreatedEncountersByPatientId(patientId: Long): List<Encountercreate>
+
+    /**
+     * Deletes every locally-created encounter for a specific patient - part of removing a
+     * patient's entire local footprint once everything about them is confirmed synced.
+     */
+    @Query("DELETE FROM encountercreate WHERE patientid = :patientId")
+    fun deleteEncountersByPatientId(patientId: Long)
 }

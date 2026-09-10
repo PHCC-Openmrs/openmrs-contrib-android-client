@@ -106,9 +106,22 @@ class PatientDashboardMainViewModel @Inject constructor(
      * edit: simply reopening the dashboard to check whether it synced could wipe it out first.
      * Still pulls even if the push itself fails, so the screen at least reflects current server
      * truth rather than getting stuck.
+     *
+     * Skips the push entirely when [Patient.isIdentityLinkedOnly] is set - this patient's local
+     * row only exists because a duplicate-identifier registration got auto-linked to an
+     * already-existing server patient by name match (see PatientRepository#syncPatient); its other
+     * demographic fields are just whatever was needed to pass validation on that registration
+     * form, not a trustworthy description of the real patient, and must never be pushed over the
+     * real patient's data - only the identity link and any visit/form data should ever reach the
+     * server for such a patient. A deliberate edit via Add/Edit Patient clears this flag, at which
+     * point automatic pushes resume as normal.
      */
     private fun syncDetails(patientToSync: Patient) {
         runningSyncs++
+        if (patientToSync.isIdentityLinkedOnly) {
+            pullPatientDetails(patientToSync.uuid!!)
+            return
+        }
         addSubscription(patientRepository.updatePatient(patientToSync)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(

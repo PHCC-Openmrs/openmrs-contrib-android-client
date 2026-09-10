@@ -80,7 +80,7 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         ProgramEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 11)
+        version = 12)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -205,6 +205,21 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     /**
+     * Adds the identityLinkedOnly column, so a patient whose identity was established purely by
+     * auto-linking a duplicate-identifier registration to an already-existing server patient (by
+     * name match) can be distinguished from a genuinely downloaded/edited patient - the automatic
+     * dashboard sync must never push that patient's other (registration-form-filler) demographic
+     * fields over the real patient's data. Defaults to 0/false for every pre-existing row, which
+     * is correct: this flag only ever gets set true going forward, by the merge path itself.
+     */
+    private static final Migration MIGRATION_11_12 = new Migration(11, 12) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `patients` ADD COLUMN `identityLinkedOnly` INTEGER NOT NULL DEFAULT 0");
+        }
+    };
+
+    /**
      * Gets database.
      *
      * @param context the context
@@ -218,7 +233,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
                             .allowMainThreadQueries()
-                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
+                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                             .fallbackToDestructiveMigration()
                             .build();
                 }

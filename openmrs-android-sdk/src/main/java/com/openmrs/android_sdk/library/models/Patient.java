@@ -34,6 +34,17 @@ public class Patient extends Person implements Serializable {
     @SerializedName("identifiers")
     @Expose
     private List<PatientIdentifier> identifiers = new ArrayList<>();
+    /**
+     * True when this local patient row's identity (uuid/identifiers) was established purely by
+     * auto-linking a duplicate-identifier registration to an already-existing server patient by
+     * name match (see PatientRepository#syncPatient), rather than by downloading a real patient or
+     * a deliberate edit - its OTHER demographic fields are typically just whatever was needed to
+     * pass validation on that registration form, not a trustworthy description of the real
+     * patient, and must never be auto-pushed to overwrite the server record. Cleared the moment a
+     * deliberate edit is made via PatientRepository#updatePatient, since that's a real, intentional
+     * description of the patient from then on.
+     */
+    private boolean identityLinkedOnly;
 
     /**
      * Instantiates a new Patient.
@@ -86,6 +97,14 @@ public class Patient extends Person implements Serializable {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public boolean isIdentityLinkedOnly() {
+        return identityLinkedOnly;
+    }
+
+    public void setIdentityLinkedOnly(boolean identityLinkedOnly) {
+        this.identityLinkedOnly = identityLinkedOnly;
     }
 
     /**

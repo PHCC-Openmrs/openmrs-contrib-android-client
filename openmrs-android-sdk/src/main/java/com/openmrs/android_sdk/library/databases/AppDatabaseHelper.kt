@@ -331,6 +331,7 @@ object AppDatabaseHelper {
             patient.causeOfDeath = Resource(ApplicationConstants.EMPTY_STRING, patientEntity.causeOfDeath, ArrayList(), 0)
         }
         patient.isDeceased = patientEntity.deceased == "true"
+        patient.isIdentityLinkedOnly = patientEntity.isIdentityLinkedOnly
         return patient
     }
 
@@ -414,6 +415,7 @@ object AppDatabaseHelper {
         patientEntity.encounters = patient.encounters
         patientEntity.deceased = (patient.isDeceased ?: false).toString()
         patientEntity.attributes = patient.attributes ?: ArrayList()
+        patientEntity.isIdentityLinkedOnly = patient.isIdentityLinkedOnly
         return patientEntity
     }
 

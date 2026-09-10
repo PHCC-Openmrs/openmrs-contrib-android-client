@@ -43,6 +43,7 @@ import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.community.contact.ContactUsActivity
 import org.openmrs.mobile.activities.logs.LogsActivity
 import org.openmrs.mobile.databinding.FragmentSettingsBinding
+import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil
 import org.openmrs.mobile.services.ConceptDownloadService
 import org.openmrs.mobile.utilities.ThemeUtils
 
@@ -63,6 +64,7 @@ class SettingsFragment : BaseFragment() {
         rateUs()
         setupContactUsButton()
         setupDarkMode()
+        setupAutoDeleteSyncedPatients()
         setupLanguageSpinner()
 
         broadcastReceiver = object : BroadcastReceiver() {
@@ -166,6 +168,26 @@ class SettingsFragment : BaseFragment() {
             darkModeSwitch.setOnCheckedChangeListener { _: CompoundButton?, isChecked: Boolean ->
                 ThemeUtils.setDarkMode(isChecked)
                 requireActivity().recreate()
+            }
+        }
+    }
+
+    /**
+     * Off by default - this is an irreversible local data wipe (patient record, visits,
+     * encounters/forms, allergies), so it must only ever run when the user has explicitly opted
+     * in here.
+     */
+    private fun setupAutoDeleteSyncedPatients() {
+        with(binding) {
+            autoDeleteSyncedPatientsSwitch.isChecked = SyncedPatientCleanupUtil.isEnabled()
+            autoDeleteSyncedPatientsSwitch.setOnCheckedChangeListener { _: CompoundButton?, isChecked: Boolean ->
+                SyncedPatientCleanupUtil.setEnabled(isChecked)
+                if (isChecked) {
+                    // Sweep immediately - otherwise a patient that was already fully synced
+                    // before this was turned on (e.g. downloaded earlier) would sit there
+                    // forever, since nothing new is happening for them to trigger a check.
+                    Thread { SyncedPatientCleanupUtil.sweepAllFullySyncedPatients() }.start()
+                }
             }
         }
     }

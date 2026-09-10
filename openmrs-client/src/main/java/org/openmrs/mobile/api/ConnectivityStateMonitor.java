@@ -22,6 +22,7 @@ import android.os.Build;
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
+import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil;
 
 /**
  * Watches system connectivity and automatically resumes the patient/encounter sync -
@@ -88,5 +89,12 @@ public class ConnectivityStateMonitor {
         Intent intent = new Intent(context, SyncStateReceiver.class);
         intent.setAction(SYNC_PATIENTS_ACTION);
         context.sendBroadcast(intent);
+
+        // "Connectivity is back, sync now" is also the one clean moment to sweep for any patient
+        // that was already fully synced before now (e.g. downloaded earlier, or synced in a past
+        // session) and clean them up if "Auto-delete synced patients" is on - a pure local read of
+        // already-existing sync state, no network call of its own, so it's a safe no-op if
+        // somehow still offline by the time this runs.
+        new Thread(SyncedPatientCleanupUtil::sweepAllFullySyncedPatients).start();
     }
 }
