@@ -22,6 +22,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -36,8 +37,6 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.NetworkUtils.hasNetwork
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.android.synthetic.main.fragment_last_viewed_patients.view.*
-import kotlinx.android.synthetic.main.snackbar.view.*
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity
@@ -102,18 +101,21 @@ class LastViewedPatientsFragment : BaseFragment() {
                     when (result.operationType) {
                         LastViewedPatientsFetching -> showLoadingPatients()
                         PatientSearching -> showSearchingForPatient()
+                        else -> {}
                     }
                 }
                 is Result.Success -> {
                     when (result.operationType) {
                         LastViewedPatientsFetching -> showMorePatients(result.data)
                         PatientSearching -> showPatientSearchResult(result.data)
+                        else -> {}
                     }
                 }
                 is Result.Error -> {
                     when (result.operationType) {
                         LastViewedPatientsFetching -> showErrorFetchingPatients()
                         PatientSearching -> showPatientSearchError()
+                        else -> {}
                     }
                 }
                 else -> throw IllegalStateException()
@@ -219,11 +221,11 @@ class LastViewedPatientsFragment : BaseFragment() {
     }
 
     fun showOpenPatientSnackbar(patientId: Long) {
-        val frameLayout = binding.swiperefreshLastPatients.swipe_container
+        val frameLayout = binding.swipeContainer
         Snackbar.make(frameLayout, getString(R.string.snackbar_info_patient_downloaded), Snackbar.LENGTH_LONG)
                 .apply {
                     setActionTextColor(Color.WHITE)
-                    view.snackbar_text.setTextColor(Color.WHITE)
+                    view.findViewById<TextView>(R.id.snackbar_text).setTextColor(Color.WHITE)
                     setAction(getString(R.string.snackbar_action_open)) { openPatientDashboardActivity(patientId) }
                 }
                 .show()

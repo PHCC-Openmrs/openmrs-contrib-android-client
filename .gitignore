@@ -154,3 +154,6 @@ output.json
 .idea_modules/
 atlassian-ide-plugin.xmlv
 /.idea/jarRepositories.xml
+
+# Kotlin 2.x build scratch directory (compiler session files)
+.kotlin/

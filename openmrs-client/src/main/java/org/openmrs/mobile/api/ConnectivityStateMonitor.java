@@ -18,7 +18,6 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkRequest;
-import android.os.Build;
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
@@ -62,11 +61,6 @@ public class ConnectivityStateMonitor {
      * Starts watching for connectivity changes for the lifetime of the process.
      */
     public void register() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            // registerNetworkCallback isn't available; the manual sync button remains the
-            // only way to resume sync on these very old devices.
-            return;
-        }
         ConnectivityManager connectivityManager =
                 (ConnectivityManager) appContext.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {

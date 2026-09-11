@@ -20,7 +20,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Typeface
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -145,11 +144,9 @@ class SettingsFragment : BaseFragment() {
         binding.rateUsLayout.setOnClickListener {
             val intent = Intent(Intent.ACTION_VIEW, viewModel.appMarketUri)
             // Ignore Play Store back stack, on back press will take us back to our app
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY or
-                        Intent.FLAG_ACTIVITY_NEW_DOCUMENT or
-                        Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
-            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY or
+                    Intent.FLAG_ACTIVITY_NEW_DOCUMENT or
+                    Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
             try {
                 startActivity(intent)
             } catch (e: ActivityNotFoundException) {

@@ -101,6 +101,10 @@ public class AuthenticateCheckService extends Service {
                             if (isForeground(OpenMRS.getInstance().getPackageName())) {
                                 Intent broadcastIntent = new Intent();
                                 broadcastIntent.setAction(ApplicationConstants.BroadcastActions.AUTHENTICATION_CHECK_BROADCAST_ACTION);
+                                // ACBaseActivity now registers this receiver with
+                                // RECEIVER_NOT_EXPORTED (required from targetSdk 34), so scope the
+                                // broadcast to this app instead of sending it implicitly.
+                                broadcastIntent.setPackage(getPackageName());
                                 sendBroadcast(broadcastIntent);
                             } else {
                                 OpenmrsAndroid.clearUserPreferencesData();

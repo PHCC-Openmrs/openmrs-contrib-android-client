@@ -20,6 +20,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import android.util.Base64;
 
+import com.chuckerteam.chucker.api.ChuckerCollector;
 import com.chuckerteam.chucker.api.ChuckerInterceptor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -125,7 +126,19 @@ public class RestServiceBuilder {
 
                     return chain.proceed(requestBuilder.build());
                 })
-                .addInterceptor(new ChuckerInterceptor(OpenmrsAndroid.getInstance()))
+                // Chucker's notification is disabled deliberately. Chucker 3.4.0 builds its
+                // notification PendingIntent without FLAG_IMMUTABLE/FLAG_MUTABLE, which throws
+                // IllegalArgumentException at targetSdk 31+. Because this is an OkHttp
+                // interceptor, that exception surfaced on EVERY request and broke login (the
+                // location fetch failed with "Targeting S+ (version 31 and above) requires...").
+                // Chucker only creates that PendingIntent when it shows a notification, so
+                // showNotification=false avoids it entirely; transactions are still recorded and
+                // viewable from Chucker's own launcher entry. The alternative - Chucker 4.1.0,
+                // the first release with the flag fix - would force OkHttp 3.12 -> 4.12 across
+                // the whole app, including release builds.
+                .addInterceptor(new ChuckerInterceptor(
+                        OpenmrsAndroid.getInstance(),
+                        new ChuckerCollector(OpenmrsAndroid.getInstance(), false)))
                 .build();
 
         Retrofit retrofit = builder.client(client).build();

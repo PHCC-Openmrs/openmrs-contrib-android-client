@@ -14,8 +14,13 @@
 
 package org.openmrs.mobile.activities.dashboard
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,6 +45,22 @@ class DashboardActivity : ACBaseActivity() {
         }
     }
 
+    /**
+     * The concept download runs as a foreground service and shows a progress notification.
+     * From targetSdk 33 that notification is silently dropped unless POST_NOTIFICATIONS has been
+     * granted, so ask for it once on the post-login landing screen. The result is deliberately
+     * ignored: the download itself works either way, only its progress notification depends on it.
+     */
+    private val requestNotificationPermission =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        if (!granted) requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -60,6 +81,8 @@ class DashboardActivity : ACBaseActivity() {
         */
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dashboard)
+
+        requestNotificationPermissionIfNeeded()
 
         // Create toolbar
         val actionBar = supportActionBar

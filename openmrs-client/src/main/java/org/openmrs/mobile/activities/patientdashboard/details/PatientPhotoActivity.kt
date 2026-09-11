@@ -17,6 +17,7 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import org.openmrs.mobile.databinding.ActivityPatientPhotoBinding
+import org.openmrs.mobile.utilities.SystemBarInsets
 import java.io.ByteArrayInputStream
 
 class PatientPhotoActivity : AppCompatActivity() {
@@ -36,5 +37,8 @@ class PatientPhotoActivity : AppCompatActivity() {
         val patientPhoto = BitmapFactory.decodeStream(inputStream)
 
         binding.patientPhoto.setImageBitmap(patientPhoto)
+
+        // Not an ACBaseActivity, so it needs the edge-to-edge insets applied directly.
+        SystemBarInsets.apply(this)
     }
 }

@@ -14,13 +14,23 @@
     -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="org.openmrs.mobile">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Required from targetSdk 33: without it the concept-download notification is dropped. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+      FOREGROUND_SERVICE itself is merged in from androidx.work's manifest, but the granular
+      type permission is not, and targetSdk 34+ requires it to match the service's
+      android:foregroundServiceType.
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -32,6 +42,7 @@
     <application
         android:name=".application.OpenMRS"
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="false"
         android:icon="@drawable/ic_openmrs"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -43,6 +54,7 @@
             android:theme="@style/AppThemeOrig" />
         <activity
             android:name=".activities.introduction.SplashActivity"
+            android:exported="true"
             android:noHistory="true"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -64,7 +76,10 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".services.ConceptDownloadService" />
+        <service
+            android:name=".services.ConceptDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <activity
             android:name=".activities.dashboard.DashboardActivity"
@@ -77,6 +92,7 @@
         <activity
             android:name=".activities.syncedpatients.SyncedPatientsActivity"
             android:configChanges="keyboardHidden|screenSize"
+            android:exported="true"
             android:label="@string/action_synced_patients"
             android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
@@ -120,6 +136,7 @@
         <activity
             android:name=".activities.activevisits.ActiveVisitsActivity"
             android:configChanges="keyboardHidden|screenSize"
+            android:exported="true"
             android:label="@string/action_active_visits"
             android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
@@ -228,6 +245,7 @@
         <activity
             android:name=".activities.lastviewedpatients.LastViewedPatientsActivity"
             android:configChanges="keyboardHidden|screenSize"
+            android:exported="true"
             android:label="@string/action_download_patients"
             android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
@@ -333,10 +351,37 @@
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
 
+        <!--
+          Lets the camera app write the captured patient photo, and lets an external viewer read
+          it, without ever handing a file:// Uri across process boundaries.
+        -->
         <provider
-            android:name="androidx.work.impl.WorkManagerInitializer"
-            android:authorities="${applicationId}.workmanager-init"
-            tools:node="remove"/>
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!--
+          OpenMRS implements Configuration.Provider to supply Hilt's WorkerFactory, so
+          WorkManager's default initializer has to be disabled. From WorkManager 2.7 the default
+          initializer is an androidx.startup Initializer rather than its own ContentProvider,
+          so removing the old androidx.work.impl.WorkManagerInitializer provider no longer has
+          any effect; the meta-data entry below is what disables it now.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>
