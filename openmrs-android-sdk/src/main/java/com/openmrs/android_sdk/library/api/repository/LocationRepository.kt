@@ -68,12 +68,18 @@ class LocationRepository @Inject constructor(private val locationDAO: LocationDA
         }
 
     /**
-     * Fetches all "Login Location"-tagged locations registered in a server, via the FHIR2
-     * module - the same API the OpenMRS O3 web app uses for its login-location picker. The
-     * legacy REST tag search (`/ws/rest/v1/location?tag=...`) can return an empty result set
-     * for a tag search that this FHIR endpoint correctly resolves (a known quirk/bug in the
-     * legacy REST webservices module's location-tag search on some OpenMRS instances), so this
-     * avoids that entirely rather than working around it.
+     * Fetches the locations a user is allowed to log into, via the FHIR2 module - the same API
+     * the OpenMRS O3 web app uses for its login-location picker. The legacy REST tag search
+     * (`/ws/rest/v1/location?tag=...`) can return an empty result set for a tag search that this
+     * FHIR endpoint correctly resolves (a known quirk/bug in the legacy REST webservices
+     * module's location-tag search on some OpenMRS instances), so this avoids that entirely
+     * rather than working around it.
+     *
+     * Mirrors the O3 web login app's two-stage logic: when the (Bahmni-style) "Location Based
+     * Access" module is installed, it writes an admin-assigned, comma-separated list of location
+     * UUIDs into the user's `locationUuid` user property; if present, exactly those locations are
+     * fetched by id and the "Login Location" tag is ignored (the assigned list is authoritative).
+     * Otherwise every "Login Location"-tagged location is shown, as before.
      *
      * Unlike the legacy endpoint, FHIR2 requires authentication outright (a plain 401 instead
      * of a silent empty result for an anonymous request). This is called from the login screen
@@ -96,9 +102,17 @@ class LocationRepository @Inject constructor(private val locationDAO: LocationDA
                 restApi
             }
 
-            var response = fhirRestApi.getFhirLocationsByTag(
-                fhirLocationEndPoint, "Login Location", "data", FHIR_PAGE_SIZE
-            ).execute()
+            val allowedLocationUuids = fetchAllowedLocationUuids(fhirRestApi, url)
+
+            var response = if (allowedLocationUuids != null) {
+                fhirRestApi.getFhirLocationsById(
+                    fhirLocationEndPoint, allowedLocationUuids.joinToString(","), "data"
+                ).execute()
+            } else {
+                fhirRestApi.getFhirLocationsByTag(
+                    fhirLocationEndPoint, "Login Location", "data", FHIR_PAGE_SIZE
+                ).execute()
+            }
             if (!response.isSuccessful || response.body() == null) {
                 throw Exception("Error fetching locations: ${response.message()}")
             }
@@ -127,6 +141,25 @@ class LocationRepository @Inject constructor(private val locationDAO: LocationDA
 
             locations
         })
+    }
+
+    /**
+     * Returns the admin-assigned location UUIDs this user is restricted to, or null if the user
+     * is unrestricted - either because no such user property is set (the default for every
+     * user, and for servers without the "Location Based Access" module), it's blank, or the
+     * session couldn't be fetched at all, in which case this fails open to the existing
+     * tag-based behaviour rather than blocking location selection.
+     */
+    private fun fetchAllowedLocationUuids(fhirRestApi: RestApi, url: String): List<String>? {
+        return try {
+            val sessionUrl = url + ApplicationConstants.API.REST_ENDPOINT + "session"
+            val response = fhirRestApi.getSession(sessionUrl).execute()
+            val raw = response.takeIf { it.isSuccessful }?.body()?.user?.userProperties?.get("locationUuid")
+            raw?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }?.ifEmpty { null }
+        } catch (e: Exception) {
+            logger.w("Failed to fetch user's location restriction, defaulting to unrestricted: ${e.message}")
+            null
+        }
     }
 
     companion object {

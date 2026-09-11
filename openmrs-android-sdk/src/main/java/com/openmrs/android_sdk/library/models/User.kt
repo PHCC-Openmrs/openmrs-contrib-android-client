@@ -30,7 +30,11 @@ data class User(@Expose var username: String? = null,
 
                 @Expose var person: Person? = null,
                 @Expose var roles: List<Role>? = null,
-                @Expose var privileges: List<Privilege>? = null) : Resource() {
+                @Expose var privileges: List<Privilege>? = null,
+                // Comma-separated location UUIDs restricting this user's login locations live in
+                // userProperties["locationUuid"] when the (Bahmni-style) "Location Based Access"
+                // module is installed - see LocationRepository.getLocations.
+                @Expose var userProperties: Map<String, String>? = null) : Resource() {
 
     override fun toString(): String {
         if (username == null)
