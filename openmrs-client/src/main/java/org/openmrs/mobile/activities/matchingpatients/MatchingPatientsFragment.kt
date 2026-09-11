@@ -100,6 +100,7 @@ class MatchingPatientsFragment : BaseFragment() {
                     when (it.operationType) {
                         PatientRegistering -> success(getString(R.string.patient_register_success))
                         PatientMerging -> success(getString(R.string.patient_merge_success))
+                        else -> {}
                     }
                     showNextPatientsDataOrFinish()
                 }
@@ -107,9 +108,11 @@ class MatchingPatientsFragment : BaseFragment() {
                     when (it.operationType) {
                         PatientRegistering -> error(getString(R.string.patient_register_fail))
                         PatientMerging -> error(getString(R.string.patient_merge_fail))
+                        else -> {}
                     }
                     showNextPatientsDataOrFinish()
                 }
+                else -> {}
             }
         })
     }

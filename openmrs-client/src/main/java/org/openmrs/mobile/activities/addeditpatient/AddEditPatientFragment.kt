@@ -46,6 +46,7 @@ import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.contract.ActivityResultContracts.TakePicture
 import androidx.annotation.StringDef
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -114,16 +115,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
 
     private val viewModel: AddEditPatientViewModel by viewModels()
 
-    private lateinit var cameraAndStoragePermissions: PermissionsRequester
-    private lateinit var storageWritePermission: PermissionsRequester
+    private lateinit var cameraPermission: PermissionsRequester
 
     private val pickPhoto = registerForActivityResult(GetContent()) { uri ->
         if (uri == null) return@registerForActivityResult
-        val destinationUri = Uri.fromFile(File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                ImageUtils.createUniqueImageFileName())
-        )
-        startCropActivity(uri, destinationUri)
+        startCropActivity(uri, Uri.fromFile(newPhotoFile()))
     }
 
     private val capturePhoto = registerForActivityResult(TakePicture()) { resultOk ->
@@ -150,18 +146,12 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     private fun setupPermissionsHandler() {
-        cameraAndStoragePermissions = constructPermissionsRequest(
-                Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        cameraPermission = constructPermissionsRequest(
+                Manifest.permission.CAMERA,
                 onShowRationale = ::showCameraPermissionRationale,
                 onPermissionDenied = { showSnackbarLong(R.string.permissions_camera_storage_denied) },
                 onNeverAskAgain = { showSnackbarLong(R.string.permissions_camera_storage_neverask) },
                 requiresPermission = ::capturePhoto
-        )
-        storageWritePermission = constructPermissionsRequest(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                onShowRationale = { request -> request.proceed() },
-                onNeverAskAgain = { showSnackbarLong(R.string.permission_storage_neverask) },
-                requiresPermission = ::pickPhoto
         )
     }
 
@@ -639,7 +629,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         patientPhoto.setOnClickListener {
             if (viewModel.capturedPhotoFile != null) {
                 val i = Intent(Intent.ACTION_VIEW)
-                i.setDataAndType(Uri.fromFile(viewModel.capturedPhotoFile), ApplicationConstants.IMAGE_JPEG)
+                i.setDataAndType(contentUriFor(viewModel.capturedPhotoFile!!), ApplicationConstants.IMAGE_JPEG)
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 startActivity(i)
             } else if (viewModel.patient.photo != null) {
                 viewModel.patient.run { ImageUtils.showPatientPhoto(requireContext(), photo, name.nameString) }
@@ -775,11 +766,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         0 -> {
             // Capture photo
             StrictMode.VmPolicy.Builder().run { StrictMode.setVmPolicy(build()) }
-            cameraAndStoragePermissions.launch()
+            cameraPermission.launch()
         }
         1 -> {
-            // Pick photo from gallery
-            storageWritePermission.launch()
+            // Pick photo from gallery. GetContent needs no permission.
+            pickPhoto()
         }
         2 -> {
             // Remove photo
@@ -792,12 +783,28 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     private fun capturePhoto() = with(viewModel) {
-        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-        capturedPhotoFile = File(dir, ImageUtils.createUniqueImageFileName())
-        capturePhoto.launch(Uri.fromFile(capturedPhotoFile))
+        val file = newPhotoFile()
+        capturedPhotoFile = file
+        // The camera runs in another process, so it can only be given a content:// Uri.
+        capturePhoto.launch(contentUriFor(file))
     }
 
     private fun pickPhoto() = pickPhoto.launch(URI_IMAGE)
+
+    /**
+     * Patient photos are written to the app's own external files directory. Public DCIM is not
+     * writable by path from targetSdk 30 onwards, and patient photos should not be exposed to
+     * the device gallery anyway.
+     */
+    private fun newPhotoFile(): File {
+        val dir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                ?: File(requireContext().filesDir, Environment.DIRECTORY_PICTURES)
+        dir.mkdirs()
+        return File(dir, ImageUtils.createUniqueImageFileName())
+    }
+
+    private fun contentUriFor(file: File): Uri = FileProvider.getUriForFile(
+            requireContext(), "${requireContext().packageName}.fileprovider", file)
 
     private fun showCameraPermissionRationale(request: PermissionRequest) {
         AlertDialog.Builder(requireActivity())

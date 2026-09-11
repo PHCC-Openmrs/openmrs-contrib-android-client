@@ -17,6 +17,7 @@ package org.openmrs.mobile.utilities
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.Provider
 import com.openmrs.android_sdk.library.models.Visit
+import java.util.Locale
 
 object FilterUtil {
     /**
@@ -113,8 +114,8 @@ object FilterUtil {
             var searchableWord = searchableWords[i]
             if (searchableWord != null) {
                 val queryLength = mutableQuery?.trim { it <= ' ' }?.length
-                searchableWord = searchableWord.toLowerCase()
-                mutableQuery = mutableQuery?.toLowerCase()?.trim { it <= ' ' }
+                searchableWord = searchableWord.lowercase(Locale.getDefault())
+                mutableQuery = mutableQuery?.lowercase(Locale.getDefault())?.trim { it <= ' ' }
                 val fits = searchableWord.length >= queryLength!! && searchableWord.contains(mutableQuery.toString())
                 if (fits) {
                     return true

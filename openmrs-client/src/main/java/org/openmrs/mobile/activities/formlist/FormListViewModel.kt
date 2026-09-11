@@ -18,6 +18,7 @@ import rx.android.schedulers.AndroidSchedulers
 import javax.inject.Inject
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.util.Locale
 import kotlin.math.abs
 
 @HiltViewModel
@@ -51,7 +52,7 @@ class FormListViewModel @Inject constructor(
                         if (!valueRefString.isNullOrBlank()) {
                             currentForms.add(formResource)
                         } else {
-                            val formData = createFormDataFromAsset(formResource.name?.toLowerCase() ?: "")
+                            val formData = createFormDataFromAsset(formResource.name?.lowercase(Locale.getDefault()) ?: "")
                             formData?.let { data ->
                                 formRepository.createForm(formResource.uuid!!, data).execute()
                                 val resource = FormResourceEntity()

@@ -22,6 +22,7 @@ import com.github.appintro.AppIntro2
 import com.github.appintro.AppIntroFragment
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.dashboard.DashboardActivity
+import org.openmrs.mobile.utilities.SystemBarInsets
 
 class IntroActivity : AppIntro2() {
 
@@ -78,6 +79,11 @@ class IntroActivity : AppIntro2() {
             startActivity(Intent(this, DashboardActivity::class.java))
             finish()
         }
+
+        // Extends AppIntro2, not ACBaseActivity, so it needs the edge-to-edge insets applied
+        // directly. Slides lose their full-bleed look at the very top and bottom, but the slide
+        // titles and the Next/Done controls stay clear of the system bars.
+        SystemBarInsets.apply(this)
     }
 
     override fun onSkipPressed(currentFragment: Fragment?) {

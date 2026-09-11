@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Paths shared through PatientPhotoFileProvider.
+  ~
+  ~ Patient photos are captured into the app's own external files directory rather than public
+  ~ DCIM: from targetSdk 30 an app can no longer write into shared storage by path, and patient
+  ~ photos should not land in the device gallery in any case.
+  ~
+  ~ files-path is the fallback used when external storage is unavailable and
+  ~ getExternalFilesDir() returns null.
+  -->
+<paths>
+    <external-files-path
+        name="patient_photos_external"
+        path="Pictures/" />
+    <files-path
+        name="patient_photos_internal"
+        path="Pictures/" />
+
+    <!-- Crash logs, attached to the "email the crash report" action in ACBaseActivity.
+         OpenmrsAndroid.getOpenMRSDir() resolves to getExternalFilesDir(null) + "/OpenMRS". -->
+    <external-files-path
+        name="openmrs_logs"
+        path="OpenMRS/" />
+</paths>

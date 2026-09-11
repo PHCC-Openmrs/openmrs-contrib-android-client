@@ -47,6 +47,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -76,6 +78,7 @@ import org.openmrs.mobile.net.AuthorizationManager;
 import org.openmrs.mobile.utilities.ForceClose;
 import org.openmrs.mobile.utilities.LanguageUtils;
 import org.openmrs.mobile.utilities.PrivilegeUtils;
+import org.openmrs.mobile.utilities.SystemBarInsets;
 import org.openmrs.mobile.utilities.ThemeUtils;
 
 @AndroidEntryPoint
@@ -123,6 +126,14 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPostCreate(@Nullable Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        // Runs after the subclass's onCreate has called setContentView, so the decor content
+        // root exists. targetSdk 36 forces edge-to-edge with no opt-out; see SystemBarInsets.
+        SystemBarInsets.apply(this);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         setupTheme();
@@ -132,7 +143,8 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 && !(this instanceof ContactUsActivity) && !(this instanceof SplashActivity)) {
             mAuthorizationManager.moveToLoginActivity();
         }
-        registerReceiver(mPasswordChangedReceiver, mIntentFilter);
+        ContextCompat.registerReceiver(this, mPasswordChangedReceiver, mIntentFilter,
+                ContextCompat.RECEIVER_NOT_EXPORTED);
         ToastUtil.setAppVisible(true);
     }
 
@@ -428,12 +440,16 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 .setPositiveButton(R.string.crash_dialog_positive_button, (dialog, id) -> dialog.cancel())
                 .setNegativeButton(R.string.crash_dialog_negative_button, (dialog, id) -> finishAffinity())
                 .setNeutralButton(R.string.crash_dialog_neutral_button, (dialog, id) -> {
-                    String filename = OpenmrsAndroid.getOpenMRSDir()
-                            + File.separator + mOpenMRSLogger.getLogFilename();
+                    File logFile = new File(OpenmrsAndroid.getOpenMRSDir(),
+                            mOpenMRSLogger.getLogFilename());
                     Intent email = new Intent(Intent.ACTION_SEND);
                     email.putExtra(Intent.EXTRA_SUBJECT, R.string.error_email_subject_app_crashed);
                     email.putExtra(Intent.EXTRA_TEXT, error);
-                    email.putExtra(Intent.EXTRA_STREAM, Uri.parse(ApplicationConstants.URI_FILE + filename));
+                    // A file:// Uri handed to an email client throws FileUriExposedException and
+                    // would be unreadable by it in any case, so share through the FileProvider.
+                    email.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(
+                            this, getPackageName() + ".fileprovider", logFile));
+                    email.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     //need this to prompts email client only
                     email.setType(ApplicationConstants.MESSAGE_RFC_822);
 
