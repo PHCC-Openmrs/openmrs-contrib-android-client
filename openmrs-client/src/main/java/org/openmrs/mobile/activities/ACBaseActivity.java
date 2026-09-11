@@ -38,6 +38,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -49,6 +50,9 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -103,12 +107,9 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Edge-to-edge is mandatory from API 36. AppCompat's decor roots (ActionBarOverlayLayout
-        // and FitWindowsLinearLayout) both declare fitsSystemWindows, so they already inset the
-        // action bar and content correctly - intercepting insets here instead would leave content
-        // drawn underneath the action bar.
         EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
+        applyWindowInsets();
         Thread.setDefaultUncaughtExceptionHandler(forceClose);
 
         setupTheme();
@@ -127,6 +128,45 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         }
         mIntentFilter = new IntentFilter();
         mIntentFilter.addAction(ApplicationConstants.BroadcastActions.AUTHENTICATION_CHECK_BROADCAST_ACTION);
+    }
+
+    /**
+     * Edge-to-edge is mandatory from API 36, which means decorFitsSystemWindows is false. AppCompat
+     * still positions the action bar below the status bar from onApplyWindowInsets, but the legacy
+     * fitSystemWindows(Rect) path it uses to inset android.R.id.content is no longer invoked - so
+     * content would be drawn underneath the action bar. Inset it here instead.
+     */
+    private void applyWindowInsets() {
+        final View decor = getWindow().getDecorView();
+        ViewCompat.setOnApplyWindowInsetsListener(decor, (v, windowInsets) -> {
+            View content = findViewById(android.R.id.content);
+            if (content != null) {
+                Insets bars = windowInsets.getInsets(
+                        WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+                Insets ime = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
+                content.setPadding(bars.left, bars.top + actionBarHeight(), bars.right,
+                        Math.max(bars.bottom, ime.bottom));
+            }
+            // Returned unconsumed: AppCompat needs these to place the action bar itself.
+            return windowInsets;
+        });
+        decor.post(() -> ViewCompat.requestApplyInsets(decor));
+    }
+
+    /** 0 when the theme has no action bar, in which case content only clears the system bars. */
+    private int actionBarHeight() {
+        View actionBar = findViewById(androidx.appcompat.R.id.action_bar_container);
+        if (actionBar == null || actionBar.getVisibility() == View.GONE) {
+            return 0;
+        }
+        if (actionBar.getHeight() > 0) {
+            return actionBar.getHeight();
+        }
+        TypedValue value = new TypedValue();
+        if (getTheme().resolveAttribute(androidx.appcompat.R.attr.actionBarSize, value, true)) {
+            return TypedValue.complexToDimensionPixelSize(value.data, getResources().getDisplayMetrics());
+        }
+        return 0;
     }
 
     @Override
