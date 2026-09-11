@@ -155,5 +155,12 @@ output.json
 atlassian-ide-plugin.xmlv
 /.idea/jarRepositories.xml
 
+# Per-developer IDE state. These were committed before the blanket .idea/* rule above
+# existed, so they stayed tracked and showed up as local changes for everyone.
+# deploymentTargetSelector.xml even carried another developer's AVD path.
+.idea/deploymentTargetSelector.xml
+.idea/deviceManager.xml
+.idea/planningMode.xml
+
 # Kotlin 2.x build scratch directory (compiler session files)
 .kotlin/
