@@ -41,7 +41,7 @@ class PatientDashboardChartsViewModelTest : ACUnitTestBaseRx() {
     fun fetchChartsData_error() {
         val errorMsg = "Error message!"
         val throwable = Throwable(errorMsg)
-        Mockito.`when`(visitDAO.getVisitsByPatientID(PATIENT_ID.toLong())).thenReturn(Observable.error(throwable))
+        Mockito.`when`(visitDAO.getVisitsByPatientID(PATIENT_ID)).thenReturn(Observable.error(throwable))
 
 
         viewModel.fetchChartsData()
@@ -52,6 +52,6 @@ class PatientDashboardChartsViewModelTest : ACUnitTestBaseRx() {
     }
 
     companion object {
-        const val PATIENT_ID = "1"
+        const val PATIENT_ID = 1L
     }
 }

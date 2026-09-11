@@ -21,14 +21,14 @@ class DayAxisValueFormatterTest{
         assertEquals("Apr 1, '21", result2)
     }
 
-    @Test
-    fun WrongFormatOfInputString_returnsIncorrectValue(){
-        val result1 = DayAxisValueFormatter(arrayListOf("01-04-2020", "01-04-2021")).getFormattedValue(value1, ax)
-        val result2 = DayAxisValueFormatter(arrayListOf("01-04-2020", "01-04-2021")).getFormattedValue(value2, ax)
-        print(result1)
-        print(result2)
-        assertNotEquals("Apr 1, '20", result1)
-        assertNotEquals("Apr 1, '21", result2)
+    /**
+     * A dash-separated date matches none of the supported formats. DateUtils used to parse it
+     * leniently into an unrelated date; it now rejects it outright, so the formatter fails
+     * instead of charting a silently wrong label.
+     */
+    @Test(expected = NullPointerException::class)
+    fun wrongFormatOfInputString_isRejected(){
+        DayAxisValueFormatter(arrayListOf("01-04-2020", "01-04-2021")).getFormattedValue(value1, ax)
     }
 
     @Test(expected = NullPointerException::class)

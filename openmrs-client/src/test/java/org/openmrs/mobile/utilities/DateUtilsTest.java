@@ -95,7 +95,9 @@
             INITIAL_DATA_CONVERT_TIME_1 = "1980-03-26T00:00:00.000+0200";
             EXPECTED_DATA_CONVERT_TIME_1 = "25/03/1980";
             INITIAL_DATA_DATE_FROM_STRING = "1980-03-26T00:00:00.000+0200";
-            EXPECTED_DATA_DATE_FROM_STRING = "26/03/1980";
+            // Midnight at +0200 is 22:00 UTC on the 25th, which is the 25th in PST8PDT - the
+            // same conversion EXPECTED_DATA_CONVERT_TIME_1 above makes for this very string.
+            EXPECTED_DATA_DATE_FROM_STRING = "25/03/1980";
 
             EXPECTED_DATA_DEFAULT_DATE_FORMAT_1 = "26/03/1967";
             EXPECTED_DATA_DEFAULT_DATE_FORMAT_2 = "24/03/1990";

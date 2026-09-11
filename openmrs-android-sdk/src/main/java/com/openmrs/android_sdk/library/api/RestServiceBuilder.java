@@ -20,6 +20,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import android.util.Base64;
 
+import com.chuckerteam.chucker.api.ChuckerCollector;
 import com.chuckerteam.chucker.api.ChuckerInterceptor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -125,7 +126,12 @@ public class RestServiceBuilder {
 
                     return chain.proceed(requestBuilder.build());
                 })
-                .addInterceptor(new ChuckerInterceptor(OpenmrsAndroid.getInstance()))
+                // Notifications are disabled because this Chucker version builds its notification
+                // PendingIntent without a mutability flag, which throws on every request once the
+                // app targets API 31+. Captured traffic is still viewable via Chucker's own
+                // launcher entry. Debug-only: release builds use chucker-no-op.
+                .addInterceptor(new ChuckerInterceptor(OpenmrsAndroid.getInstance(),
+                        new ChuckerCollector(OpenmrsAndroid.getInstance(), false)))
                 .build();
 
         Retrofit retrofit = builder.client(client).build();

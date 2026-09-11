@@ -11,12 +11,21 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import com.openmrs.android_sdk.library.api.repository.LocationRepository
+import com.openmrs.android_sdk.library.dao.PatientDAO
+import org.mockito.Mock
 import org.openmrs.mobile.activities.formdisplay.FormDisplayPageViewModel
 import org.openmrs.mobile.bundle.FormFieldsWrapper
 import org.openmrs.mobile.test.ACUnitTestBaseRx
 
 @RunWith(JUnit4::class)
 class FormDisplayPageViewModelTest : ACUnitTestBaseRx() {
+
+    @Mock
+    lateinit var locationRepository: LocationRepository
+
+    @Mock
+    lateinit var patientDAO: PatientDAO
 
     lateinit var savedStateHandle: SavedStateHandle
 
@@ -39,7 +48,7 @@ class FormDisplayPageViewModelTest : ACUnitTestBaseRx() {
             set(FORM_PAGE_BUNDLE, Page())
             set(FORM_FIELDS_BUNDLE, formFieldsWrapper)
         }
-        viewModel = FormDisplayPageViewModel(savedStateHandle)
+        viewModel = FormDisplayPageViewModel(savedStateHandle, locationRepository, patientDAO)
     }
 
     @Test

@@ -17,6 +17,8 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
 import org.mockito.Mockito
+import com.openmrs.android_sdk.library.api.repository.EncounterRepository
+import com.openmrs.android_sdk.library.dao.PatientDAO
 import org.openmrs.mobile.activities.patientdashboard.diagnosis.PatientDashboardDiagnosisViewModel
 import org.openmrs.mobile.test.ACUnitTestBaseRx
 import rx.Observable
@@ -31,6 +33,12 @@ class PatientDashboardDiagnosisViewModelTest : ACUnitTestBaseRx() {
     @Mock
     lateinit var encounterDAO: EncounterDAO
 
+    @Mock
+    lateinit var patientDAO: PatientDAO
+
+    @Mock
+    lateinit var encounterRepository: EncounterRepository
+
     lateinit var savedStateHandle: SavedStateHandle
 
     lateinit var viewModel: PatientDashboardDiagnosisViewModel
@@ -43,7 +51,7 @@ class PatientDashboardDiagnosisViewModelTest : ACUnitTestBaseRx() {
     override fun setUp() {
         super.setUp()
         savedStateHandle = SavedStateHandle().apply { set(PATIENT_ID_BUNDLE, PATIENT_ID) }
-        viewModel = PatientDashboardDiagnosisViewModel(encounterDAO, savedStateHandle)
+        viewModel = PatientDashboardDiagnosisViewModel(encounterDAO, patientDAO, encounterRepository, savedStateHandle)
         diagnosisList = createDiagnosisList(2)
         observations = createObservations(diagnosisList)
     }
@@ -51,7 +59,7 @@ class PatientDashboardDiagnosisViewModelTest : ACUnitTestBaseRx() {
     @Test
     fun fetchDiagnoses_success() {
         val encounters = createEncounters(observations, false)
-        Mockito.`when`(encounterDAO.getAllEncountersByType(eq(PATIENT_ID.toLong()), any()))
+        Mockito.`when`(encounterDAO.getAllEncountersByType(eq(PATIENT_ID), any()))
                 .thenReturn(Observable.just(encounters))
 
         viewModel.fetchDiagnoses()
@@ -63,7 +71,7 @@ class PatientDashboardDiagnosisViewModelTest : ACUnitTestBaseRx() {
     @Test
     fun fetchDiagnoses_success_shouldNotShowDuplicates() {
         val encounters = createEncounters(observations, true)
-        Mockito.`when`(encounterDAO.getAllEncountersByType(eq(PATIENT_ID.toLong()), any()))
+        Mockito.`when`(encounterDAO.getAllEncountersByType(eq(PATIENT_ID), any()))
                 .thenReturn(Observable.just(encounters))
 
         viewModel.fetchDiagnoses()
@@ -99,6 +107,6 @@ class PatientDashboardDiagnosisViewModelTest : ACUnitTestBaseRx() {
     }
 
     companion object {
-        const val PATIENT_ID = "1"
+        const val PATIENT_ID = 1L
     }
 }

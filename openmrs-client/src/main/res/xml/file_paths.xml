@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Patient photos captured by the camera, kept in app-private external storage so no
+         storage permission is required under scoped storage. -->
+    <external-files-path
+        name="patient_images"
+        path="Pictures/" />
+</paths>

@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
@@ -98,8 +99,8 @@ class AddEditAllergyViewModelTest : ACUnitTestBaseRx() {
     @Before
     override fun setUp() {
         super.setUp()
-        savedStateHandle = SavedStateHandle().apply { set(PATIENT_ID_BUNDLE, "10") }
-        `when`(patientDAO.findPatientByID(anyString())).thenReturn(Patient())
+        savedStateHandle = SavedStateHandle().apply { set(PATIENT_ID_BUNDLE, 10L) }
+        `when`(patientDAO.findPatientByID(anyLong())).thenReturn(Patient())
         `when`(allergyRepository.getAllergyByUUID(anyString())).thenReturn(Observable.just(Allergy()))
 
         initConcepts()

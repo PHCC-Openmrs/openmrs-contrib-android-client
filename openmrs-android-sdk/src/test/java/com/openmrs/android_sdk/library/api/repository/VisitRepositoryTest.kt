@@ -25,6 +25,7 @@ import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.Resource
 import com.openmrs.android_sdk.library.models.Visit
 import com.openmrs.android_sdk.utilities.DateUtils
+import com.openmrs.android_sdk.utilities.NetworkUtils
 import com.openmrs.android_sdk.utilities.ObservationDeserializer
 import com.openmrs.android_sdk.utilities.ResourceSerializer
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -79,6 +80,10 @@ class VisitRepositoryTest {
         every { OpenmrsAndroid.getInstance() } returns context
         every { OpenmrsAndroid.getVisitTypeUUID() } returns "fakeUuid"
         every { OpenmrsAndroid.getLocation() } returns "fakeLocation"
+        // A successful visit push calls SyncedPatientCleanupUtil, whose isEnabled() reads shared
+        // preferences outside its own try/catch - unstubbed, it throws and the push is silently
+        // treated as failed. Relaxed prefs report the feature as off, which is the default.
+        every { OpenmrsAndroid.getOpenMRSSharedPreferences() } returns mockk(relaxed = true)
         mockkStatic(AppDatabase::class)
         every { AppDatabase.getDatabase(appContext) } returns appDatabase
         every { appDatabase.locationRoomDAO() } returns locationRoomDAO
@@ -152,9 +157,18 @@ class VisitRepositoryTest {
         visitRepository.locationDAO = mockk(relaxed = true)
         val visitDAO: VisitDAO = mockk(relaxed = true)
         every { visitDAO.saveOrUpdate(any(), any()) } returns Observable.just(55L)
+        // startVisit persists through saveNewVisitLocally and unboxes the result to a long, so a
+        // relaxed default would surface as Object-cannot-be-cast-to-Long.
+        every { visitDAO.saveNewVisitLocally(any(), any()) } returns Observable.just(55L)
         visitRepository.visitDAO = visitDAO
 
         val patient: Patient = mockk(relaxed = true)
+        // startVisit only pushes to the server when online and the patient already has a server
+        // uuid; without both, it returns the local visit and the response assertions below fail.
+        every { patient.isSynced } returns true
+        mockkStatic(NetworkUtils::class)
+        every { NetworkUtils.isOnline() } returns true
+
         mockkStatic(DateUtils::class)
         every { DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT) } returns "fakeTime"
 

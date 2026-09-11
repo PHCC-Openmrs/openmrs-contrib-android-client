@@ -16,6 +16,7 @@ package org.openmrs.mobile.activities.introduction
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.Fragment
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.github.appintro.AppIntro2
@@ -27,6 +28,7 @@ class IntroActivity : AppIntro2() {
 
     @Suppress("DEPRECATION")
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
         addSlide(AppIntroFragment.newInstance(

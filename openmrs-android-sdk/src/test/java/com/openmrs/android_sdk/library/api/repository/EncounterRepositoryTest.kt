@@ -123,9 +123,9 @@ class EncounterRepositoryTest {
         every { visit.uuid } returns "fakeUuid"
 
         mockkConstructor(PatientDAO::class)
-        every { anyConstructed<PatientDAO>().findPatientByID("1234") } returns patient
+        every { anyConstructed<PatientDAO>().findPatientByID(1234L) } returns patient
 
-        val fakeObservable: Observable<Visit> = mockk(relaxed = true)
+        val fakeObservable: Observable<Visit?> = mockk(relaxed = true)
         every { fakeObservable.execute() } returns visit
 
         mockkConstructor(VisitDAO::class)

@@ -48,13 +48,13 @@ class PatientDashboardAllergyViewModelTest : ACUnitTestBaseRx() {
         super.setUp()
         savedStateHandle = SavedStateHandle().apply { set(PATIENT_ID_BUNDLE, PATIENT_ID) }
         viewModel = PatientDashboardAllergyViewModel(patientDAO, allergyRepository, savedStateHandle)
-        patient = createPatient(PATIENT_ID.toLong())
+        patient = createPatient(PATIENT_ID)
         allergies = listOf(createAllergy(1L, "doctor"), createAllergy(2L, "doctor"))
     }
 
     @Test
     fun fetchAllergies_success() {
-        Mockito.`when`(allergyRepository.getAllergyFromDatabase(PATIENT_ID)).thenReturn(Observable.just(allergies))
+        Mockito.`when`(allergyRepository.getAllergyFromDatabase(PATIENT_ID.toString())).thenReturn(Observable.just(allergies))
 
         viewModel.fetchAllergies()
 
@@ -65,7 +65,7 @@ class PatientDashboardAllergyViewModelTest : ACUnitTestBaseRx() {
     fun fetchAllergies_error() {
         val errorMsg = "Error message!"
         val throwable = Throwable(errorMsg)
-        Mockito.`when`(allergyRepository.getAllergyFromDatabase(PATIENT_ID)).thenReturn(Observable.error(throwable))
+        Mockito.`when`(allergyRepository.getAllergyFromDatabase(PATIENT_ID.toString())).thenReturn(Observable.error(throwable))
 
         viewModel.fetchAllergies()
 
@@ -111,6 +111,6 @@ class PatientDashboardAllergyViewModelTest : ACUnitTestBaseRx() {
     }
 
     companion object {
-        const val PATIENT_ID = "1"
+        const val PATIENT_ID = 1L
     }
 }

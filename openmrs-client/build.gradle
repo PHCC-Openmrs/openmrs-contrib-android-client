@@ -1,52 +1,49 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        jcenter()
-        maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
-    }
-
-    dependencies {
-        classpath 'com.github.triplet.gradle:play-publisher:2.2.1'
-        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
-    }
-}
 plugins {
     id 'com.android.application'
-    id 'com.github.triplet.play' version '2.2.1'
     id 'kotlin-android'
-    id 'kotlin-android-extensions'
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
-
-    // TODO AC-861
-    //id 'jacoco-android'
-    id 'com.hiya.jacoco-android'
 }
 apply from: './versions.gradle'
 apply plugin: "androidx.navigation.safeargs"
 
-def version = versions.appVersion
 def GOOGLE_PLACE_API_KEY = System.getenv('GOOGLE_PLACE_API_KEY') ?: "YOUR_API_KEY"
 
+// Play rejects an upload whose versionCode is not strictly greater than the previous one.
+// CI can override without editing the file: -PversionCode=42 or VERSION_CODE=42.
+def appVersionCode = (project.findProperty('versionCode') ?: System.getenv('VERSION_CODE') ?: versions.versionCode)
+        .toString().toInteger()
+def appVersionName = (project.findProperty('versionName') ?: System.getenv('VERSION_NAME') ?: versions.appVersion)
+        .toString()
+
+// Signing material is resolved from keystore.properties (untracked) first, then the environment.
+// When none is available the release signingConfig is omitted entirely, so the build still
+// produces an unsigned artifact rather than failing with a null-password error.
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+def releaseStoreFile = rootProject.file(
+        keystoreProperties['storeFile'] ?: System.getenv('KEYSTORE_FILE') ?: 'release.keystore')
+def releaseStorePassword = keystoreProperties['storePassword'] ?: System.getenv('KEYSTORE_PASSWORD')
+def releaseKeyAlias = keystoreProperties['keyAlias'] ?: System.getenv('KEYSTORE_ALIAS_NAME')
+def releaseKeyPassword = keystoreProperties['keyPassword'] ?: System.getenv('KEYSTORE_ALIAS_PASS')
+def hasReleaseSigning = releaseStoreFile.exists() && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+
 android {
-    compileSdkVersion versions.compileSdk
-
-    def travisBuildNumber = System.getenv("TRAVIS_BUILD_NUMBER")
-    def buildNumber = (travisBuildNumber) ? (travisBuildNumber as int) : 1
-
-    def applicationVersion = version
-    def travisTag = System.getenv("TRAVIS_TAG")
-    def buildVersionName = (travisTag) ? travisTag : applicationVersion + "-debug." + buildNumber
+    namespace 'org.openmrs.mobile'
+    compileSdk versions.compileSdk
+    buildToolsVersion versions.buildTools
 
     defaultConfig {
         applicationId "org.openmrs.mobile"
-        versionName buildVersionName
-        versionCode buildNumber
+        versionName appVersionName
+        versionCode appVersionCode
         multiDexEnabled true
 
-        minSdkVersion versions.minSdk
-        targetSdkVersion versions.targetSdk
+        minSdk versions.minSdk
+        targetSdk versions.targetSdk
 
         testApplicationId "org.openmrs.mobile.test"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -68,11 +65,13 @@ android {
     }
 
     signingConfigs {
-        release {
-            storeFile rootProject.file('release.keystore')
-            storePassword System.getenv("KEYSTORE_PASSWORD")
-            keyAlias System.getenv("KEYSTORE_ALIAS_NAME")
-            keyPassword System.getenv("KEYSTORE_ALIAS_PASS")
+        if (hasReleaseSigning) {
+            release {
+                storeFile releaseStoreFile
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
         }
     }
 
@@ -80,40 +79,54 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-            signingConfig signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.getByName('release')
+            }
         }
         debug {
-            testCoverageEnabled true
+            enableUnitTestCoverage true
+            versionNameSuffix '-debug'
         }
     }
 
-    lintOptions {
+    lint {
         warning 'InvalidPackage'
     }
 
-    packagingOptions {
-        exclude 'META-INF/LICENSE'
-        exclude 'META-INF/LICENSE.txt'
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/DEPENDENCIES.txt'
-        exclude 'META-INF/NOTICE'
-        exclude 'META-INF/NOTICE.txt'
-        exclude 'META-INF/rxjava.properties'
+    packaging {
+        resources {
+            excludes += [
+                    'META-INF/LICENSE',
+                    'META-INF/LICENSE.txt',
+                    'META-INF/DEPENDENCIES',
+                    'META-INF/DEPENDENCIES.txt',
+                    'META-INF/NOTICE',
+                    'META-INF/NOTICE.txt',
+                    'META-INF/rxjava.properties'
+            ]
+        }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = JavaVersion.VERSION_17
     }
 
     testOptions {
         unitTests {
             returnDefaultValues = true
             includeAndroidResources = true
+            // Mockito/Objenesis reflect into java.base internals, which JDK 17 blocks by default.
+            all {
+                it.jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED',
+                        '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED',
+                        '--add-opens=java.base/java.util=ALL-UNNAMED',
+                        '--add-opens=java.base/java.text=ALL-UNNAMED'
+            }
         }
     }
 
@@ -127,7 +140,6 @@ repositories {
     mavenCentral()
     maven { url 'https://yanzm.github.io/MaterialTabHost/repository' }
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
-    jcenter()
     maven { url "https://jitpack.io" }
 }
 
@@ -199,11 +211,11 @@ dependencies {
     implementation "com.google.android.libraries.places:places:${versions.placesAPI}"
 
     // Hilt Dependency Injection
-    implementation "com.google.dagger:hilt-android:2.42"
-    kapt "com.google.dagger:hilt-compiler:2.42"
-    implementation("androidx.hilt:hilt-work:1.0.0")
-    kapt("androidx.hilt:hilt-compiler:1.0.0") /* Use it for Kotlin Workers */
-    annotationProcessor("androidx.hilt:hilt-compiler:1.0.0") /* Use it for Java Workers */
+    implementation "com.google.dagger:hilt-android:${versions.hilt}"
+    kapt "com.google.dagger:hilt-compiler:${versions.hilt}"
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    kapt("androidx.hilt:hilt-compiler:1.2.0") /* Use it for Kotlin Workers */
+    annotationProcessor("androidx.hilt:hilt-compiler:1.2.0") /* Use it for Java Workers */
 
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:${versions.lifecycle_version}")
@@ -230,11 +242,10 @@ dependencies {
             "org.junit.jupiter:junit-jupiter:5.8.2",
             'org.powermock:powermock-api-mockito2:2.0.2',
             'org.powermock:powermock-module-junit4:2.0.2',
-            "com.google.dagger:hilt-android-testing:2.42",
+            "com.google.dagger:hilt-android-testing:${versions.hilt}",
             "androidx.arch.core:core-testing:${versions.arch_version}"
     )
-    testImplementation "android.arch.core:core-testing:${versions.coreTesting}"
-    kaptTest "com.google.dagger:hilt-compiler:2.42"
+    kaptTest "com.google.dagger:hilt-compiler:${versions.hilt}"
 
     // Leak Canary
     debugImplementation "com.squareup.leakcanary:leakcanary-android:${versions.leakcanary}"
@@ -244,24 +255,4 @@ dependencies {
 
 kapt {
     correctErrorTypes true
-}
-
-play {
-    enabled = rootProject.file('google_play.json').exists()
-
-    if (version.contains("alpha")) {
-        track = 'alpha'
-    } else if (version.contains("beta")) {
-        track = 'beta'
-    } else {
-        track = 'production'
-    }
-
-    serviceAccountCredentials = rootProject.file('google_play.json')
-    resolutionStrategy = "auto"
-    releaseStatus = "completed"
-
-    outputProcessor { // this: ApkVariantOutput
-        versionNameOverride = "$versionNameOverride.$versionCode"
-    }
 }

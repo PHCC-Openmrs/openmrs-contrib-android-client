@@ -24,6 +24,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.anyLong
 import org.mockito.Mockito.anyString
 import org.mockito.kotlin.any
 import org.openmrs.mobile.activities.formadmission.FormAdmissionViewModel
@@ -84,7 +85,7 @@ class FormAdmissionViewModelTest : ACUnitTestBaseRx() {
     }
 
     private fun initObservables() {
-        `when`(patientDAO.findPatientByID(anyString())).thenReturn(Patient())
+        `when`(patientDAO.findPatientByID(anyLong())).thenReturn(Patient())
         `when`(providerRepository.getProviders()).thenReturn(Observable.just(providerList))
         `when`(providerRepository.getEncounterRoles()).thenReturn(Observable.just(encounterRoleList))
         `when`(providerRepository.getLocations(anyString())).thenReturn(Observable.just(targetLocationList))

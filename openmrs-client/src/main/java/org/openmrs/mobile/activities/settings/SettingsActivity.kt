@@ -17,6 +17,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
@@ -27,6 +28,7 @@ class SettingsActivity : ACBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
         val actionBar = supportActionBar
         if (actionBar != null) {
             actionBar.elevation = 0f
@@ -64,8 +66,10 @@ class SettingsActivity : ACBaseActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        setResult(Activity.RESULT_OK, null)
-        super.onBackPressed()
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            setResult(Activity.RESULT_OK, null)
+            finish()
+        }
     }
 }

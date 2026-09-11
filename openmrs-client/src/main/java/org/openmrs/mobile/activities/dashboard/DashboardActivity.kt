@@ -14,8 +14,14 @@
 
 package org.openmrs.mobile.activities.dashboard
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.NavHostFragment
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
@@ -61,6 +67,10 @@ class DashboardActivity : ACBaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_dashboard)
 
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
+
+        requestNotificationPermissionIfNeeded()
+
         // Create toolbar
         val actionBar = supportActionBar
         if (actionBar != null) {
@@ -103,15 +113,31 @@ class DashboardActivity : ACBaseActivity() {
         dashboardFragment?.bindDrawableResources()
     }
 
-    override fun onBackPressed() {
-        if (doubleBackToExitPressedOnce) {
-            super.onBackPressed();
+    private val notificationPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* download runs either way */ }
 
-            return;
+    /**
+     * Asked here rather than at login, because the concept download is kicked off immediately
+     * before the login activity finishes - a permission dialog launched there would be torn down
+     * with it. Without the grant the download still runs, only its notification is suppressed.
+     */
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (doubleBackToExitPressedOnce) {
+                finish()
+                return
+            }
+            doubleBackToExitPressedOnce = true
+            ToastUtil.notify(getString(R.string.dashboard_exit_toast_message))
+            handler?.postDelayed(runnable, 2000)
         }
-        this.doubleBackToExitPressedOnce = true;
-        ToastUtil.notify(getString(R.string.dashboard_exit_toast_message));
-        handler?.postDelayed(runnable, 2000);
     }
 
     override fun onDestroy() {

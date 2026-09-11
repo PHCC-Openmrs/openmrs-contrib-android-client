@@ -15,12 +15,14 @@ package org.openmrs.mobile.activities.patientdashboard.details
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import org.openmrs.mobile.databinding.ActivityPatientPhotoBinding
 import java.io.ByteArrayInputStream
 
 class PatientPhotoActivity : AppCompatActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val binding = ActivityPatientPhotoBinding.inflate(layoutInflater)
         setContentView(binding.root)

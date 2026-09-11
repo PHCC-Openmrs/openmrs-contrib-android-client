@@ -35,6 +35,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Menu;
@@ -42,6 +43,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -101,6 +103,11 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Edge-to-edge is mandatory from API 36. AppCompat's decor roots (ActionBarOverlayLayout
+        // and FitWindowsLinearLayout) both declare fitsSystemWindows, so they already inset the
+        // action bar and content correctly - intercepting insets here instead would leave content
+        // drawn underneath the action bar.
+        EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
         Thread.setDefaultUncaughtExceptionHandler(forceClose);
 
@@ -132,7 +139,11 @@ public abstract class ACBaseActivity extends AppCompatActivity {
                 && !(this instanceof ContactUsActivity) && !(this instanceof SplashActivity)) {
             mAuthorizationManager.moveToLoginActivity();
         }
-        registerReceiver(mPasswordChangedReceiver, mIntentFilter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mPasswordChangedReceiver, mIntentFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mPasswordChangedReceiver, mIntentFilter);
+        }
         ToastUtil.setAppVisible(true);
     }
 

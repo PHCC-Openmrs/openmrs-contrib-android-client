@@ -21,6 +21,7 @@ import com.openmrs.android_sdk.library.dao.AppointmentRoomDAO
 import com.openmrs.android_sdk.library.dao.ConceptRoomDAO
 import com.openmrs.android_sdk.library.dao.EncounterCreateRoomDAO
 import com.openmrs.android_sdk.library.dao.EncounterDAO
+import com.openmrs.android_sdk.library.dao.PrivilegeCacheRoomDAO
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO
 import com.openmrs.android_sdk.library.databases.AppDatabase
 import com.openmrs.android_sdk.library.di.modules.AppDatabaseModule
@@ -55,7 +56,18 @@ object FakeAppDatabaseModule {
         return appDatabase
     }
 
+    // Relaxed: tests only verify that these DAOs were called, so unstubbed writes should record
+    // the interaction and return a default rather than throwing.
     @Provides
     @Singleton
-    fun provideAppointmentRoomDAO(@ApplicationContext context: Context): AppointmentRoomDAO = mockk()
+    fun provideAppointmentRoomDAO(@ApplicationContext context: Context): AppointmentRoomDAO =
+        mockk(relaxed = true)
+
+    // Required because RepositoryEntryPoint exposes PrivilegeRepository, which injects this DAO.
+    // This module replaces AppDatabaseModule wholesale, so every DAO the graph reaches must be
+    // re-provided here.
+    @Provides
+    @Singleton
+    fun providePrivilegeCacheRoomDAO(@ApplicationContext context: Context): PrivilegeCacheRoomDAO =
+        mockk(relaxed = true)
 }
