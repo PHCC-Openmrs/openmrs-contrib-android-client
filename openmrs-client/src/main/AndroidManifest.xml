@@ -213,6 +213,9 @@
             android:name=".services.VisitService"
             android:enabled="true" />
         <service
+            android:name=".services.ProgramEnrollmentService"
+            android:enabled="true" />
+        <service
             android:name=".services.EncounterService"
             android:enabled="true" />
         <service
@@ -307,6 +310,10 @@
         <activity
             android:name=".activities.addeditappointment.AddEditAppointmentActivity"
             android:label="@string/new_appointment_title"
+            android:theme="@style/AppThemeOrig" />
+        <activity
+            android:name=".activities.startvisit.StartVisitActivity"
+            android:label="@string/start_visit_form_title"
             android:theme="@style/AppThemeOrig" />
         <activity
             android:name=".activities.orderbasket.OrderBasketActivity"

@@ -16,8 +16,10 @@ package com.openmrs.android_sdk.library.api.repository
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.databases.AppDatabase
 import com.openmrs.android_sdk.library.databases.AppDatabaseHelper
+import com.openmrs.android_sdk.library.databases.entities.ProgramEntity
 import com.openmrs.android_sdk.library.models.ProgramCreate
 import com.openmrs.android_sdk.library.models.ProgramGet
+import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.NetworkUtils
 import retrofit2.Call
 import rx.Observable
@@ -128,12 +130,45 @@ class ProgramRepository @Inject constructor() : BaseRepository(){
             if (isSuccessful && this.body() != null) {
                 val programs: List<ProgramGet> = this.body()!!.results
                 val convertedList = AppDatabaseHelper.convertProgramListToEntityList(programs)
+                // Replace the whole cache rather than upsert into it: `id`, not `uuid`, is this
+                // table's primary key, so REPLACE never finds a conflicting row to overwrite - a
+                // plain insert on every refresh would just keep appending duplicate rows per uuid.
+                programRoomDAO.deleteAllPrograms()
                 programRoomDAO.insertOrUpdatePrograms(convertedList)
                 return Observable.just(programs)
             } else {
                 throw Exception("getAllProgramsAndSaveLocally error: ${message()}")
             }
         }
+    }
+
+    /**
+     * The services (programs) selectable for a visit at a given location.
+     *
+     * Refreshed from the server when online and read from the local cache otherwise, so the
+     * start-visit form offers the same services offline as online. The result is filtered by
+     * [ApplicationConstants.ProgramLocationRestrictions] against the location chosen in the form
+     * (not the session location), mirroring the web client's `useServicePrograms`.
+     *
+     * @param locationUuid the visit location the services must be offered at
+     * @return the services offered there
+     */
+    fun getServicePrograms(locationUuid: String?): Observable<List<ProgramEntity>> {
+        return AppDatabaseHelper.createObservableIO(Callable {
+            if (NetworkUtils.isOnline()) {
+                try {
+                    getAllProgramsAndSaveLocally()
+                } catch (e: Exception) {
+                    logger.e("Could not refresh the services, using the cached ones: " + e.message)
+                }
+            }
+            val cached = try {
+                programRoomDAO.getAllPrograms()
+            } catch (e: Exception) {
+                emptyList()
+            }
+            filterProgramsByLocation(cached, locationUuid)
+        })
     }
 
     /**
@@ -150,10 +185,36 @@ class ProgramRepository @Inject constructor() : BaseRepository(){
             if (isSuccessful && this.body() != null) {
                 val program: ProgramGet = this.body()!!
                 val programEntity = AppDatabaseHelper.convert(program)
+                // Same reasoning as getAllProgramsAndSaveLocally: `id` is the primary key, not
+                // `uuid`, so a second call for the same program would otherwise leave two rows
+                // for it instead of replacing the first.
+                programRoomDAO.deleteProgramByUuid(uuid)
                 programRoomDAO.insertProgram(programEntity)
                 return Observable.just(program)
             } else {
                 throw Exception("getProgramByUuidAndSaveLocally error: ${message()}")
+            }
+        }
+    }
+
+    companion object {
+        /**
+         * Keeps only the programs offered at [locationUuid]. A program with no restriction, or one
+         * whose restriction lists no locations, is offered everywhere; a restricted program is
+         * offered only where it is listed, and nowhere at all while no location is chosen.
+         *
+         * Mirrors the web client's `filterProgramsByLocation`, which exists for the same reason:
+         * OpenMRS programs have no location field of their own.
+         */
+        @JvmStatic
+        fun filterProgramsByLocation(programs: List<ProgramEntity>, locationUuid: String?): List<ProgramEntity> {
+            val restrictions = ApplicationConstants.ProgramLocationRestrictions.RESTRICTIONS
+            if (restrictions.isEmpty()) return programs
+
+            return programs.filter { program ->
+                val allowedLocations = restrictions[program.uuid]
+                if (allowedLocations.isNullOrEmpty()) true
+                else !locationUuid.isNullOrEmpty() && allowedLocations.contains(locationUuid)
             }
         }
     }

@@ -20,6 +20,8 @@ import static com.openmrs.android_sdk.utilities.DateUtils.convertTime;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import retrofit2.Call;
@@ -38,6 +40,7 @@ import com.openmrs.android_sdk.library.models.Encounter;
 import com.openmrs.android_sdk.library.models.Patient;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.Visit;
+import com.openmrs.android_sdk.library.models.VisitAttribute;
 import com.openmrs.android_sdk.library.models.VisitType;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.DateUtils;
@@ -54,17 +57,23 @@ public class VisitRepository extends BaseRepository {
     public LocationDAO locationDAO;
     public VisitDAO visitDAO;
     public EncounterDAO encounterDAO;
+    public ProgramEnrollmentRepository programEnrollmentRepository;
 
-    String representation = "custom:(uuid,location:ref,visitType:ref,startDatetime,stopDatetime,encounters:full)";
+    // Visits carry their attributes down with them so a visit started on the web (or on another
+    // device) still says which service(s) it is for once it reaches this device - which is what
+    // ending it has to know in order to complete the matching enrollment episodes.
+    String representation = "custom:(uuid,location:ref,visitType:ref,startDatetime,stopDatetime,attributes:(uuid,value,attributeType:(uuid,display)),encounters:full)";
 
     /**
      * Instantiates a new Visit repository.
      */
     @Inject
-    public VisitRepository(VisitDAO visitDAO, EncounterDAO encounterDAO, LocationDAO locationDAO) {
+    public VisitRepository(VisitDAO visitDAO, EncounterDAO encounterDAO, LocationDAO locationDAO,
+                           ProgramEnrollmentRepository programEnrollmentRepository) {
         this.visitDAO = visitDAO;
         this.encounterDAO = encounterDAO;
         this.locationDAO = locationDAO;
+        this.programEnrollmentRepository = programEnrollmentRepository;
     }
 
     /**
@@ -198,11 +207,32 @@ public class VisitRepository extends BaseRepository {
             if (response.isSuccessful()) {
                 visit.setStopDatetime(emptyVisitWithStopDate.getStopDatetime());
                 visitDAO.saveOrUpdate(visit, visit.patient.getId()).single().toBlocking().first();
+                // A visit ending closes the service enrollment episode(s) it opened - the same
+                // thing the web client's `visit-ended` listener does. Deliberately after the visit
+                // itself is ended and saved, and never allowed to throw: the visit has ended, and
+                // must not be reopened over a failure to complete an enrollment.
+                completeServiceEnrollments(visit, emptyVisitWithStopDate.getStopDatetime());
                 return true;
             } else {
                 throw new Exception("endVisitByUuid error: " + response.message());
             }
         });
+    }
+
+    /**
+     * Completes the program-enrolment episodes a visit opened, as of when it ended. Swallows any
+     * failure: the visit has already ended, and an enrollment left open is retried on the next
+     * sync pass, whereas a thrown exception here would report the whole end-visit as failed.
+     *
+     * @param visit        the visit that has just ended
+     * @param stopDatetime when it ended
+     */
+    private void completeServiceEnrollments(Visit visit, String stopDatetime) {
+        try {
+            programEnrollmentRepository.completeEnrollmentsForVisit(visit, stopDatetime);
+        } catch (Exception e) {
+            getLogger().e("Could not complete this visit's service enrollments: " + e.getMessage());
+        }
     }
 
     /**
@@ -217,22 +247,43 @@ public class VisitRepository extends BaseRepository {
      * @return observable visit that has been started (locally, and on the server if possible)
      */
     public Observable<Visit> startVisit(final Patient patient) {
+        return startVisit(patient, null, null, Collections.emptyList());
+    }
+
+    /**
+     * Start a visit for a patient, with the details the start-visit form collected.
+     *
+     * <p>Mirrors the web client's start-visit form: the visit is recorded at the chosen location,
+     * from the chosen date and time, carrying the answers to the form's extra questions - which
+     * service(s) it is for, punctuality, and whatever else is configured. Starting a visit for a
+     * service also opens a program enrolment episode for that service, completed when the visit
+     * ends.
+     *
+     * <p>Everything is saved locally first, so a visit can be started - form-fillable, services
+     * and all - with no connectivity at all, and pushed whole once there is some.
+     *
+     * @param patient       the patient to start a visit for
+     * @param location      where the visit takes place; the session location when null
+     * @param startDatetime when the visit starts, OpenMRS-formatted; now when null
+     * @param attributes    the answers to the form's extra questions, the Service selection among
+     *                      them; may be empty
+     * @return observable visit that has been started (locally, and on the server if possible)
+     */
+    public Observable<Visit> startVisit(final Patient patient,
+                                        final LocationEntity location,
+                                        final String startDatetime,
+                                        final List<VisitAttribute> attributes) {
         return AppDatabaseHelper.createObservableIO(() -> {
             try {
                 final Visit visit = new Visit();
-                visit.setStartDatetime(DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT));
+                visit.setStartDatetime(startDatetime != null ? startDatetime
+                        : DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT));
                 visit.setPatient(patient);
+                visit.setLocation(location != null ? location : sessionLocation());
 
-                // findLocationByName can return null (only when the stored location name itself
-                // is null - see OpenmrsAndroid#getLocation); Visit.location is a non-null Kotlin
-                // property, so passing null through would throw. Fall back to a display-only
-                // LocationEntity, same as AppDatabaseHelper#convert(VisitEntity) already does.
-                String locationName = OpenmrsAndroid.getLocation();
-                LocationEntity location = locationDAO.findLocationByName(locationName);
-                if (location == null) {
-                    location = new LocationEntity(locationName == null ? "" : locationName);
+                if (attributes != null && !attributes.isEmpty()) {
+                    visit.setAttributes(new ArrayList<>(attributes));
                 }
-                visit.setLocation(location);
 
                 VisitType visitType = new VisitType();
                 visitType.setUuid(OpenmrsAndroid.getVisitTypeUUID());
@@ -241,12 +292,44 @@ public class VisitRepository extends BaseRepository {
                 long visitId = visitDAO.saveNewVisitLocally(visit, patient.getId()).toBlocking().first();
                 visit.setId(visitId);
 
-                return syncStartedVisit(visit, patient);
+                Visit startedVisit = syncStartedVisit(visit, patient);
+
+                // The enrollment episodes are opened from the visit's own Service attribute rather
+                // than from a separate argument, so a visit carries its services with it wherever
+                // it was built - and a visit with no Service attribute opens none, leaving visits
+                // that predate this feature untouched, exactly as in the web client.
+                List<String> servicePrograms = visit.serviceProgramUuids();
+                if (!servicePrograms.isEmpty()) {
+                    programEnrollmentRepository.enrollForVisit(patient, visitId, servicePrograms,
+                            visit.getStartDatetime(), visit.getLocation().getUuid());
+                }
+
+                return startedVisit;
             } catch (Exception e) {
                 getLogger().e("Error saving visit locally: " + e.getMessage(), e);
                 throw e;
             }
         });
+    }
+
+    /**
+     * The location the user is logged in at, as a full {@link LocationEntity} whenever it is one
+     * of the cached login locations.
+     *
+     * <p>findLocationByName can return null (only when the stored location name itself is null -
+     * see {@link OpenmrsAndroid#getLocation}); Visit.location is a non-null Kotlin property, so
+     * passing null through would throw. Falls back to a display-only LocationEntity, same as
+     * AppDatabaseHelper#convert(VisitEntity) already does.
+     *
+     * @return the session location
+     */
+    private LocationEntity sessionLocation() {
+        String locationName = OpenmrsAndroid.getLocation();
+        LocationEntity location = locationDAO.findLocationByName(locationName);
+        if (location == null) {
+            location = new LocationEntity(locationName == null ? "" : locationName);
+        }
+        return location;
     }
 
     /**
@@ -283,6 +366,13 @@ public class VisitRepository extends BaseRepository {
             if (response.isSuccessful() && response.body() != null) {
                 Visit syncedVisit = response.body();
                 syncedVisit.setId(visit.getId());
+                // The response is returned in whatever representation the server defaults to, which
+                // need not include the attributes we just sent. Keep the ones we know about rather
+                // than let a thinner response blank them out locally - ending the visit reads its
+                // services back from here.
+                if (syncedVisit.getAttributes() == null || syncedVisit.getAttributes().isEmpty()) {
+                    syncedVisit.setAttributes(visit.getAttributes());
+                }
                 visitDAO.saveOrUpdate(syncedVisit, patient.getId()).toBlocking().first();
                 SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
                 return syncedVisit;

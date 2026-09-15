@@ -136,6 +136,7 @@ class ProgramRepositoryTest {
     @Test
     fun getAllProgramsAndSaveLocally_success(){
 
+        every { programRoomDAO.deleteAllPrograms() } returns 4
         every { programRoomDAO.insertOrUpdatePrograms(any()) } returns listOf(1L,2L,3L)
         programRepository.restApi = programApi
         enqueueMockResponse("mocked_responses/ProgramRepository/ProgramGetAll-success.json")
@@ -146,9 +147,32 @@ class ProgramRepositoryTest {
         Assert.assertEquals(result[2].name, "HIV Preventative Services (PEP/PrEP)")
     }
 
+    /**
+     * Regression test: `programs.id`, not `uuid`, is the table's primary key, so
+     * `insertOrUpdatePrograms`'s REPLACE conflict strategy alone never finds a conflicting row -
+     * every refresh has to clear the cache first, or a program list fetched twice (e.g. once by
+     * the login prefetch, once by opening the start-visit form) doubles up every program.
+     */
+    @Test
+    fun getAllProgramsAndSaveLocally_clearsTheCacheBeforeReinserting(){
+
+        every { programRoomDAO.deleteAllPrograms() } returns 4
+        every { programRoomDAO.insertOrUpdatePrograms(any()) } returns listOf(1L,2L,3L)
+        programRepository.restApi = programApi
+        enqueueMockResponse("mocked_responses/ProgramRepository/ProgramGetAll-success.json")
+
+        programRepository.getAllProgramsAndSaveLocally().toBlocking().first()
+
+        io.mockk.verifyOrder {
+            programRoomDAO.deleteAllPrograms()
+            programRoomDAO.insertOrUpdatePrograms(any())
+        }
+    }
+
     @Test
     fun getProgramByUuidAndSaveLocally_success(){
 
+        every { programRoomDAO.deleteProgramByUuid(any()) } returns 1
         every { programRoomDAO.insertProgram(any()) } returns 1L
         programRepository.restApi = programApi
         enqueueMockResponse("mocked_responses/ProgramRepository/ProgramGet-success.json")

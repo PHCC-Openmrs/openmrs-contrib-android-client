@@ -716,4 +716,18 @@
     <string name="about_openmrs_2">OpenMRS is a platform that countries and implementers use to create a customized EMR system in response to actual needs on the ground.</string>
     <string name="more_about_openmrs"><![CDATA[more]]></string>
 
+
+    <!-- Start visit form, mirroring the web client's start-visit workspace -->
+    <string name="start_visit_form_title">Start visit</string>
+    <string name="start_visit_form_error">Could not load the start visit form</string>
+    <string name="visit_location_label">Visit location</string>
+    <string name="visit_service_label">Service</string>
+    <string name="visit_service_hint">Select services</string>
+    <string name="visit_service_none_available">No services are offered at this location</string>
+    <string name="select_an_option">Select an option</string>
+    <string name="optional_field_label">%1$s (optional)</string>
+    <string name="dialog_button_done">Done</string>
+    <string name="warning_select_visit_location">Please select a visit location</string>
+    <string name="warning_select_visit_service">Please select at least one service</string>
+    <string name="warning_visit_attribute_required">Please fill in %1$s</string>
 </resources>

@@ -26,18 +26,17 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.openmrs.android_sdk.library.models.OperationType.PatientVisitStarting
 import com.openmrs.android_sdk.library.models.OperationType.PatientVisitsFetching
 import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.library.models.Visit
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.ToastUtil.error
-import com.openmrs.android_sdk.utilities.ToastUtil.notify
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity
+import org.openmrs.mobile.activities.startvisit.StartVisitActivity
 import org.openmrs.mobile.activities.visitdashboard.VisitDashboardActivity
 import org.openmrs.mobile.databinding.FragmentPatientVisitBinding
 import org.openmrs.mobile.utilities.makeGone
@@ -90,23 +89,11 @@ class PatientVisitsFragment : BaseFragment() {
         viewModel.result.observe(viewLifecycleOwner, Observer { result ->
             when (result) {
                 is Result.Loading -> {
-                    when (result.operationType) {
-                        PatientVisitStarting -> showStartVisitProgressDialog()
-                        else -> {
-                        }
-                    }
                 }
                 is Result.Success -> {
                     dismissCurrentDialog()
                     when (result.operationType) {
                         PatientVisitsFetching -> showVisitsList(result.data)
-                        PatientVisitStarting -> {
-                            val visit = result.data[0]
-                            if (visit.uuid.isNullOrEmpty()) {
-                                notify(getString(R.string.visit_saved_offline))
-                            }
-                            goToVisitDashboard(visit.id!!)
-                        }
                         else -> {
                         }
                     }
@@ -115,7 +102,6 @@ class PatientVisitsFragment : BaseFragment() {
                     dismissCurrentDialog()
                     when (result.operationType) {
                         PatientVisitsFetching -> showErrorFetchingVisits()
-                        PatientVisitStarting -> error(getString(R.string.visit_start_error))
                         else -> {
                         }
                     }
@@ -127,10 +113,6 @@ class PatientVisitsFragment : BaseFragment() {
 
     private fun fetchPatientVisits() {
         viewModel.fetchVisitsData()
-    }
-
-    fun startVisit() {
-        viewModel.startVisit()
     }
 
     private fun showVisitsList(visits: List<Visit>) {
@@ -155,21 +137,32 @@ class PatientVisitsFragment : BaseFragment() {
         }
     }
 
+    /**
+     * Opens the start-visit form - the mobile counterpart of the web client's start-visit
+     * workspace, which asks for the visit's location, service(s) and the configured visit
+     * attributes rather than just confirming.
+     */
     private fun showStartVisitStatus() {
         if (viewModel.getPatient().isDeceased) {
             error(getString(R.string.cannot_start_visit_for_deceased))
         } else {
             viewModel.hasActiveVisit().observeOnce(viewLifecycleOwner, Observer { hasActiveVisit ->
-                with(patientDashboardActivity.supportActionBar!!) {
-                    if (hasActiveVisit) patientDashboardActivity.showStartVisitImpossibleDialog(title)
-                    else patientDashboardActivity.showStartVisitDialog(title)
+                if (hasActiveVisit) {
+                    patientDashboardActivity.showStartVisitImpossibleDialog(
+                        patientDashboardActivity.supportActionBar!!.title
+                    )
+                } else {
+                    goToStartVisitForm()
                 }
             })
         }
     }
 
-    private fun showStartVisitProgressDialog() {
-        patientDashboardActivity.showProgressDialog(R.string.action_starting_visit)
+    private fun goToStartVisitForm() {
+        Intent(activity, StartVisitActivity::class.java).apply {
+            putExtra(PATIENT_ID_BUNDLE, viewModel.getPatient().id)
+            startActivity(this)
+        }
     }
 
     private fun dismissCurrentDialog() {

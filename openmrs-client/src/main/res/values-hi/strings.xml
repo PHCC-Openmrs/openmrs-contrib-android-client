@@ -502,4 +502,18 @@
     <!--LastViewedPatientRecyclerViewAdapter-->
     <string name="failed_fetching_patient_data_error_message">रोगी डेटा लाने में विफल</string>
 
+
+    <!-- Start visit form, mirroring the web client's start-visit workspace -->
+    <string name="start_visit_form_title">विज़िट शुरू करें</string>
+    <string name="start_visit_form_error">विज़िट प्रारंभ फ़ॉर्म लोड नहीं हो सका</string>
+    <string name="visit_location_label">विज़िट स्थान</string>
+    <string name="visit_service_label">सेवा</string>
+    <string name="visit_service_hint">सेवाएँ चुनें</string>
+    <string name="visit_service_none_available">इस स्थान पर कोई सेवा उपलब्ध नहीं है</string>
+    <string name="select_an_option">एक विकल्प चुनें</string>
+    <string name="optional_field_label">%1$s (वैकल्पिक)</string>
+    <string name="dialog_button_done">पूर्ण</string>
+    <string name="warning_select_visit_location">कृपया विज़िट स्थान चुनें</string>
+    <string name="warning_select_visit_service">कृपया कम से कम एक सेवा चुनें</string>
+    <string name="warning_visit_attribute_required">कृपया %1$s भरें</string>
 </resources>

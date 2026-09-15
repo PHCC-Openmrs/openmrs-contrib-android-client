@@ -48,6 +48,7 @@ import com.openmrs.android_sdk.library.models.PersonAddress
 import com.openmrs.android_sdk.library.models.PersonName
 import com.openmrs.android_sdk.library.models.Resource
 import com.openmrs.android_sdk.library.models.Visit
+import com.openmrs.android_sdk.library.models.VisitAttribute
 import com.openmrs.android_sdk.library.models.VisitType
 import com.openmrs.android_sdk.library.models.Appointment
 import com.openmrs.android_sdk.library.models.AppointmentLocationInfo
@@ -64,6 +65,9 @@ import com.openmrs.android_sdk.utilities.DateUtils
 import com.openmrs.android_sdk.utilities.DateUtils.convertTime
 import com.openmrs.android_sdk.utilities.execute
 import dagger.hilt.android.EntryPointAccessors
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 import rx.Observable
 import rx.schedulers.Schedulers
 import java.io.ByteArrayInputStream
@@ -71,6 +75,12 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.Callable
 
 object AppDatabaseHelper {
+
+    /* Keys of the JSON a visit's attributes are stored under in `visits.attributes`. */
+    private const val ATTRIBUTE_TYPE_KEY = "attributeType"
+    private const val ATTRIBUTE_TYPE_DISPLAY_KEY = "attributeTypeDisplay"
+    private const val VALUE_KEY = "value"
+    private const val VALUE_DISPLAY_KEY = "valueDisplay"
 
     @JvmStatic
     fun convert(obs: Observation, encounterID: Long): ObservationEntity {
@@ -256,8 +266,13 @@ object AppDatabaseHelper {
         } catch (e: Exception) {
             visit.location = LocationEntity(visitEntity.visitPlace)
         }
+        // The locations table only holds the login locations, so a visit whose location is not one
+        // of them resolves above to a display-only entity. Restore the uuid the visit was saved
+        // with regardless: pushing the visit, and enrolling its patient at that location, need it.
+        if (visit.location.uuid.isNullOrEmpty()) visit.location.uuid = visitEntity.visitLocationUuid
         visit.startDatetime = visitEntity.startDate
         visit.stopDatetime = visitEntity.stopDate
+        visit.attributes = deserializeVisitAttributes(visitEntity.attributes)
         visit.encounters = EncounterDAO().findEncountersByVisitID(visitEntity.id)
         visit.patient = PatientDAO().findPatientByID(visitEntity.patientKeyID)
         return visit
@@ -271,9 +286,60 @@ object AppDatabaseHelper {
         visitEntity.patientKeyID = visit.patient.id!!
         visitEntity.visitType = visit.visitType.display
         visitEntity.visitPlace = visit.location.display
+        visitEntity.visitLocationUuid = visit.location.uuid
         visitEntity.isStartDate = visit.startDatetime
         visitEntity.stopDate = visit.stopDatetime
+        visitEntity.attributes = serializeVisitAttributes(visit.attributes)
         return visitEntity
+    }
+
+    /**
+     * Renders a visit's attributes as the JSON array held in `visits.attributes`. Returns null for
+     * no attributes, so a visit without them is stored as NULL rather than an empty array - the
+     * same distinction [Visit.attributes] itself draws.
+     */
+    @JvmStatic
+    fun serializeVisitAttributes(attributes: List<VisitAttribute>?): String? {
+        if (attributes.isNullOrEmpty()) return null
+        val jsonArray = JSONArray()
+        attributes.forEach { attribute ->
+            val attributeType = attribute.attributeType
+            if (!attributeType.isNullOrEmpty()) {
+                jsonArray.put(JSONObject().apply {
+                    put(ATTRIBUTE_TYPE_KEY, attributeType)
+                    put(VALUE_KEY, attribute.value.orEmpty())
+                    attribute.attributeTypeDisplay?.let { put(ATTRIBUTE_TYPE_DISPLAY_KEY, it) }
+                    attribute.valueDisplay?.let { put(VALUE_DISPLAY_KEY, it) }
+                })
+            }
+        }
+        return if (jsonArray.length() == 0) null else jsonArray.toString()
+    }
+
+    /**
+     * Reads back what [serializeVisitAttributes] wrote. Malformed JSON (only reachable by editing
+     * the database by hand) reads as no attributes rather than throwing, which would take the
+     * whole visit - and the visit list it is shown in - down with it.
+     */
+    @JvmStatic
+    fun deserializeVisitAttributes(json: String?): List<VisitAttribute>? {
+        if (json.isNullOrEmpty()) return null
+        return try {
+            val jsonArray = JSONArray(json)
+            (0 until jsonArray.length()).mapNotNull { index ->
+                val jsonObject = jsonArray.optJSONObject(index) ?: return@mapNotNull null
+                VisitAttribute(
+                    jsonObject.optString(ATTRIBUTE_TYPE_KEY).takeIf { it.isNotEmpty() } ?: return@mapNotNull null,
+                    jsonObject.optString(VALUE_KEY)
+                ).apply {
+                    attributeTypeDisplay = jsonObject.optString(ATTRIBUTE_TYPE_DISPLAY_KEY).takeIf { it.isNotEmpty() }
+                    valueDisplay = jsonObject.optString(VALUE_DISPLAY_KEY).takeIf { it.isNotEmpty() } ?: value
+                }
+            }.takeIf { it.isNotEmpty() }
+        } catch (e: JSONException) {
+            OpenmrsAndroid.getOpenMRSLogger()?.e("Could not read a visit's stored attributes", e)
+            null
+        }
     }
 
     @JvmStatic

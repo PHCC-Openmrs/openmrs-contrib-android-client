@@ -36,8 +36,10 @@ import com.openmrs.android_sdk.library.dao.ObservationRoomDAO;
 import com.openmrs.android_sdk.library.dao.OrderRoomDAO;
 import com.openmrs.android_sdk.library.dao.PatientRoomDAO;
 import com.openmrs.android_sdk.library.dao.PrivilegeCacheRoomDAO;
+import com.openmrs.android_sdk.library.dao.ProgramEnrollmentRoomDAO;
 import com.openmrs.android_sdk.library.dao.ProgramRoomDAO;
 import com.openmrs.android_sdk.library.dao.ProviderRoomDAO;
+import com.openmrs.android_sdk.library.dao.VisitAttributeTypeRoomDAO;
 import com.openmrs.android_sdk.library.dao.VisitRoomDAO;
 import com.openmrs.android_sdk.library.databases.entities.AllergyEntity;
 import com.openmrs.android_sdk.library.databases.entities.AppointmentEntity;
@@ -50,9 +52,11 @@ import com.openmrs.android_sdk.library.databases.entities.ObservationEntity;
 import com.openmrs.android_sdk.library.databases.entities.OrderEntity;
 import com.openmrs.android_sdk.library.databases.entities.PatientEntity;
 import com.openmrs.android_sdk.library.databases.entities.PrivilegeCacheEntity;
+import com.openmrs.android_sdk.library.databases.entities.ProgramEnrollmentCreateEntity;
 import com.openmrs.android_sdk.library.databases.entities.ProgramEntity;
 import com.openmrs.android_sdk.library.databases.entities.StandaloneEncounterEntity;
 import com.openmrs.android_sdk.library.databases.entities.StandaloneObservationEntity;
+import com.openmrs.android_sdk.library.databases.entities.VisitAttributeTypeEntity;
 import com.openmrs.android_sdk.library.databases.entities.VisitEntity;
 import com.openmrs.android_sdk.library.models.EncounterType;
 import com.openmrs.android_sdk.library.models.Encountercreate;
@@ -78,9 +82,11 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
         AppointmentEntity.class,
         OrderEntity.class,
         ProgramEntity.class,
+        ProgramEnrollmentCreateEntity.class,
+        VisitAttributeTypeEntity.class,
         DrugEntity.class,
         PrivilegeCacheEntity.class},
-        version = 12)
+        version = 13)
 @TypeConverters({StringListConverter.class, WorkflowConverter.class})
 public abstract class AppDatabase extends RoomDatabase {
 
@@ -220,6 +226,40 @@ public abstract class AppDatabase extends RoomDatabase {
     };
 
     /**
+     * Adds everything the start-visit form needs to ask the same questions the web client asks,
+     * and to answer them offline: the visit's location uuid and its attributes (Service,
+     * Punctuality, ...) alongside the visit, a queue of the program-enrolment episodes a visit
+     * opened, and a cache of the visit attribute types themselves. Purely additive, so existing
+     * installs keep their synced patients/visits/concepts instead of falling back to a full wipe;
+     * visits predating this simply have no location uuid and no attributes, exactly as visits
+     * predating the feature do in the web client.
+     */
+    private static final Migration MIGRATION_12_13 = new Migration(12, 13) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            database.execSQL("ALTER TABLE `visits` ADD COLUMN `visit_location_uuid` TEXT");
+            database.execSQL("ALTER TABLE `visits` ADD COLUMN `attributes` TEXT");
+            database.execSQL("CREATE TABLE IF NOT EXISTS `programenrollmentcreate` (" +
+                    "`_id` INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    "`uuid` TEXT, " +
+                    "`patient_id` INTEGER NOT NULL, " +
+                    "`visit_id` INTEGER, " +
+                    "`program_uuid` TEXT NOT NULL, " +
+                    "`date_enrolled` TEXT NOT NULL, " +
+                    "`date_completed` TEXT, " +
+                    "`location_uuid` TEXT, " +
+                    "`completion_synced` INTEGER NOT NULL)");
+            database.execSQL("CREATE TABLE IF NOT EXISTS `visitattributetypes` (" +
+                    "`uuid` TEXT NOT NULL, " +
+                    "`display` TEXT, " +
+                    "`datatype_classname` TEXT, " +
+                    "`datatype_config` TEXT, " +
+                    "`answers` TEXT, " +
+                    "PRIMARY KEY(`uuid`))");
+        }
+    };
+
+    /**
      * Gets database.
      *
      * @param context the context
@@ -233,7 +273,7 @@ public abstract class AppDatabase extends RoomDatabase {
                     INSTANCE = Room.databaseBuilder(context.getApplicationContext(),
                             AppDatabase.class, ApplicationConstants.DB_NAME)
                             .allowMainThreadQueries()
-                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                             .fallbackToDestructiveMigration()
                             .build();
                 }
@@ -345,6 +385,20 @@ public abstract class AppDatabase extends RoomDatabase {
      * @return the Drug Room DAO
      */
     public abstract DrugRoomDAO drugRoomDAO();
+
+    /**
+     * Program enrollment room dao.
+     *
+     * @return the program enrollment room dao
+     */
+    public abstract ProgramEnrollmentRoomDAO programEnrollmentRoomDAO();
+
+    /**
+     * Visit attribute type room dao.
+     *
+     * @return the visit attribute type room dao
+     */
+    public abstract VisitAttributeTypeRoomDAO visitAttributeTypeRoomDAO();
 
     /**
      * Privilege cache room dao.

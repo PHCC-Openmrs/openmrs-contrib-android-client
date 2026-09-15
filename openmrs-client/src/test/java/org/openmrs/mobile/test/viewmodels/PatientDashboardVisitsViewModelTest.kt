@@ -113,19 +113,6 @@ class PatientDashboardVisitsViewModelTest : ACUnitTestBaseRx() {
         viewModel.hasActiveVisit().observeForever { hasActiveVisit -> assertFalse(hasActiveVisit) }
     }
 
-    @Test
-    fun startVisit_success() {
-        val visit = visitList[0]
-        Mockito.`when`(patientDAO.findPatientByID(PATIENT_ID)).thenReturn(patient)
-        Mockito.`when`(visitRepository.startVisit(patient)).thenReturn(Observable.just(visit))
-
-        viewModel.startVisit()
-
-        val actualResult = (viewModel.result.value as Result.Success).data[0]
-
-        assertEquals(visit, actualResult)
-    }
-
     companion object {
         const val PATIENT_ID = 1L
     }

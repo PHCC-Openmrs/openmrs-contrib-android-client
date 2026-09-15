@@ -6,7 +6,6 @@ import androidx.lifecycle.SavedStateHandle
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.PatientDAO
 import com.openmrs.android_sdk.library.dao.VisitDAO
-import com.openmrs.android_sdk.library.models.OperationType.PatientVisitStarting
 import com.openmrs.android_sdk.library.models.OperationType.PatientVisitsFetching
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.Visit
@@ -67,16 +66,5 @@ class PatientDashboardVisitsViewModel @Inject constructor(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { visit: Visit? -> liveData.value = visit != null })
         return liveData
-    }
-
-    fun startVisit() {
-        setLoading(PatientVisitStarting)
-        val patient = patientDAO.findPatientByID(patientId)
-        addSubscription(visitRepository.startVisit(patient)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        { visit: Visit -> setContent(listOf(visit), PatientVisitStarting) },
-                        { setError(it, PatientVisitStarting) }
-                ))
     }
 }
