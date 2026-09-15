@@ -150,6 +150,20 @@ public interface RestApi {
                                                     @Query("_count") int count);
 
     /**
+     * Fetches an explicit set of locations by UUID via the FHIR2 module - used instead of
+     * {@link #getFhirLocationsByTag} when the logged-in user is restricted to a specific,
+     * admin-assigned list of locations (the same behaviour as the OpenMRS O3 web login app).
+     *
+     * @param url the full ".../ws/fhir2/R4/Location" URL
+     * @param ids comma-separated location UUIDs
+     * @return the FHIR searchset Bundle
+     */
+    @GET()
+    Call<FhirLocationBundle> getFhirLocationsById(@Url String url,
+                                                   @Query("_id") String ids,
+                                                   @Query("_summary") String summary);
+
+    /**
      * Fetches a subsequent page of a FHIR Bundle via its own absolute "next" link URL.
      *
      * @param url the full page URL, taken from a previous {@link FhirLocationBundle}'s "next" link
@@ -461,6 +475,18 @@ public interface RestApi {
      */
     @GET("session")
     Call<Session> getSession();
+
+    /**
+     * Gets session against an explicit server URL, rather than the Retrofit instance's
+     * pre-configured base URL - needed when checking a user's location restriction as part of
+     * fetching login locations, since that happens before the newly-typed server URL has been
+     * committed as the active base URL (see {@link com.openmrs.android_sdk.library.api.repository.LocationRepository#getLocations}).
+     *
+     * @param url the full ".../ws/rest/v1/session" URL
+     * @return the session
+     */
+    @GET()
+    Call<Session> getSession(@Url String url);
 
     /**
      * Ends a visit by its uuid.
