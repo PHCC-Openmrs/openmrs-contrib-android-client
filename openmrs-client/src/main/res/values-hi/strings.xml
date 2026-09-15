@@ -13,7 +13,7 @@
   -->
 
 <resources>
-    <string name="app_name">OpenMRS ग्राहक</string>
+    <string name="app_name">Care</string>
     <string name="action_settings">समायोजन</string>
     <string name="action_logout">लॉग आउट</string>
     <string name="action_location">स्थान</string>
