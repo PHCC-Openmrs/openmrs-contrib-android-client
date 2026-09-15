@@ -144,11 +144,14 @@ class VisitDashboardFragment : BaseFragment() {
     }
 
     private fun startEncounter() {
-        if (viewModel.visit?.patient?.uuid == null) {
-            ToastUtil.error(getString(R.string.patient_not_yet_registered))
-        } else {
-            startFormListActivity()
-        }
+        // Used to block here whenever the patient had no server uuid yet (e.g. registered
+        // offline) - but startFormListActivity() below only ever needs the patient's local Room
+        // id, never their uuid, and everything downstream (FormListActivity -> FormDisplayActivity
+        // -> EncounterRepository.saveEncounter()) already has its own offline-safe local-only save
+        // path. The main-menu Form Entry entry point reaches the exact same FormListActivity with
+        // no such check at all, so this one was just an unnecessary extra gate blocking a
+        // legitimate offline flow, not a real precondition.
+        startFormListActivity()
     }
 
     private fun startFormListActivity() {
