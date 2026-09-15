@@ -20,8 +20,8 @@ import android.content.Intent;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.openmrs.android_sdk.library.api.RestApi;
+import com.openmrs.android_sdk.library.api.repository.FormRepository;
 import com.openmrs.android_sdk.library.dao.EncounterTypeRoomDAO;
-import com.openmrs.android_sdk.library.dao.FormResourceDAO;
 import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity;
 import com.openmrs.android_sdk.library.models.EncounterType;
@@ -40,6 +40,8 @@ public class FormListService extends IntentService {
     RestApi apiService;
     @Inject
     AppDatabase appDatabase;
+    @Inject
+    FormRepository formRepository;
 
     public FormListService() {
         super("Sync Form List");
@@ -52,28 +54,11 @@ public class FormListService extends IntentService {
         // (e.g. Clerk) don't hold "Get Forms" server-side, so attempting this would just
         // 403 and surface a confusing error toast right after login.
         if (PrivilegeUtils.hasAnyPrivilege(ApplicationConstants.Privileges.ADD_ENCOUNTERS, ApplicationConstants.Privileges.FORM_ENTRY)) {
-            FormResourceDAO formResourceDAO = appDatabase.formResourceDAO();
-            Response<Results<FormResourceEntity>> response = null;
-            try {
-                response = apiService.getForms().execute();
-                if (response.isSuccessful() && response.body() != null) {
-                    formResourceDAO.deleteAllForms();
-                    List<FormResourceEntity> formResourceList = response.body().getResults();
-                    for (FormResourceEntity formResourceEntity : formResourceList) {
-                        if (formResourceEntity.getName() == null) {
-                            formResourceEntity.setName("Unnamed Form");
-                        }
-                        if (formResourceEntity.getEncounterTypeResource() != null && formResourceEntity.getEncounterTypeResource().getUuid() != null) {
-                            formResourceEntity.setEncounterTypeUuid(formResourceEntity.getEncounterTypeResource().getUuid());
-                        }
-                        formResourceDAO.addFormResource(formResourceEntity);
-                    }
-                    ToastUtil.notify("Synced " + formResourceList.size() + " forms");
-                } else {
-                    ToastUtil.error(response != null ? response.message() : "Error fetching forms");
-                }
-            } catch (Exception e) {
-                ToastUtil.error("Error with forms sync: " + e.getMessage());
+            List<FormResourceEntity> formResourceList = formRepository.syncFormList();
+            if (formResourceList != null) {
+                ToastUtil.notify("Synced " + formResourceList.size() + " forms");
+            } else {
+                ToastUtil.error("Error fetching forms");
             }
         }
         // Refresh encounter types

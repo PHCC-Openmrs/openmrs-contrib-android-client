@@ -105,6 +105,39 @@ class FormRepository @Inject constructor() : BaseRepository() {
     }
 
     /**
+     * Fetches the form list from the server and replaces the local list with it - the single
+     * source of truth for which forms exist locally, which [resolveAllFormSchemas] depends on
+     * already being populated (it only resolves schemas for rows that already exist; it never
+     * creates rows itself). Synchronous/blocking - callers on a background thread already (e.g.
+     * an `IntentService`) can call this directly; callers needing this off the calling thread
+     * should wrap it themselves. Makes no assumption about network state or privileges - callers
+     * are responsible for their own gating, matching every other method in this class.
+     *
+     * @return the synced form list, or null if the fetch failed or was unsuccessful
+     */
+    fun syncFormList(): List<FormResourceEntity>? {
+        return try {
+            val response = restApi.getForms().execute()
+            if (!response.isSuccessful || response.body() == null) return null
+            val formResourceList = response.body()!!.results
+            db.formResourceDAO().deleteAllForms()
+            formResourceList.forEach { formResourceEntity ->
+                if (formResourceEntity.name == null) {
+                    formResourceEntity.name = "Unnamed Form"
+                }
+                val encounterTypeUuid = formResourceEntity.encounterTypeResource?.uuid
+                if (!encounterTypeUuid.isNullOrEmpty()) {
+                    formResourceEntity.encounterTypeUuid = encounterTypeUuid
+                }
+                db.formResourceDAO().addFormResource(formResourceEntity)
+            }
+            formResourceList
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
      * Resolves a form's "json"/"JSON schema" resource value. Some OpenMRS servers store this
      * value out-of-line as clob data, in which case valueReference is just a bare UUID rather
      * than the JSON itself (this is what O3 detects and resolves via a `clobdata/{uuid}` call).

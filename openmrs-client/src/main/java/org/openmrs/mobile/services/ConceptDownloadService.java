@@ -41,7 +41,9 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.settings.SettingsActivity;
 import org.openmrs.mobile.application.OpenMRS;
+import org.openmrs.mobile.utilities.PrivilegeUtils;
 
+import rx.Observable;
 import rx.schedulers.Schedulers;
 
 @AndroidEntryPoint
@@ -206,10 +208,25 @@ public class ConceptDownloadService extends Service {
      * vice versa) - but the service must not stop (see [stopIfBothFinished]) until this finishes
      * too, or the process could lose its foreground-service standing (and get killed) while these
      * per-form network calls are still in flight.
+     *
+     * Explicitly (re-)syncs the form list itself, synchronously, before resolving any schemas -
+     * schema resolution only works on forms that already exist as local rows, and relying on
+     * FormListService (started independently, e.g. at login) to have already populated them was a
+     * real, unsynchronized race: FormListService needs a full network round trip while this
+     * service's schema resolution starts almost immediately, so it could - and did - run against
+     * an empty or stale form list and silently cache nothing, even though this whole operation
+     * still reported success. Doing our own sync here first removes the dependency on that other
+     * service's timing entirely.
      */
     private void resolveFormSchemasForOfflineUse() {
-        formRepository.resolveAllFormSchemas()
+        Observable.fromCallable(() -> {
+                    if (PrivilegeUtils.hasAnyPrivilege(ApplicationConstants.Privileges.ADD_ENCOUNTERS, ApplicationConstants.Privileges.FORM_ENTRY)) {
+                        formRepository.syncFormList();
+                    }
+                    return true;
+                })
                 .subscribeOn(Schedulers.io())
+                .flatMap(ignored -> formRepository.resolveAllFormSchemas())
                 .subscribe(result -> finishFormSchemaResolution(), throwable -> finishFormSchemaResolution());
     }
 
