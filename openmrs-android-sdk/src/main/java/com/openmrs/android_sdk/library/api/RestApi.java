@@ -70,6 +70,9 @@ import com.openmrs.android_sdk.library.models.PatientDtoUpdate;
 import com.openmrs.android_sdk.library.models.PatientPhoto;
 import com.openmrs.android_sdk.library.models.ProgramCreate;
 import com.openmrs.android_sdk.library.models.ProgramGet;
+import com.openmrs.android_sdk.library.models.ProgramEnrollment;
+import com.openmrs.android_sdk.library.models.ProgramEnrollmentCreate;
+import com.openmrs.android_sdk.library.models.ProgramEnrollmentUpdate;
 import com.openmrs.android_sdk.library.models.Provider;
 import com.openmrs.android_sdk.library.models.RecurringAppointmentPayload;
 import com.openmrs.android_sdk.library.models.Resource;
@@ -82,6 +85,7 @@ import com.openmrs.android_sdk.library.models.SystemSetting;
 import com.openmrs.android_sdk.library.models.User;
 import com.openmrs.android_sdk.library.models.Visit;
 import com.openmrs.android_sdk.library.models.VisitType;
+import com.openmrs.android_sdk.library.models.VisitAttributeType;
 
 /**
  * The interface Rest api.
@@ -1335,4 +1339,46 @@ public interface RestApi {
      */
     @DELETE("program/{uuid}")
     Call<ProgramGet> deleteProgram(@Path("uuid") String uuid);
+
+    /**
+     * Gets the visit attribute types defined on the server - the extra questions a visit can carry
+     * (e.g. Punctuality). Which of them the start-visit form actually asks is configured in
+     * {@code ApplicationConstants.VisitAttributeTypes.FORM_ATTRIBUTE_TYPE_UUIDS}.
+     *
+     * @param representation the representation to return
+     * @return the visit attribute types
+     */
+    @GET("visitattributetype")
+    Call<Results<VisitAttributeType>> getVisitAttributeTypes(@Query("v") String representation);
+
+    /**
+     * Opens a program enrolment episode for a patient.
+     *
+     * @param programEnrollment the episode to open
+     * @return the created episode
+     */
+    @POST("programenrollment")
+    Call<ProgramEnrollment> createProgramEnrollment(@Body ProgramEnrollmentCreate programEnrollment);
+
+    /**
+     * Edits a program enrolment episode - in practice, completing it when its visit ends.
+     *
+     * @param uuid the uuid of the episode
+     * @param programEnrollment the new enrolment/completion dates
+     * @return the updated episode
+     */
+    @POST("programenrollment/{uuid}")
+    Call<ProgramEnrollment> updateProgramEnrollment(@Path("uuid") String uuid,
+                                                    @Body ProgramEnrollmentUpdate programEnrollment);
+
+    /**
+     * Gets a patient's program enrolment episodes.
+     *
+     * @param patientUuid the uuid of the patient
+     * @param representation the representation to return
+     * @return the patient's episodes
+     */
+    @GET("programenrollment")
+    Call<Results<ProgramEnrollment>> getProgramEnrollments(@Query("patient") String patientUuid,
+                                                           @Query("v") String representation);
 }

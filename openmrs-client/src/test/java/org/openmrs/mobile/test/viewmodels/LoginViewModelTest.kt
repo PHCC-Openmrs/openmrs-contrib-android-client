@@ -7,6 +7,8 @@ import com.openmrs.android_sdk.library.api.repository.ConceptRepository
 import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
 import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
+import com.openmrs.android_sdk.library.api.repository.ProgramRepository
+import com.openmrs.android_sdk.library.api.repository.VisitAttributeTypeRepository
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.LocationDAO
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
@@ -66,6 +68,12 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
     @Mock
     lateinit var conceptRepository: ConceptRepository
 
+    @Mock
+    lateinit var programRepository: ProgramRepository
+
+    @Mock
+    lateinit var visitAttributeTypeRepository: VisitAttributeTypeRepository
+
     lateinit var viewModel: LoginViewModel
 
     private val initialUrl = "http://www.some_server_url.com"
@@ -87,7 +95,7 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         BCryptMock = Mockito.mockStatic(BCrypt::class.java)
 
         viewModel = LoginViewModel(loginRepository, visitRepository, locationRepository, locationDAO, userService,
-                privilegeRepository, conceptRepository)
+                privilegeRepository, conceptRepository, programRepository, visitAttributeTypeRepository)
     }
 
     @After
@@ -312,6 +320,10 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         `when`(OpenmrsAndroid.getServerUrl()).thenReturn(url)
         `when`(loginRepository.getSession(username, password)).thenReturn(Observable.just(session))
         `when`(visitRepository.getVisitType()).thenReturn(Observable.just(visitType))
+        // A successful login warms the start-visit form's caches; leaving these unstubbed would
+        // have the prefetch fail rather than run.
+        `when`(programRepository.getServicePrograms(null)).thenReturn(Observable.just(emptyList()))
+        `when`(visitAttributeTypeRepository.getFormVisitAttributeTypes()).thenReturn(Observable.just(emptyList()))
 
         viewModel.login(username, password, url, false)
 

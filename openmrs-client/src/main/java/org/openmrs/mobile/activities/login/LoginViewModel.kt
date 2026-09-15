@@ -9,6 +9,8 @@ import com.openmrs.android_sdk.library.api.repository.ConceptRepository
 import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
 import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
+import com.openmrs.android_sdk.library.api.repository.ProgramRepository
+import com.openmrs.android_sdk.library.api.repository.VisitAttributeTypeRepository
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.LocationDAO
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
@@ -37,7 +39,9 @@ class LoginViewModel @Inject constructor(
         private val locationDAO: LocationDAO,
         private val userService: UserService,
         private val privilegeRepository: PrivilegeRepository,
-        private val conceptRepository: ConceptRepository
+        private val conceptRepository: ConceptRepository,
+        private val programRepository: ProgramRepository,
+        private val visitAttributeTypeRepository: VisitAttributeTypeRepository
 ) : BaseViewModel<ResultType>() {
 
     /**
@@ -131,10 +135,45 @@ class LoginViewModel @Inject constructor(
                 }
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        { setContent(it) },
+                        {
+                            setContent(it)
+                            if (it == ResultType.LoginSuccess) prefetchVisitFormMetadata()
+                        },
                         { setError(it, OperationType.Login) }
                 )
         )
+    }
+
+    /**
+     * Warms the caches the start-visit form reads from - the services on offer and the visit
+     * attribute types with their answers - so that form can be filled in from the first time the
+     * device goes offline, rather than only after it has been opened online once.
+     *
+     * Deliberately fire-and-forget and off the login path: a user who cannot reach this metadata
+     * can still log in and work, the form falls back to whatever is already cached, and it
+     * refreshes itself anyway whenever it is opened online.
+     */
+    private fun prefetchVisitFormMetadata() {
+        // Wrapped whole: this runs inside the login subscription's onNext, so anything thrown here
+        // - not just a failed request - would otherwise be routed to that subscription's error
+        // handler and reported as a failed login.
+        try {
+            // Null location: the point here is to fill the cache, not to answer "which services
+            // are offered where" - the form applies the location restrictions itself, against the
+            // location actually chosen on it.
+            addSubscription(programRepository.getServicePrograms(null)
+                    .subscribe({}, { logPrefetchFailure("services", it) })
+            )
+            addSubscription(visitAttributeTypeRepository.getFormVisitAttributeTypes()
+                    .subscribe({}, { logPrefetchFailure("visit attribute types", it) })
+            )
+        } catch (e: Exception) {
+            logPrefetchFailure("start visit form data", e)
+        }
+    }
+
+    private fun logPrefetchFailure(what: String, throwable: Throwable) {
+        OpenmrsAndroid.getOpenMRSLogger()?.w("Could not prefetch the $what: " + throwable.message)
     }
 
     fun saveLocationsToDatabase(locationList: List<LocationEntity>, selectedLocation: String) {

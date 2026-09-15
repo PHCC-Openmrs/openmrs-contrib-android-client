@@ -9,8 +9,13 @@
  */
 package com.openmrs.android_sdk.library.models
 
+import com.google.gson.annotations.Expose
+
+// @Expose on every field is required: the app's shared Gson (RestServiceBuilder) is built with
+// excludeFieldsWithoutExposeAnnotation(), so a field without it is silently left at its default
+// (null, for these non-nullable Kotlin properties) on every response - not skipped, blanked.
 data class ProgramGet(
-    var uuid: String,
-    var name: String,
-    var allWorkflows: List<WorkflowGet>
+    @Expose var uuid: String,
+    @Expose var name: String,
+    @Expose var allWorkflows: List<WorkflowGet>
 )

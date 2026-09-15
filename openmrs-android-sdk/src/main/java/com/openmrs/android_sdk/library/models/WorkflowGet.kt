@@ -9,9 +9,13 @@
  */
 package com.openmrs.android_sdk.library.models
 
+import com.google.gson.annotations.Expose
+
+// See ProgramGet: @Expose is required on every field for the shared (excludeFieldsWithoutExpose)
+// Gson instance to populate it at all.
 data class WorkflowGet(
-    var uuid: String,
-    var retired: Boolean,
-    var programConcept: ProgramConcept,
-    var states: List<StateGet>
+    @Expose var uuid: String,
+    @Expose var retired: Boolean,
+    @Expose var programConcept: ProgramConcept,
+    @Expose var states: List<StateGet>
 )

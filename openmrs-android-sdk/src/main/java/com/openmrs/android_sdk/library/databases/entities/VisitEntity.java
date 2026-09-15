@@ -23,6 +23,22 @@ public class VisitEntity extends Resource {
     private String startDate;
     @ColumnInfo(name = "stop_date")
     private String stopDate;
+    /**
+     * UUID of the visit's location. {@link #visitPlace} only ever held the location's display
+     * text, which is enough to show a visit but not to post one, nor to enrol the patient at that
+     * location - both need the uuid, including for a visit started offline and pushed later.
+     */
+    @ColumnInfo(name = "visit_location_uuid")
+    private String visitLocationUuid;
+    /**
+     * The visit's attributes (Service, Punctuality, ...) as a JSON array of
+     * {@code {"attributeType": uuid, "value": string}} objects - see
+     * {@code AppDatabaseHelper#serializeVisitAttributes}. Held as one column rather than a table
+     * of its own: they are only ever read and written together with the visit itself, and they go
+     * to the server inline in the visit's own payload.
+     */
+    @ColumnInfo(name = "attributes")
+    private String attributes;
 
     /**
      * Instantiates a new Visit entity.
@@ -73,6 +89,42 @@ public class VisitEntity extends Resource {
      */
     public void setStopDate(String stopDate) {
         this.stopDate = stopDate;
+    }
+
+    /**
+     * Sets visit location uuid.
+     *
+     * @param visitLocationUuid the visit location uuid
+     */
+    public void setVisitLocationUuid(String visitLocationUuid) {
+        this.visitLocationUuid = visitLocationUuid;
+    }
+
+    /**
+     * Gets visit location uuid.
+     *
+     * @return the visit location uuid
+     */
+    public String getVisitLocationUuid() {
+        return visitLocationUuid;
+    }
+
+    /**
+     * Sets the visit's attributes, as a JSON array.
+     *
+     * @param attributes the attributes
+     */
+    public void setAttributes(String attributes) {
+        this.attributes = attributes;
+    }
+
+    /**
+     * Gets the visit's attributes, as a JSON array.
+     *
+     * @return the attributes
+     */
+    public String getAttributes() {
+        return attributes;
     }
 
     /**

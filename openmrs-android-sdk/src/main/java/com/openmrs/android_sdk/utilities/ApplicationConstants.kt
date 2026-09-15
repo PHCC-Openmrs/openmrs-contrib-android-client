@@ -308,4 +308,67 @@ object ApplicationConstants {
         const val SELECT_ALLERGEN = "Select Allergen"
         const val SELECT_REACTION = "Reactions (you can select multiple)"
     }
+
+    /**
+     * The extra questions the start-visit form asks about a visit, and how they are identified.
+     *
+     * Mirrors the web client: [FORM_ATTRIBUTE_TYPE_UUIDS] is this deployment's
+     * `@openmrs/esm-patient-chart-app` `visitAttributeTypes` configuration (only the types listed
+     * there are shown, so server-side types the clinic does not use stay out of the form), and
+     * [SERVICE_UUID] is the dedicated "Service" type the form writes its service selection to.
+     */
+    object VisitAttributeTypes {
+        /**
+         * The "Service" visit attribute type: which service(s) - i.e. programs - a visit is for.
+         * The type allows only one occurrence, so several selected services are stored as one
+         * comma-separated list of program uuids, exactly as the web client stores them.
+         */
+        const val SERVICE_UUID = "487b03fe-8034-4e95-ab67-bac9f2d7a27b"
+
+        /** Coded (concept) attribute type: whether the patient arrived on time. */
+        const val PUNCTUALITY_UUID = "57ea0cbb-064f-4d09-8cf4-e8228700491c"
+
+        /** The configured attribute types shown on the start-visit form, in display order. */
+        @JvmField
+        val FORM_ATTRIBUTE_TYPE_UUIDS = listOf(PUNCTUALITY_UUID)
+
+        /** Of [FORM_ATTRIBUTE_TYPE_UUIDS], those the form refuses to submit without. */
+        @JvmField
+        val REQUIRED_ATTRIBUTE_TYPE_UUIDS = emptyList<String>()
+
+        /** Separator for the several program uuids packed into one [SERVICE_UUID] value. */
+        const val SERVICE_VALUE_SEPARATOR = ","
+    }
+
+    /** OpenMRS custom datatypes a visit attribute type can be backed by, deciding how it renders. */
+    object VisitAttributeDatatypes {
+        const val CONCEPT = "org.openmrs.customdatatype.datatype.ConceptDatatype"
+        const val FREE_TEXT = "org.openmrs.customdatatype.datatype.FreeTextDatatype"
+        const val LONG_FREE_TEXT = "org.openmrs.customdatatype.datatype.LongFreeTextDatatype"
+        const val FLOAT = "org.openmrs.customdatatype.datatype.FloatDatatype"
+        const val BOOLEAN = "org.openmrs.customdatatype.datatype.BooleanDatatype"
+        const val DATE = "org.openmrs.customdatatype.datatype.DateDatatype"
+    }
+
+    /**
+     * Restricts a service (program) to the locations it is actually offered at, keyed by program
+     * uuid - OpenMRS programs have no location field of their own, so this mirrors the web
+     * client's `programsLocationRestrictions` configuration one-for-one.
+     *
+     * A program with no entry here, or an entry with no locations, is offered everywhere.
+     */
+    object ProgramLocationRestrictions {
+        private const val DEIR_AL_BALAH_PHCC_UUID = "ba34b45c-0a0d-4000-9624-ab6fd419f778"
+
+        @JvmField
+        val RESTRICTIONS: Map<String, List<String>> = mapOf(
+            // Sexual Reproductive Health (SRH)
+            "f73376c9-7bdf-44e5-ba97-ddf4db5bc9f9" to listOf(DEIR_AL_BALAH_PHCC_UUID),
+            // Primary Health Care
+            "bd6b8c0a-49c9-4f98-afea-8b8fcd999688" to listOf(DEIR_AL_BALAH_PHCC_UUID),
+            // Pediatric Consultation
+            "9138885e-f9f4-4981-b1fb-ef3d022228bd" to listOf(DEIR_AL_BALAH_PHCC_UUID)
+            // Nutrition Registration is deliberately absent: it is offered at every location.
+        )
+    }
 }

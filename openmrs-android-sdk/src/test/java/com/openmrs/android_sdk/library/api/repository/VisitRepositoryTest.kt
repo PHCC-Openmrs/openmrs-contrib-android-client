@@ -18,6 +18,8 @@ import com.openmrs.android_sdk.library.dao.EncounterRoomDAO
 import com.openmrs.android_sdk.library.dao.VisitRoomDAO
 import com.openmrs.android_sdk.library.dao.EncounterTypeRoomDAO
 import com.openmrs.android_sdk.library.dao.ObservationRoomDAO
+import com.openmrs.android_sdk.library.dao.PatientRoomDAO
+import com.openmrs.android_sdk.library.dao.ProgramEnrollmentRoomDAO
 import com.openmrs.android_sdk.library.dao.VisitDAO
 import com.openmrs.android_sdk.library.databases.AppDatabase
 import com.openmrs.android_sdk.library.models.Observation
@@ -72,6 +74,10 @@ class VisitRepositoryTest {
     val visitRoomDAO: VisitRoomDAO = mockk()
     val encounterTypeRoomDAO: EncounterTypeRoomDAO = mockk()
     val observationRoomDAO: ObservationRoomDAO = mockk()
+    // VisitRepository now reaches ProgramEnrollmentRepository, whose PatientDAO resolves this in
+    // its constructor - so the Hilt graph touches it before any test body runs.
+    val patientRoomDAO: PatientRoomDAO = mockk(relaxed = true)
+    val programEnrollmentRoomDAO: ProgramEnrollmentRoomDAO = mockk(relaxed = true)
 
     @Before
     fun init() {
@@ -91,6 +97,8 @@ class VisitRepositoryTest {
         every { appDatabase.visitRoomDAO() } returns visitRoomDAO
         every { appDatabase.encounterTypeRoomDAO() } returns encounterTypeRoomDAO
         every { appDatabase.observationRoomDAO() } returns observationRoomDAO
+        every { appDatabase.patientRoomDAO() } returns patientRoomDAO
+        every { appDatabase.programEnrollmentRoomDAO() } returns programEnrollmentRoomDAO
 
         mockWebServer = MockWebServer()
         mockWebServer.start()

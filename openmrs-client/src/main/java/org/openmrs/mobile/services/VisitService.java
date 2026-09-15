@@ -73,9 +73,10 @@ public class VisitService extends IntentService {
                 }
             }
         } finally {
-            // Chain straight into EncounterService, same reasoning as PatientService chaining into
-            // this service: one trigger should cascade through the whole dependency chain.
-            startService(new Intent(this, EncounterService.class));
+            // Chain straight into ProgramEnrollmentService (which in turn chains into
+            // EncounterService), same reasoning as PatientService chaining into this service: one
+            // trigger should cascade through the whole dependency chain.
+            startService(new Intent(this, ProgramEnrollmentService.class));
         }
     }
 }

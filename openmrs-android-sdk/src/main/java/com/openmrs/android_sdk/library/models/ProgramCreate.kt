@@ -9,10 +9,15 @@
  */
 package com.openmrs.android_sdk.library.models
 
+import com.google.gson.annotations.Expose
+
+// See ProgramGet: @Expose is required on every field, here for the *outgoing* direction - without
+// it, POST/PUT program requests serialize to "{}" against the shared (excludeFieldsWithoutExpose)
+// Gson instance.
 data class ProgramCreate(
-    var name: String,
-    var description: String,
-    var retired: Boolean,
-    var concept: String,
-    var outcomesConcept: String?
+    @Expose var name: String,
+    @Expose var description: String,
+    @Expose var retired: Boolean,
+    @Expose var concept: String,
+    @Expose var outcomesConcept: String?
 )

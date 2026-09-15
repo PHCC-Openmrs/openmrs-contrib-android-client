@@ -27,10 +27,12 @@ import com.google.gson.GsonBuilder;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.models.Observation;
 import com.openmrs.android_sdk.library.models.PersonAttribute;
+import com.openmrs.android_sdk.library.models.VisitAttribute;
 import com.openmrs.android_sdk.library.models.Resource;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.ObservationDeserializer;
 import com.openmrs.android_sdk.utilities.PersonAttributeDeserializer;
+import com.openmrs.android_sdk.utilities.VisitAttributeDeserializer;
 import com.openmrs.android_sdk.utilities.ResourceSerializer;
 
 /**
@@ -158,6 +160,7 @@ public class RestServiceBuilder {
                 .registerTypeHierarchyAdapter(Resource.class, new ResourceSerializer())
                 .registerTypeHierarchyAdapter(Observation.class, new ObservationDeserializer())
                 .registerTypeHierarchyAdapter(PersonAttribute.class, new PersonAttributeDeserializer())
+                .registerTypeHierarchyAdapter(VisitAttribute.class, new VisitAttributeDeserializer())
                 .create();
 
         return GsonConverterFactory.create(myGson);
