@@ -18,6 +18,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 import android.os.Bundle;
 import android.view.Menu;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.widget.Toolbar;
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
@@ -37,6 +38,8 @@ public class MatchingPatientsActivity extends ACBaseActivity {
 
         ActivityMatchingPatientsBinding binding = ActivityMatchingPatientsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+
+        getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
 
         Toolbar toolbar = binding.toolbar;
 
@@ -71,9 +74,11 @@ public class MatchingPatientsActivity extends ACBaseActivity {
         return true;
     }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        OpenmrsAndroid.setSyncState(false);
-    }
+    private final OnBackPressedCallback onBackPressedCallback = new OnBackPressedCallback(true) {
+        @Override
+        public void handleOnBackPressed() {
+            OpenmrsAndroid.setSyncState(false);
+            finish();
+        }
+    };
 }

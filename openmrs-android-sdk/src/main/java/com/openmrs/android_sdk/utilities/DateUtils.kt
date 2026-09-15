@@ -20,6 +20,7 @@ import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import org.joda.time.format.DateTimeFormatter
 import java.text.DateFormat
+import java.text.ParsePosition
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.TimeZone
@@ -77,13 +78,17 @@ object DateUtils {
         for (format in formats) {
             try {
                 val sdf = SimpleDateFormat(format)
+                // Lenient parsing rolls out-of-range fields over instead of rejecting them, so
+                // "1988/12/20" read as dd/MM/yyyy silently becomes a date in year 26 rather than
+                // falling through to a format that actually matches.
+                sdf.isLenient = false
                 val date = sdf.parse(dateAsString)
                 if (date != null) return date.time
             } catch (e: Exception) {
             }
         }
         
-        openMRSLogger.w("Failed to parse date :$dateAsString")
+        openMRSLogger?.w("Failed to parse date :$dateAsString")
         return null
     }
 
@@ -196,8 +201,13 @@ object DateUtils {
         if (dateAsString == null || format == null) return false
         try {
             val simpleDateFormat = SimpleDateFormat(format)
-            val date = simpleDateFormat.parse(dateAsString)
-            return date != null
+            simpleDateFormat.isLenient = false
+            val position = ParsePosition(0)
+            val date = simpleDateFormat.parse(dateAsString, position)
+            // parse() stops once the pattern is satisfied and ignores whatever follows, so a
+            // leftover remainder means the string does not really match the format - otherwise
+            // "1977-03-26T00:00" would validate as "yyyy-MM-dd".
+            return date != null && position.index == dateAsString.length
         } catch (exception: Exception) {
             return false
         }

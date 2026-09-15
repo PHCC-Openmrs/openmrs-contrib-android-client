@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import com.openmrs.android_sdk.library.models.ResultType
@@ -37,6 +38,8 @@ class ProviderDashboardActivity : ACBaseActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityProviderDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
         supportActionBar?.run {
             elevation = 0f
@@ -132,13 +135,14 @@ class ProviderDashboardActivity : ACBaseActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        if (isActionFABOpen) {
-            closeFABMenu()
-            animateFAB(true)
-        } else {
-            super.onBackPressed()
-            finish()
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (isActionFABOpen) {
+                closeFABMenu()
+                animateFAB(true)
+            } else {
+                finish()
+            }
         }
     }
 

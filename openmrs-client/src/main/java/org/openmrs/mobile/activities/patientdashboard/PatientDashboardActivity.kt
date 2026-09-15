@@ -18,6 +18,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.viewModels
 import androidx.lifecycle.Observer
 import androidx.viewpager.widget.ViewPager
@@ -55,6 +56,8 @@ class PatientDashboardActivity : ACBaseActivity() {
         super.onCreate(savedInstanceState)
         _binding = ActivityPatientDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
         with(supportActionBar!!) {
             elevation = 0f
@@ -287,11 +290,10 @@ class PatientDashboardActivity : ACBaseActivity() {
         return true
     }
 
-    override fun onBackPressed() {
-        if (isActionFABOpen) closeFABs()
-        else {
-            super.onBackPressed()
-            finish()
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (isActionFABOpen) closeFABs()
+            else finish()
         }
     }
 

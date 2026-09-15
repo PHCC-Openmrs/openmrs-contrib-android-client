@@ -43,7 +43,7 @@ class PatientDashboardVitalsViewModelTest : ACUnitTestBaseRx() {
         super.setUp()
         savedStateHandle = SavedStateHandle().apply { set(PATIENT_ID_BUNDLE, ID) }
         viewModel = PatientDashboardVitalsViewModel(patientDAO, encounterDAO, savedStateHandle)
-        patient = createPatient(ID.toLong())
+        patient = createPatient(ID)
         Mockito.`when`(patientDAO.findPatientByID(ID)).thenReturn(patient)
     }
 
@@ -83,7 +83,7 @@ class PatientDashboardVitalsViewModelTest : ACUnitTestBaseRx() {
     }
 
     companion object {
-        const val ID = "1"
+        const val ID = 1L
     }
 
 }

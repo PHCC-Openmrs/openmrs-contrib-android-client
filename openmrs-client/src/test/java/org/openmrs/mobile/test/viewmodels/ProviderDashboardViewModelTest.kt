@@ -33,7 +33,10 @@ class ProviderDashboardViewModelTest : ACUnitTestBaseRx() {
     @Before
     override fun setUp() {
         super.setUp()
-        val savedStateHandle = SavedStateHandle().apply { set(PROVIDER_BUNDLE, Provider()) }
+        // A uuid is required: the ViewModel passes provider.uuid straight through, and
+        // Mockito's any() does not match a null argument.
+        val provider = Provider().apply { uuid = "provider-uuid" }
+        val savedStateHandle = SavedStateHandle().apply { set(PROVIDER_BUNDLE, provider) }
         viewModel = ProviderDashboardViewModel(providerRepository, savedStateHandle)
     }
 

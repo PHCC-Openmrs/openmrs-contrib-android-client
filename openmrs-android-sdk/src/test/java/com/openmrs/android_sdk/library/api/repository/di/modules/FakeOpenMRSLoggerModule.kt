@@ -29,7 +29,9 @@ import javax.inject.Singleton
     replaces = [OpenMRSLoggerModule::class]
 )
 object FakeOpenMRSLoggerModule {
+    // Relaxed so a logging call on an error path reports the underlying failure instead of
+    // replacing it with "no answer found for: OpenMRSLogger.e(...)".
     @Provides
     @Singleton
-    fun provideLogger(): OpenMRSLogger = mockk()
+    fun provideLogger(): OpenMRSLogger = mockk(relaxed = true)
 }

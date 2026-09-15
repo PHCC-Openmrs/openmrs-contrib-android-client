@@ -15,6 +15,7 @@ package org.openmrs.mobile.activities.addeditpatient
 
 import android.content.DialogInterface
 import android.os.Bundle
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import dagger.hilt.android.AndroidEntryPoint
@@ -30,6 +31,7 @@ class AddEditPatientActivity : ACBaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_patient_info)
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
         supportActionBar?.run {
             elevation = 0f
@@ -49,9 +51,11 @@ class AddEditPatientActivity : ACBaseActivity() {
         }
     }
 
-    override fun onBackPressed() {
-        if (addEditPatientFragment!!.isAnyFieldNotEmpty()) showInfoLostDialog()
-        else if (!addEditPatientFragment!!.isLoading()) super.onBackPressed()
+    private val onBackPressedCallback = object : OnBackPressedCallback(true) {
+        override fun handleOnBackPressed() {
+            if (addEditPatientFragment!!.isAnyFieldNotEmpty()) showInfoLostDialog()
+            else if (!addEditPatientFragment!!.isLoading()) finish()
+        }
     }
 
     /**
@@ -65,7 +69,6 @@ class AddEditPatientActivity : ACBaseActivity() {
                 .setPositiveButton(R.string.dialog_button_stay) { dialog: DialogInterface, id: Int -> dialog.cancel() }
                 .setNegativeButton(R.string.dialog_button_leave) { _: DialogInterface?, id: Int ->
                     // Finish the activity
-                    super.onBackPressed()
                     finish()
                 }
                 .create()

@@ -3,8 +3,10 @@ package org.openmrs.mobile.test.viewmodels
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.RestServiceBuilder
+import com.openmrs.android_sdk.library.api.repository.ConceptRepository
 import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
+import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.LocationDAO
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity
@@ -58,6 +60,12 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
     @Mock
     lateinit var userService: UserService
 
+    @Mock
+    lateinit var privilegeRepository: PrivilegeRepository
+
+    @Mock
+    lateinit var conceptRepository: ConceptRepository
+
     lateinit var viewModel: LoginViewModel
 
     private val initialUrl = "http://www.some_server_url.com"
@@ -78,7 +86,8 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         NetworkUtilsMock = Mockito.mockStatic(NetworkUtils::class.java)
         BCryptMock = Mockito.mockStatic(BCrypt::class.java)
 
-        viewModel = LoginViewModel(loginRepository, visitRepository, locationRepository, locationDAO, userService)
+        viewModel = LoginViewModel(loginRepository, visitRepository, locationRepository, locationDAO, userService,
+                privilegeRepository, conceptRepository)
     }
 
     @After

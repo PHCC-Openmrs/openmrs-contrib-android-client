@@ -67,7 +67,7 @@ class SyncedPatientsActivity : ACBaseActivity() {
                 val intent = Intent(this, LastViewedPatientsActivity::class.java)
                 startActivity(intent)
             }
-            android.R.id.home -> onBackPressed()
+            android.R.id.home -> onBackPressedDispatcher.onBackPressed()
             else -> {
             }
         }

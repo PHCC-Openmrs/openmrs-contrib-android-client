@@ -18,6 +18,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.TaskStackBuilder
 import org.openmrs.mobile.R
@@ -36,10 +37,11 @@ object NotificationUtil {
         val stackBuilder = TaskStackBuilder.create(OpenMRS.getInstance())
         stackBuilder.addParentStack(DashboardActivity::class.java)
         stackBuilder.addNextIntent(resultIntent)
-        val resultPendingIntent = stackBuilder.getPendingIntent(
-                0,
-                PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        var pendingIntentFlags = PendingIntent.FLAG_UPDATE_CURRENT
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            pendingIntentFlags = pendingIntentFlags or PendingIntent.FLAG_IMMUTABLE
+        }
+        val resultPendingIntent = stackBuilder.getPendingIntent(0, pendingIntentFlags)
         mBuilder.setContentIntent(resultPendingIntent)
         mBuilder.setAutoCancel(true)
         val mNotificationManager = OpenMRS.getInstance().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

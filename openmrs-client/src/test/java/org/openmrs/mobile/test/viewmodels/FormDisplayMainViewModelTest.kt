@@ -1,7 +1,9 @@
 package org.openmrs.mobile.test.viewmodels
 
+import android.content.Context
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import androidx.lifecycle.SavedStateHandle
+import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.repository.EncounterRepository
 import com.openmrs.android_sdk.library.api.repository.FormRepository
 import com.openmrs.android_sdk.library.dao.PatientDAO
@@ -15,15 +17,21 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NA
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.InputField
 import com.openmrs.android_sdk.utilities.SelectOneField
+import com.openmrs.android_sdk.utilities.ToastUtil
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
+import org.mockito.MockedStatic
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.openmrs.mobile.activities.formdisplay.FormDisplayMainViewModel
 import org.openmrs.mobile.test.ACUnitTestBaseRx
@@ -50,19 +58,33 @@ class FormDisplayMainViewModelTest : ACUnitTestBaseRx() {
 
     private val formResource = FormResourceEntity().apply { uuid = "UUUUU" }
 
+    private lateinit var openmrsAndroidMock: MockedStatic<OpenmrsAndroid>
+
     @Before
     override fun setUp() {
         super.setUp()
+        // submitForm surfaces failures through ToastUtil, which dereferences the application
+        // context and then builds a real Toast. Supply a context so the !! holds, and mark the
+        // app as not visible so ToastUtil takes its existing early-return instead.
+        openmrsAndroidMock = Mockito.mockStatic(OpenmrsAndroid::class.java)
+        `when`(OpenmrsAndroid.getInstance()).thenReturn(mock(Context::class.java))
+        ToastUtil.setAppVisible(false)
         savedStateHandle = SavedStateHandle().apply {
             set(PATIENT_ID_BUNDLE, 88L)
             set(ENCOUNTERTYPE, "test encounter type")
             set(FORM_NAME, "test form name")
         }
 
-        `when`(patientDAO.findPatientByID(anyString())).thenReturn(Patient())
+        `when`(patientDAO.findPatientByID(anyLong())).thenReturn(Patient())
         `when`(formRepository.fetchFormResourceByName(anyString())).thenReturn(Observable.just(formResource))
 
         viewModel = FormDisplayMainViewModel(patientDAO, formRepository, encounterRepository, savedStateHandle)
+    }
+
+    @After
+    fun closeStaticMocks() {
+        ToastUtil.setAppVisible(true)
+        openmrsAndroidMock.close()
     }
 
     @Test
@@ -77,12 +99,12 @@ class FormDisplayMainViewModelTest : ACUnitTestBaseRx() {
         )
 
         `when`(encounterRepository.saveEncounter(any())).thenReturn(Observable.just(ResultType.EncounterSubmissionSuccess))
-        viewModel.submitForm(inputFields, radioGroupFields).observeForever { result ->
+        viewModel.submitForm(inputFields, radioGroupFields, emptyList(), emptyList(), emptyList()).observeForever { result ->
             assertEquals(ResultType.EncounterSubmissionSuccess, result)
         }
 
         `when`(encounterRepository.saveEncounter(any())).thenReturn(Observable.just(ResultType.EncounterSubmissionError))
-        viewModel.submitForm(inputFields, radioGroupFields).observeForever { result ->
+        viewModel.submitForm(inputFields, radioGroupFields, emptyList(), emptyList(), emptyList()).observeForever { result ->
             assertEquals(ResultType.EncounterSubmissionError, result)
         }
     }
@@ -102,12 +124,12 @@ class FormDisplayMainViewModelTest : ACUnitTestBaseRx() {
         )
 
         `when`(encounterRepository.updateEncounter(anyString(), any())).thenReturn(Observable.just(Unit))
-        viewModel.submitForm(inputFields, radioGroupFields).observeForever { result ->
+        viewModel.submitForm(inputFields, radioGroupFields, emptyList(), emptyList(), emptyList()).observeForever { result ->
             assertEquals(ResultType.EncounterSubmissionSuccess, result)
         }
 
         `when`(encounterRepository.updateEncounter(anyString(), any())).thenReturn(Observable.error(Throwable()))
-        viewModel.submitForm(inputFields, radioGroupFields).observeForever { result ->
+        viewModel.submitForm(inputFields, radioGroupFields, emptyList(), emptyList(), emptyList()).observeForever { result ->
             assertEquals(ResultType.EncounterSubmissionError, result)
         }
     }

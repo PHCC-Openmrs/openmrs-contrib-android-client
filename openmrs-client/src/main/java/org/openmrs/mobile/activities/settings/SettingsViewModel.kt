@@ -64,7 +64,7 @@ class SettingsViewModel @Inject constructor(
         val packageManager = context.packageManager
         val packageName = context.packageName
         try {
-            versionName = packageManager.getPackageInfo(packageName, 0).versionName
+            versionName = packageManager.getPackageInfo(packageName, 0).versionName ?: ""
             val ai = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
             buildVersion = ai.metaData.getInt("buildVersion")
         } catch (e: PackageManager.NameNotFoundException) {

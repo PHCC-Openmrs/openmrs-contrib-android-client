@@ -14,13 +14,14 @@
     -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="org.openmrs.mobile">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -43,6 +44,7 @@
             android:theme="@style/AppThemeOrig" />
         <activity
             android:name=".activities.introduction.SplashActivity"
+            android:exported="true"
             android:noHistory="true"
             android:theme="@style/AppTheme">
             <intent-filter>
@@ -64,7 +66,20 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".services.ConceptDownloadService" />
+        <service
+            android:name=".services.ConceptDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
         <activity
             android:name=".activities.dashboard.DashboardActivity"
@@ -77,6 +92,7 @@
         <activity
             android:name=".activities.syncedpatients.SyncedPatientsActivity"
             android:configChanges="keyboardHidden|screenSize"
+            android:exported="false"
             android:label="@string/action_synced_patients"
             android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
@@ -120,6 +136,7 @@
         <activity
             android:name=".activities.activevisits.ActiveVisitsActivity"
             android:configChanges="keyboardHidden|screenSize"
+            android:exported="false"
             android:label="@string/action_active_visits"
             android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
@@ -228,6 +245,7 @@
         <activity
             android:name=".activities.lastviewedpatients.LastViewedPatientsActivity"
             android:configChanges="keyboardHidden|screenSize"
+            android:exported="false"
             android:label="@string/action_download_patients"
             android:launchMode="singleTop"
             android:theme="@style/AppThemeOrig">
@@ -333,10 +351,21 @@
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
 
+        <!--
+            OpenMRS implements Configuration.Provider, so WorkManager's own initializer must not
+            run. Since WorkManager 2.6 it registers through App Startup rather than its own
+            provider, so only removing this meta-data entry actually disables it.
+        -->
         <provider
-            android:name="androidx.work.impl.WorkManagerInitializer"
-            android:authorities="${applicationId}.workmanager-init"
-            tools:node="remove"/>
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>

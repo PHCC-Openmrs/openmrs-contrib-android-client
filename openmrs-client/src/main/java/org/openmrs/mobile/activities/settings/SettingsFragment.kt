@@ -13,11 +13,13 @@
  */
 package org.openmrs.mobile.activities.settings
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
@@ -30,6 +32,8 @@ import android.widget.AdapterView.OnItemSelectedListener
 import android.widget.ArrayAdapter
 import android.widget.CompoundButton
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.viewModels
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.snackbar.Snackbar
@@ -116,14 +120,30 @@ class SettingsFragment : BaseFragment() {
         }
     }
 
+    private val notificationPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { startConceptDownloadService() }
+
     private fun setupConceptsView() = with(binding) {
         languageApplyButton.setOnClickListener { requireActivity().recreate() }
         conceptsDownloadButton.setOnClickListener {
             conceptsDownloadButton.isEnabled = false
-            Intent(activity, ConceptDownloadService::class.java)
-                    .apply { action = START_CONCEPT_DOWNLOAD_ACTION }
-                    .let { activity?.startService(it) }
+            if (needsNotificationPermission()) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                startConceptDownloadService()
+            }
         }
+    }
+
+    private fun needsNotificationPermission(): Boolean =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) !=
+                    PackageManager.PERMISSION_GRANTED
+
+    private fun startConceptDownloadService() {
+        Intent(activity, ConceptDownloadService::class.java)
+                .apply { action = START_CONCEPT_DOWNLOAD_ACTION }
+                .let { activity?.startService(it) }
     }
 
     private fun addBuildVersionInfo() {

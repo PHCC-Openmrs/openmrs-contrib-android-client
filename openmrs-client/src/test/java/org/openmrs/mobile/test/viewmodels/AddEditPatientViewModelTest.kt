@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
@@ -57,7 +58,7 @@ class AddEditPatientViewModelTest : ACUnitTestBaseRx() {
     @Before
     override fun setUp() {
         super.setUp()
-        `when`(patientDAO.findPatientByID(anyString())).thenReturn(Patient())
+        `when`(patientDAO.findPatientByID(anyLong())).thenReturn(Patient())
         savedStateHandle = SavedStateHandle().apply { set(COUNTRIES_BUNDLE, countries) }
     }
 
@@ -103,7 +104,7 @@ class AddEditPatientViewModelTest : ACUnitTestBaseRx() {
 
     @Test
     fun `confirmPatient should update existing patient when its id is passed`() {
-        savedStateHandle.apply { set(PATIENT_ID_BUNDLE, "1L") }
+        savedStateHandle.apply { set(PATIENT_ID_BUNDLE, 1L) }
         viewModel = AddEditPatientViewModel(patientDAO, patientRepository, conceptRepository, savedStateHandle)
         `when`(patientRepository.updatePatient(any<Patient>())).thenReturn(Observable.just(PatientUpdateSuccess))
         with(viewModel) {

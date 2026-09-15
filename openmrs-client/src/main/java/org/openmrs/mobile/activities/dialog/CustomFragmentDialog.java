@@ -177,7 +177,7 @@ public class CustomFragmentDialog extends DialogFragment {
             if (keyCode == KeyEvent.KEYCODE_BACK && getActivity().getClass().equals(LoginActivity.class)) {
                 if (OpenmrsAndroid.getServerUrl().equals(ApplicationConstants.EMPTY_STRING)) {
                     OpenmrsAndroid.getOpenMRSLogger().d(getString(R.string.application_exit_logger_message));
-                    getActivity().onBackPressed();
+                    getActivity().getOnBackPressedDispatcher().onBackPressed();
                     dismiss();
                 } else {
                     ((LoginFragment) getActivity()

@@ -36,7 +36,7 @@ class PatientDashboardDetailsViewModelTest : ACUnitTestBaseRx() {
         super.setUp()
         savedStateHandle = SavedStateHandle().apply { set(PATIENT_ID_BUNDLE, ID) }
         viewModel = PatientDashboardDetailsViewModel(patientDAO, savedStateHandle)
-        patient = createPatient(ID.toLong())
+        patient = createPatient(ID)
     }
 
     @Test
@@ -58,6 +58,6 @@ class PatientDashboardDetailsViewModelTest : ACUnitTestBaseRx() {
     }
 
     companion object {
-        const val ID = "1"
+        const val ID = 1L
     }
 }

@@ -25,7 +25,6 @@ import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.os.StrictMode
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
@@ -46,6 +45,7 @@ import androidx.activity.result.contract.ActivityResultContracts.GetContent
 import androidx.activity.result.contract.ActivityResultContracts.TakePicture
 import androidx.annotation.StringDef
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -114,19 +114,23 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
 
     private val viewModel: AddEditPatientViewModel by viewModels()
 
-    private lateinit var cameraAndStoragePermissions: PermissionsRequester
-    private lateinit var storageWritePermission: PermissionsRequester
+    private lateinit var cameraPermission: PermissionsRequester
 
     private val pickPhoto = registerForActivityResult(GetContent()) { uri ->
         if (uri == null) return@registerForActivityResult
-        val destinationUri = Uri.fromFile(File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM),
-                ImageUtils.createUniqueImageFileName())
-        )
+        val destinationUri = Uri.fromFile(newPhotoFile())
         startCropActivity(uri, destinationUri)
     }
 
-    private val capturePhoto = registerForActivityResult(TakePicture()) { resultOk ->
+    /**
+     * [TakePicture] builds its intent without any URI permission grants, so the camera app would
+     * be unable to write to the FileProvider URI handed to it. The flags are added here.
+     */
+    private val capturePhoto = registerForActivityResult(object : TakePicture() {
+        override fun createIntent(context: Context, input: Uri): Intent =
+                super.createIntent(context, input)
+                        .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }) { resultOk ->
         if (!resultOk) return@registerForActivityResult
         val sourceUri = Uri.fromFile(viewModel.capturedPhotoFile)
         startCropActivity(sourceUri, sourceUri)
@@ -150,18 +154,14 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     private fun setupPermissionsHandler() {
-        cameraAndStoragePermissions = constructPermissionsRequest(
-                Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        // Only CAMERA is needed: photos are written to app-private storage, and the gallery
+        // picker grants read access to the chosen item without any storage permission.
+        cameraPermission = constructPermissionsRequest(
+                Manifest.permission.CAMERA,
                 onShowRationale = ::showCameraPermissionRationale,
                 onPermissionDenied = { showSnackbarLong(R.string.permissions_camera_storage_denied) },
                 onNeverAskAgain = { showSnackbarLong(R.string.permissions_camera_storage_neverask) },
                 requiresPermission = ::capturePhoto
-        )
-        storageWritePermission = constructPermissionsRequest(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                onShowRationale = { request -> request.proceed() },
-                onNeverAskAgain = { showSnackbarLong(R.string.permission_storage_neverask) },
-                requiresPermission = ::pickPhoto
         )
     }
 
@@ -639,7 +639,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         patientPhoto.setOnClickListener {
             if (viewModel.capturedPhotoFile != null) {
                 val i = Intent(Intent.ACTION_VIEW)
-                i.setDataAndType(Uri.fromFile(viewModel.capturedPhotoFile), ApplicationConstants.IMAGE_JPEG)
+                i.setDataAndType(contentUriFor(viewModel.capturedPhotoFile!!), ApplicationConstants.IMAGE_JPEG)
+                i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 startActivity(i)
             } else if (viewModel.patient.photo != null) {
                 viewModel.patient.run { ImageUtils.showPatientPhoto(requireContext(), photo, name.nameString) }
@@ -774,12 +775,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     override fun performFunction(position: Int) = when (position) {
         0 -> {
             // Capture photo
-            StrictMode.VmPolicy.Builder().run { StrictMode.setVmPolicy(build()) }
-            cameraAndStoragePermissions.launch()
+            cameraPermission.launch()
         }
         1 -> {
             // Pick photo from gallery
-            storageWritePermission.launch()
+            pickPhoto()
         }
         2 -> {
             // Remove photo
@@ -792,10 +792,23 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
     }
 
     private fun capturePhoto() = with(viewModel) {
-        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-        capturedPhotoFile = File(dir, ImageUtils.createUniqueImageFileName())
-        capturePhoto.launch(Uri.fromFile(capturedPhotoFile))
+        capturedPhotoFile = newPhotoFile()
+        capturePhoto.launch(contentUriFor(capturedPhotoFile!!))
     }
+
+    /**
+     * App-private external storage: readable by the app without any storage permission and
+     * unaffected by scoped storage, unlike the shared DCIM directory used previously.
+     */
+    private fun newPhotoFile(): File {
+        val dir = requireContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        dir?.mkdirs()
+        return File(dir, ImageUtils.createUniqueImageFileName())
+    }
+
+    /** Other apps (camera, gallery viewer) cannot read file:// URIs, so hand them a content:// one. */
+    private fun contentUriFor(file: File): Uri = FileProvider.getUriForFile(
+            requireContext(), "${requireContext().packageName}.fileprovider", file)
 
     private fun pickPhoto() = pickPhoto.launch(URI_IMAGE)
 
@@ -958,7 +971,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            android.R.id.home -> requireActivity().onBackPressed()
+            android.R.id.home -> requireActivity().onBackPressedDispatcher.onBackPressed()
             R.id.actionSubmit -> submitAction()
             R.id.actionReset -> AlertDialog.Builder(requireActivity())
                     .setTitle(R.string.dialog_title_reset_patient)
