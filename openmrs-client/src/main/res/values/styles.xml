@@ -145,4 +145,19 @@
         <item name="android:textSize">14sp</item>
     </style>
 
+    <!--
+      Overrides AppIntro's own "AppIntroDefaultImage" style (same name, so this app-level
+      definition wins over the library's). The library's default uses centerInside, which never
+      enlarges an image past its natural pixel size - it just centers it - so the wide, short
+      "Care" logo (openmrs_logo.png, ~3:1 aspect ratio) renders tiny in the middle of the large
+      image area on the onboarding "Welcome" slide, with a lot of empty space above/below. fitCenter
+      instead scales the image UP to fill the available space (by whichever dimension binds first),
+      still with no cropping or distortion, just noticeably larger.
+    -->
+    <style name="AppIntroDefaultImage">
+        <item name="android:paddingLeft">32dp</item>
+        <item name="android:paddingRight">32dp</item>
+        <item name="android:scaleType">fitCenter</item>
+    </style>
+
 </resources>

@@ -145,7 +145,11 @@ class LoginFragment : BaseFragment() {
                             // server that requires auth to list locations - only surface the
                             // error once the user has actually asked for it via Continue.
                             if (isExplicitLocationFetch) {
-                                showURLErrorSnackbar(result.throwable.message!!)
+                                // Plain snackbar, not showURLErrorSnackbar: that one adds a
+                                // "CHOOSE" action for picking a different server, which only
+                                // makes sense for an actual bad-URL/unreachable-server error -
+                                // not for wrong credentials, the far more common case here.
+                                createSnackbar(result.throwable.message!!).show()
                             }
                             setLocationErrorOccurred(true)
                             showCredentialsStep()
@@ -279,9 +283,15 @@ class LoginFragment : BaseFragment() {
      * Credentials-only phase: URL/username/password with a Continue button. Shown up front, and
      * returned to whenever a location fetch fails, so the user always has a clear retry action
      * instead of being left staring at an empty location dropdown and a dead Login button.
+     *
+     * continueButton is re-enabled here: showLocationLoadingAnimation() disables it the moment
+     * Continue is tapped, and otherwise only LoginValidatorWatcher's TextWatcher turns it back
+     * on (when username/password change) - so without this, a failed fetch left it permanently
+     * dead until the user edited a field, even to retry with the exact same credentials.
      */
     private fun showCredentialsStep() = with(binding) {
         continueButton.makeVisible()
+        continueButton.isEnabled = true
         locationSpinner.makeGone()
         loginButton.makeGone()
     }

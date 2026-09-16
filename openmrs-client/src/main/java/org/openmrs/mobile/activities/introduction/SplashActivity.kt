@@ -14,7 +14,6 @@
 package org.openmrs.mobile.activities.introduction
 
 import android.content.Intent
-import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Handler
 import android.view.WindowManager
@@ -35,11 +34,6 @@ class SplashActivity : ACBaseActivity() {
         binding = ActivitySplashBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val typeface = Typeface.createFromAsset(assets, ApplicationConstants.TypeFacePathConstants.MONTSERRAT)
-        with(binding) {
-            clientName.typeface = typeface
-            clientName.setText(R.string.client_name)
-        }
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         val move = AnimationUtils.loadAnimation(applicationContext, R.anim.splash_screen_logo_anim)
         val set = AnimationSet(true)
