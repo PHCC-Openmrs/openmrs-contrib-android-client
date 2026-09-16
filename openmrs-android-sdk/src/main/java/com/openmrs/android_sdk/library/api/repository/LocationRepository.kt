@@ -114,6 +114,18 @@ class LocationRepository @Inject constructor(private val locationDAO: LocationDA
                 ).execute()
             }
             if (!response.isSuccessful || response.body() == null) {
+                // A wrong username/password here looks identical to any other failure (network
+                // error, 500, malformed body) unless specifically distinguished: this FHIR2
+                // endpoint requires auth, so bad credentials return 401 same as any other
+                // rejection - and since this is the very first authenticated call the login
+                // screen's "Continue" step makes (the dedicated, correctly-classified auth check
+                // in LoginViewModel#login only runs later, on a screen a user with wrong
+                // credentials never reaches), a generic "Error fetching locations" message here
+                // was the only thing ever shown for wrong credentials, never a real
+                // invalid-credentials message.
+                if (response.code() == 401) {
+                    throw Exception("Invalid username or password. Please verify your credentials and try again.")
+                }
                 throw Exception("Error fetching locations: ${response.message()}")
             }
 
