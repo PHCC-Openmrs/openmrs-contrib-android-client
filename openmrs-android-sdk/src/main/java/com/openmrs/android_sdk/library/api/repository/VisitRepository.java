@@ -377,12 +377,115 @@ public class VisitRepository extends BaseRepository {
                 SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
                 return syncedVisit;
             } else {
-                getLogger().e("Error starting a visit: " + response.message());
+                getLogger().e("Error starting a visit: " + describeError(response));
+
+                // The patient may already have an active visit on the server - most commonly
+                // right after a duplicate-identifier patient merge (see
+                // PatientRepository#syncPatient) links this local patient to an existing server
+                // patient who already had an ongoing visit there, which the server then refuses
+                // to duplicate. Rather than parsing server-specific error text (which varies
+                // across OpenMRS versions/modules), check directly whether the patient already
+                // has an active visit - if so, treat it as stale (this workflow has no legitimate
+                // way to have started a second, genuinely concurrent visit), end it, and retry
+                // creating the locally-queued visit fresh. A harmless no-op for any other kind of
+                // failure (nothing found, falls through unchanged below, exactly as before this
+                // check existed).
+                Visit existingActiveVisit = findExistingActiveVisit(patient);
+                if (existingActiveVisit != null && endExistingActiveVisit(existingActiveVisit, visit.getStartDatetime())) {
+                    Response<Visit> retryResponse = restApi.startVisit(visit).execute();
+                    if (retryResponse.isSuccessful() && retryResponse.body() != null) {
+                        Visit syncedVisit = retryResponse.body();
+                        syncedVisit.setId(visit.getId());
+                        if (syncedVisit.getAttributes() == null || syncedVisit.getAttributes().isEmpty()) {
+                            syncedVisit.setAttributes(visit.getAttributes());
+                        }
+                        visitDAO.saveOrUpdate(syncedVisit, patient.getId()).toBlocking().first();
+                        SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
+                        return syncedVisit;
+                    } else {
+                        getLogger().e("Error starting a visit even after ending the existing active one: " + describeError(retryResponse));
+                    }
+                }
             }
         } catch (Exception e) {
             getLogger().e("Error starting a visit, will retry when back online: " + e.getMessage());
         }
         return visit;
+    }
+
+    /**
+     * Builds a diagnosable message from a failed response - {@code Response#message()} alone is
+     * only the generic HTTP status line (e.g. "Bad Request"), not the server's actual reason.
+     */
+    private String describeError(Response<?> response) {
+        try {
+            String body = response.errorBody() != null ? response.errorBody().string() : null;
+            return (body != null && !body.isEmpty()) ? body : response.message();
+        } catch (Exception e) {
+            return response.message();
+        }
+    }
+
+    /**
+     * Looks up the patient's current active visit on the server, if any - used by
+     * {@link #syncStartedVisit} to recover when it fails to create a new visit because the
+     * patient already has one ongoing there. Best-effort: any failure here is swallowed, since
+     * this already runs inside another method's own failure-handling path.
+     *
+     * @return the patient's active visit, or null if there isn't one (or the lookup itself failed)
+     */
+    private Visit findExistingActiveVisit(Patient patient) {
+        try {
+            Response<Results<Visit>> response = restApi.findActiveVisitsByPatientUuid(patient.getUuid(), representation).execute();
+            if (response.isSuccessful() && response.body() != null && !response.body().getResults().isEmpty()) {
+                return response.body().getResults().get(0);
+            }
+        } catch (Exception e) {
+            getLogger().e("Error checking for an existing active visit: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Ends a patient's existing active visit found by {@link #findExistingActiveVisit}, so a
+     * locally-queued new visit can be created in its place. Deliberately does not go through the
+     * public {@link #endVisit} (and its service-enrollment completion) - that method needs a
+     * locally-tracked visit with a known patient/local id, which this "foreign" server visit
+     * (never previously known to this device) doesn't have. Best-effort: swallows its own
+     * failures, since this already runs inside another method's own failure-handling path.
+     *
+     * <p>Ends it just before the NEW visit's own start time, not "now" (real sync time) - the new
+     * visit was started earlier (offline, then queued until this reconnect), so ending the old one
+     * at "now" would still leave its [start, now] window overlapping the new visit's start time,
+     * and the server rejects that as "Visit.visitCannotOverlapAnotherVisitOfTheSamePatient" -
+     * confirmed via a real device log during testing.
+     *
+     * @param newVisitStartDatetime the locally-queued visit's own start time
+     *                              ({@link com.openmrs.android_sdk.utilities.DateUtils#OPEN_MRS_REQUEST_FORMAT}), used to
+     *                              pick a stop time for the old visit that can never overlap it
+     * @return true if the visit was ended successfully, false otherwise
+     */
+    private boolean endExistingActiveVisit(Visit existingActiveVisit, String newVisitStartDatetime) {
+        try {
+            Long newVisitStartMillis = newVisitStartDatetime != null
+                    ? convertTime(newVisitStartDatetime, OPEN_MRS_REQUEST_FORMAT)
+                    : null;
+            long stopMillis = newVisitStartMillis != null
+                    ? newVisitStartMillis - 60000
+                    : System.currentTimeMillis();
+
+            Visit emptyVisitWithStopDate = new Visit();
+            emptyVisitWithStopDate.setStopDatetime(convertTime(stopMillis, OPEN_MRS_REQUEST_FORMAT));
+            Response<Visit> response = restApi.endVisitByUUID(existingActiveVisit.getUuid(), emptyVisitWithStopDate).execute();
+            if (response.isSuccessful()) {
+                getLogger().i("Ended existing active visit (UUID: " + existingActiveVisit.getUuid() + ") to make way for the locally-queued one.");
+                return true;
+            }
+            getLogger().e("Failed to end existing active visit: " + describeError(response));
+        } catch (Exception e) {
+            getLogger().e("Error ending existing active visit: " + e.getMessage());
+        }
+        return false;
     }
 
     /**
