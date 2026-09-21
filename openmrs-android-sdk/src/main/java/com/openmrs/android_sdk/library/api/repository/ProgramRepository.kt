@@ -148,7 +148,10 @@ class ProgramRepository @Inject constructor() : BaseRepository(){
      * Refreshed from the server when online and read from the local cache otherwise, so the
      * start-visit form offers the same services offline as online. The result is filtered by
      * [ApplicationConstants.ProgramLocationRestrictions] against the location chosen in the form
-     * (not the session location), mirroring the web client's `useServicePrograms`.
+     * (not the session location), mirroring the web client's `useServicePrograms`, then narrowed
+     * down to [ONLY_ENABLED_SERVICE_NAME] - the mobile app currently only offers Health Promotion
+     * as a visit service, even though all five remain configured on the server and are still
+     * shown in the web client.
      *
      * @param locationUuid the visit location the services must be offered at
      * @return the services offered there
@@ -167,7 +170,9 @@ class ProgramRepository @Inject constructor() : BaseRepository(){
             } catch (e: Exception) {
                 emptyList()
             }
-            filterProgramsByLocation(cached, locationUuid)
+            filterProgramsByLocation(cached, locationUuid).filter {
+                it.name?.trim().equals(ONLY_ENABLED_SERVICE_NAME, ignoreCase = true)
+            }
         })
     }
 
@@ -198,6 +203,13 @@ class ProgramRepository @Inject constructor() : BaseRepository(){
     }
 
     companion object {
+        /**
+         * The only visit service the mobile app currently shows in the Service picker (see
+         * [getServicePrograms]). Matched by name rather than uuid since that's how the server
+         * identifies it consistently across environments.
+         */
+        private const val ONLY_ENABLED_SERVICE_NAME = "Health Promotion"
+
         /**
          * Keeps only the programs offered at [locationUuid]. A program with no restriction, or one
          * whose restriction lists no locations, is offered everywhere; a restricted program is

@@ -116,6 +116,7 @@ class StartVisitViewModel @Inject constructor(
             .flatMap { programRepository.getServicePrograms(selectedLocation?.uuid) }
             .map { programs ->
                 servicePrograms = programs
+                autoSelectSoleService()
                 Unit
             }
             .flatMap { visitAttributeTypeRepository.getFormVisitAttributeTypes() }
@@ -150,6 +151,7 @@ class StartVisitViewModel @Inject constructor(
                 { programs ->
                     servicePrograms = programs
                     selectedServiceUuids.retainAll(programs.mapNotNull { it.uuid }.toSet())
+                    autoSelectSoleService()
                     _serviceProgramsUpdated.value = true
                 },
                 {
@@ -159,6 +161,16 @@ class StartVisitViewModel @Inject constructor(
                 }
             )
         )
+    }
+
+    /**
+     * When exactly one service is on offer (currently always true - see
+     * [ProgramRepository.getServicePrograms]), there's nothing meaningful to pick, so it's
+     * selected automatically rather than making the user open a picker just to check the one box
+     * available.
+     */
+    private fun autoSelectSoleService() {
+        servicePrograms.singleOrNull()?.uuid?.let { selectedServiceUuids.add(it) }
     }
 
     /**

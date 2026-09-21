@@ -409,6 +409,7 @@
     <string name="offline_mode_patient_data_saved_locally_notification_message">सिंक बंद है। रोगी अद्यतन डेटा स्थानीय रूप से सहेजा जाता है और ऑनलाइन मोड बहाल होने पर सिंक होगा।</string>
     <string name="only_one_patient_can_be_selected_notification_message">आप केवल एक समान रोगी का चयन कर सकते हैं</string>
     <string name="all_fields_empty_error_message">सभी फ़ील्ड रिक्त नहीं हो सकते</string>
+    <string name="required_fields_missing_error_message">कृपया आवश्यक फ़ील्ड भरें: %1$s</string>
     <string name="no_such_form_name_error_message">%1$s नामक कोई मुठभेड़ प्रकार नहीं है</string>
     <string name="logs_copied_to_clipboard_message">क्लिपबोर्ड पर कॉपी किए गए लॉग</string>
     <string name="authenticate_check_service_error_response_message">प्रामाणिक जाँच सेवा प्रतिक्रिया में त्रुटि</string>
