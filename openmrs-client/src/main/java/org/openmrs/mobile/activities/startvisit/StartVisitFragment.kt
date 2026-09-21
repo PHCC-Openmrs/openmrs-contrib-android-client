@@ -129,6 +129,10 @@ class StartVisitFragment : BaseFragment() {
             ToastUtil.notify(getString(R.string.visit_service_none_available))
             return
         }
+        // A single service is auto-selected by the viewmodel (see
+        // StartVisitViewModel.autoSelectSoleService) - nothing left to pick, so opening a
+        // one-item checklist would just make the user tap what's already set.
+        if (programs.size == 1) return
 
         val labels = programs.map { it.name.orEmpty() }.toTypedArray()
         val checked = programs.map { viewModel.selectedServiceUuids.contains(it.uuid) }.toBooleanArray()

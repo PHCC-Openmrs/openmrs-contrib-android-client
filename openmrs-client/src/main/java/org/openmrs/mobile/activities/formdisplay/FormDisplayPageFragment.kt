@@ -313,7 +313,7 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnItemSelectedListener(spinner, selectOneField)
         } else {
-            viewModel.autoFillGenderAnswerIndex(question)?.let {
+            (viewModel.autoFillGenderAnswerIndex(question) ?: viewModel.autoFillGovernorateAnswerIndex(question))?.let {
                 spinnerField.setAnswer(it)
                 spinner.setSelection(it)
             }
@@ -362,7 +362,7 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnCheckedChangeListener(radioGroup, selectOneField)
         } else {
-            viewModel.autoFillGenderAnswerIndex(question)?.let {
+            (viewModel.autoFillGenderAnswerIndex(question) ?: viewModel.autoFillGovernorateAnswerIndex(question))?.let {
                 radioGroupField.setAnswer(it)
                 (radioGroup.getChildAt(it) as? RadioButton)?.isChecked = true
             }
@@ -557,6 +557,42 @@ class FormDisplayPageFragment : BaseFragment() {
         else if (!valid) ToastUtil.error(getString(R.string.invalid_inputs))
 
         return !allEmpty && valid
+    }
+
+    /**
+     * Checks every question on this page marked `"required": true` by the form schema against
+     * the field the user actually filled in (matched by concept, the same lookup
+     * [addQuestion]'s builders use). [checkInputFields] only catches an entirely blank page or an
+     * out-of-range number - it never looks at `Question.isRequired`, so a form with nine required
+     * questions and one filled-in optional one used to submit successfully with the nine blank.
+     *
+     * @return the labels of required questions still unanswered, empty when the page is complete
+     */
+    fun findUnansweredRequiredQuestions(): List<String> {
+        val unanswered = mutableListOf<String>()
+        fun visit(questions: List<Question>) {
+            questions.forEach { question ->
+                if (question.questionOptions?.rendering == "group") {
+                    visit(question.questions)
+                } else if (question.isRequired && !isQuestionAnswered(question)) {
+                    unanswered.add(question.label ?: question.id ?: "")
+                }
+            }
+        }
+        viewModel.page.sections.forEach { visit(it.questions) }
+        return unanswered
+    }
+
+    private fun isQuestionAnswered(question: Question): Boolean {
+        val concept = question.questionOptions?.concept ?: return true
+        return when (question.questionOptions?.rendering) {
+            "number" -> viewModel.findInputFieldByConcept(concept)?.hasValue == true
+            "select", "radio", "ui-select-extended" -> viewModel.findSelectOneFieldById(concept)?.chosenAnswer != null
+            "checkbox" -> viewModel.findSelectMultipleFieldById(concept)?.selectedAnswers?.isNotEmpty() == true
+            "date" -> !viewModel.findDateFieldById(concept)?.date.isNullOrEmpty()
+            "text", "textarea" -> !viewModel.findTextFieldById(concept)?.value.isNullOrBlank()
+            else -> true
+        }
     }
 
     fun getInputFields() = viewModel.inputFields

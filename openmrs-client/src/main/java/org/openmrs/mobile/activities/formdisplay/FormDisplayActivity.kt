@@ -83,6 +83,11 @@ class FormDisplayActivity : ACBaseActivity() {
             btnSubmit.setOnClickListener { submitForm() }
 
             viewPager.adapter = formPageAdapter
+            // Keeps every page's fragment alive instead of the default single-page window, so
+            // submitForm's registeredFragments walk below - and thus its required-field check -
+            // actually sees every page once the user has scrolled past it, not just neighbours of
+            // whichever page is currently visible.
+            viewPager.offscreenPageLimit = (formPageAdapter.count - 1).coerceAtLeast(1)
             viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
                 override fun onPageSelected(position: Int) {
                     mDots.forEach {
@@ -131,16 +136,25 @@ class FormDisplayActivity : ACBaseActivity() {
         val dateFields = mutableListOf<DateField>()
         val textFields = mutableListOf<TextField>()
 
+        val unansweredRequired = mutableListOf<String>()
+
         (binding.viewPager.adapter as FormPageAdapter).registeredFragments.forEach { pos, frag ->
             val formPageFragment = frag as FormDisplayPageFragment
 
             if (!formPageFragment.checkInputFields()) return
+
+            unansweredRequired.addAll(formPageFragment.findUnansweredRequiredQuestions())
 
             inputFields.addAll(formPageFragment.getInputFields())
             radioGroupFields.addAll(formPageFragment.getSelectOneFields())
             checkboxFields.addAll(formPageFragment.getSelectMultipleFields())
             dateFields.addAll(formPageFragment.getDateFields())
             textFields.addAll(formPageFragment.getTextFields())
+        }
+
+        if (unansweredRequired.isNotEmpty()) {
+            ToastUtil.error(getString(R.string.required_fields_missing_error_message, unansweredRequired.joinToString(", ")))
+            return
         }
 
         enableSubmitButton(false)

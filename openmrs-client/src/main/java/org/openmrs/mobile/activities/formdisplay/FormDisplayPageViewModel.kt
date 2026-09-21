@@ -110,6 +110,8 @@ class FormDisplayPageViewModel @Inject constructor(
             PARTICIPANT_NAME_PATTERN.containsMatchIn(label) -> active.name?.nameString
             ID_PATTERN.containsMatchIn(label) -> active.getIdentifierByType(NATIONAL_ID_IDENTIFIER_TYPE_UUID)?.identifier
             PHONE_PATTERN.containsMatchIn(label) -> active.getAttributeValue(PHONE_NUMBER_UUID)
+            NEIGHBOURHOOD_PATTERN.containsMatchIn(label) -> active.address?.cityVillage
+            GOVERNORATE_PATTERN.containsMatchIn(label) -> active.address?.stateProvince
             else -> null
         }
     }
@@ -135,6 +137,21 @@ class FormDisplayPageViewModel @Inject constructor(
         val gender = patient?.gender ?: return null
         val answers = question.questionOptions?.answers ?: return null
         val index = answers.indexOfFirst { matchesGender(it, gender) }
+        return index.takeIf { it >= 0 }
+    }
+
+    /**
+     * Auto-fill answer index for a select/radio question matching a "governorate" label, by
+     * finding the answer option whose label matches the patient's stored governorate
+     * (registration's PersonAddress.stateProvince). Returns null when the label isn't a
+     * governorate field, the patient has no stored governorate, or no matching answer is found.
+     */
+    fun autoFillGovernorateAnswerIndex(question: Question): Int? {
+        val label = question.label ?: return null
+        if (!GOVERNORATE_PATTERN.containsMatchIn(label)) return null
+        val governorate = patient?.address?.stateProvince?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        val answers = question.questionOptions?.answers ?: return null
+        val index = answers.indexOfFirst { (it.label ?: it.concept)?.trim().equals(governorate, ignoreCase = true) }
         return index.takeIf { it >= 0 }
     }
 
@@ -169,5 +186,7 @@ class FormDisplayPageViewModel @Inject constructor(
         private val AGE_PATTERN = Regex("\\bage\\b", RegexOption.IGNORE_CASE)
         private val PHONE_PATTERN = Regex("phone|mobile", RegexOption.IGNORE_CASE)
         private val ID_PATTERN = Regex("national.*id|id\\s*number|\\bidentifier\\b", RegexOption.IGNORE_CASE)
+        private val NEIGHBOURHOOD_PATTERN = Regex("neighbou?rhood", RegexOption.IGNORE_CASE)
+        private val GOVERNORATE_PATTERN = Regex("governorate", RegexOption.IGNORE_CASE)
     }
 }
