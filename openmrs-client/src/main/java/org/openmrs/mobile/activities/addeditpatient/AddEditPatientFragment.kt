@@ -317,7 +317,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             }
             binding.addressOne.setText(address.address1)
             binding.cityAutoComplete.setText(address.cityVillage)
-            binding.stateAutoComplete.setText(address.stateProvince)
+            // false: a plain setText() re-runs AutoCompleteTextView's filter against this value,
+            // permanently narrowing its ArrayAdapter to only entries matching it - so reopening
+            // the dropdown later would show just this one governorate instead of all of them,
+            // exactly like patientStatusAutoComplete below already avoids.
+            binding.stateAutoComplete.setText(address.stateProvince, false)
             binding.phoneNumber.setText(viewModel.getPhoneNumber())
             binding.patientStatusAutoComplete.setText(patientStatusLabelForUuid(viewModel.getPatientStatus()), false)
             if (photo != null) binding.patientPhoto.setImageBitmap(resizedPhoto)
@@ -659,6 +663,10 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         cityAutoComplete.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                // Guards against ever showing a spinner nothing will hide: the client is what
+                // eventually calls makeGone() below, in either its success or failure listener -
+                // without one, that call never happens.
+                val placesClient = viewModel.placesClient ?: return
                 if (s.isNotBlank()) cityProgressBar.makeVisible()
                 val cityList = mutableListOf<String>()
                 val token = AutocompleteSessionToken.newInstance()
@@ -667,7 +675,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                         .setSessionToken(token)
                         .setQuery(cityAutoComplete.text.toString())
                         .build()
-                viewModel.placesClient?.findAutocompletePredictions(request)?.addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
+                placesClient.findAutocompletePredictions(request).addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
                     cityProgressBar.makeGone()
                     for (autocompletePrediction in response.autocompletePredictions) {
                         cityList.add(autocompletePrediction.getFullText(null).toString())
@@ -688,15 +696,18 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                          * else it is a union territory, then it will show :
                          * CITY, COUNTRY
                          */
+                        // false: see the matching comment on fillFormFields' stateAutoComplete
+                        // setText call - without it, picking a city here would permanently narrow
+                        // the Governorate dropdown to just this one auto-filled value.
                         if (secondary_text.contains(",")) {
                             val index = secondary_text.indexOf(',')
                             val state = secondary_text.substring(0, index)
-                            stateAutoComplete.setText(state)
+                            stateAutoComplete.setText(state, false)
                         } else {
-                            stateAutoComplete.setText(primary_text)
+                            stateAutoComplete.setText(primary_text, false)
                         }
                     }
-                }?.addOnFailureListener { exception: Exception? ->
+                }.addOnFailureListener { exception: Exception? ->
                     if (exception is ApiException) {
                         Log.i("Place API", "Place not found: " + exception.statusCode)
                     }
@@ -760,15 +771,25 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         }
     }
 
+    /**
+     * Places.initialize() is process-global and one-time, but viewModel.placesClient is a fresh
+     * null on every new instance of this screen - creating the client was wrongly nested inside
+     * the "only initialize once" check, so it only ever ran the very first time this screen was
+     * opened in the app's process lifetime. Every later visit left placesClient null with no
+     * error, silently skipping every findAutocompletePredictions() call in the Neighbourhood
+     * field's TextWatcher below - whose success/failure listeners are the only thing that ever
+     * hides cityProgressBar, so it stayed visible (spinning) forever, online or offline alike.
+     */
     private fun initPlaces() {
         if (viewModel.placesClient != null) return
         with(requireActivity()) {
             val applicationInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
             val placesApiKey = applicationInfo.metaData.getString("com.google.android.geo.API_KEY")
-            if (!Places.isInitialized() && placesApiKey != null) {
+            if (placesApiKey == null) return@with
+            if (!Places.isInitialized()) {
                 Places.initialize(applicationContext, placesApiKey)
-                viewModel.placesClient = Places.createClient(this)
             }
+            viewModel.placesClient = Places.createClient(this)
         }
     }
 

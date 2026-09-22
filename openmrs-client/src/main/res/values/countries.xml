@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Must match the web client's Governorate dropdown options exactly (string equality,
+         case-sensitive) - the web edit-patient form falls back to its first option ("Gaza City")
+         with no error whenever a patient's stored value doesn't exactly match one of its own, so
+         a mismatch here (previously "Gaza"/"Deir al-Balah"/"Khan Yunis") silently looked like
+         updates to those governorates were being overwritten. -->
     <string-array name="gaza_governorates">
         <item>North Gaza</item>
-        <item>Gaza</item>
-        <item>Deir al-Balah</item>
-        <item>Khan Yunis</item>
+        <item>Gaza City</item>
+        <item>Deir Al-Balah</item>
+        <item>Khan Younis</item>
         <item>Rafah</item>
     </string-array>
 
