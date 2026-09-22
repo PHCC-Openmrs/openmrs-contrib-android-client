@@ -137,6 +137,7 @@ class FormDisplayActivity : ACBaseActivity() {
         val textFields = mutableListOf<TextField>()
 
         val unansweredRequired = mutableListOf<String>()
+        val invalidPhoneNumbers = mutableListOf<String>()
 
         (binding.viewPager.adapter as FormPageAdapter).registeredFragments.forEach { pos, frag ->
             val formPageFragment = frag as FormDisplayPageFragment
@@ -144,6 +145,7 @@ class FormDisplayActivity : ACBaseActivity() {
             if (!formPageFragment.checkInputFields()) return
 
             unansweredRequired.addAll(formPageFragment.findUnansweredRequiredQuestions())
+            invalidPhoneNumbers.addAll(formPageFragment.findInvalidPhoneNumberQuestions())
 
             inputFields.addAll(formPageFragment.getInputFields())
             radioGroupFields.addAll(formPageFragment.getSelectOneFields())
@@ -154,6 +156,11 @@ class FormDisplayActivity : ACBaseActivity() {
 
         if (unansweredRequired.isNotEmpty()) {
             ToastUtil.error(getString(R.string.required_fields_missing_error_message, unansweredRequired.joinToString(", ")))
+            return
+        }
+
+        if (invalidPhoneNumbers.isNotEmpty()) {
+            ToastUtil.error(getString(R.string.invalid_phone_number_error_message, invalidPhoneNumbers.joinToString(", ")))
             return
         }
 

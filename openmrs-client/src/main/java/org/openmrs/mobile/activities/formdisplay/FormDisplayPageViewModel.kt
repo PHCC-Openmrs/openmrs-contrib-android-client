@@ -168,6 +168,12 @@ class FormDisplayPageViewModel @Inject constructor(
             GENDER_PATTERN.containsMatchIn(label)
     }
 
+    /** True when [question]'s label identifies it as a phone number field. */
+    fun isPhoneNumberField(question: Question): Boolean {
+        val label = question.label ?: return false
+        return PHONE_PATTERN.containsMatchIn(label)
+    }
+
     private fun matchesGender(answer: Answer, genderCode: String): Boolean {
         val answerLabel = (answer.label ?: answer.concept ?: "").trim()
         return when (genderCode.uppercase()) {

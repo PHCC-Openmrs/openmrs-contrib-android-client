@@ -569,6 +569,7 @@
     <string name="invalid_inputs">Some inputs are invalid</string>
     <string name="all_fields_empty_error_message">All fields cannot be empty</string>
     <string name="required_fields_missing_error_message">Please fill the required field(s): %1$s</string>
+    <string name="invalid_phone_number_error_message">Phone number must be exactly 10 digits: %1$s</string>
     <string name="no_such_form_name_error_message">There is no encounter type called %1$s</string>
 
     <!--LastViewPatients Fragment-->

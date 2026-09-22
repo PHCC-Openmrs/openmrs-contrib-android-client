@@ -13,6 +13,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputFilter
 import android.text.InputType
 import android.text.Spannable
 import android.text.SpannableStringBuilder
@@ -189,14 +190,16 @@ class FormDisplayPageFragment : BaseFragment() {
                 }
             }
             selectOneField.answerList = answers
-            val answerLabels = answers.map { it.label ?: it.concept }
+            // See createAndAttachSelectQuestionDropdown for why this placeholder is required, not
+            // cosmetic - Spinner always defaults to (and reports) position 0 as selected.
+            val answerLabels = listOf(getString(R.string.select_an_option)) + answers.map { it.label ?: it.concept }
 
             activity?.runOnUiThread {
                 spinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_spinner_item, answerLabels)
                 if (selectOneField.chosenAnswerPosition != -1) {
-                    spinner.setSelection(selectOneField.chosenAnswerPosition)
+                    spinner.setSelection(selectOneField.chosenAnswerPosition + 1)
                 }
-                setOnItemSelectedListener(spinner, selectOneField)
+                setOnItemSelectedListenerWithPlaceholder(spinner, selectOneField)
             }
         }, { error ->
             // A location fetch failure (e.g. a server that 404s for this tag) must not crash the
@@ -292,7 +295,13 @@ class FormDisplayPageFragment : BaseFragment() {
             )
         }
 
+        // A leading placeholder is required, not cosmetic: an Android Spinner always has *some*
+        // item selected (defaulting to position 0) and fires onItemSelected for it as soon as the
+        // listener is attached below, even though the user never touched the dropdown - without
+        // this placeholder that default selection was the first real answer, silently recording
+        // it as the user's choice. The web form's <select> starts blank the same way this does.
         val answerLabels = ArrayList<String?>()
+        answerLabels.add(getString(R.string.select_an_option))
         question.questionOptions!!.answers!!.forEach {
             answerLabels.add(it.label ?: conceptLabelMapping[it.concept] ?: it.concept)
         }
@@ -309,15 +318,15 @@ class FormDisplayPageFragment : BaseFragment() {
         val selectOneField = viewModel.findSelectOneFieldById(spinnerField.concept)
         if (selectOneField != null) {
             if (selectOneField.chosenAnswerPosition != -1) {
-                spinner.setSelection(selectOneField.chosenAnswerPosition)
+                spinner.setSelection(selectOneField.chosenAnswerPosition + 1)
             }
-            setOnItemSelectedListener(spinner, selectOneField)
+            setOnItemSelectedListenerWithPlaceholder(spinner, selectOneField)
         } else {
             (viewModel.autoFillGenderAnswerIndex(question) ?: viewModel.autoFillGovernorateAnswerIndex(question))?.let {
                 spinnerField.setAnswer(it)
-                spinner.setSelection(it)
+                spinner.setSelection(it + 1)
             }
-            setOnItemSelectedListener(spinner, spinnerField)
+            setOnItemSelectedListenerWithPlaceholder(spinner, spinnerField)
             viewModel.selectOneFields.add(spinnerField)
         }
 
@@ -445,6 +454,12 @@ class FormDisplayPageFragment : BaseFragment() {
                 minLines = 3
                 gravity = Gravity.TOP or Gravity.START
                 inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            } else if (viewModel.isPhoneNumberField(question)) {
+                // Matches the web form's phone number field: digits only, exactly 10 of them
+                // (see findInvalidPhoneNumberQuestions for the length check enforced at submit).
+                isSingleLine = true
+                inputType = InputType.TYPE_CLASS_NUMBER
+                filters = arrayOf(InputFilter.LengthFilter(PHONE_NUMBER_LENGTH))
             } else {
                 isSingleLine = true
                 inputType = InputType.TYPE_CLASS_TEXT
@@ -481,10 +496,15 @@ class FormDisplayPageFragment : BaseFragment() {
         })
     }
 
-    private fun setOnItemSelectedListener(spinner: Spinner, spinnerField: SelectOneField) {
+    /**
+     * Wires a spinner whose adapter has a leading "Select an option" placeholder at position 0
+     * (see the two createAndAttach*Select* builders above): position 0 means no answer chosen,
+     * position i>=1 is [SelectOneField.answerList]'s index i-1.
+     */
+    private fun setOnItemSelectedListenerWithPlaceholder(spinner: Spinner, spinnerField: SelectOneField) {
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(adapterView: AdapterView<*>?, view: View, i: Int, l: Long) {
-                spinnerField.setAnswer(i)
+                spinnerField.setAnswer(i - 1)
             }
 
             override fun onNothingSelected(adapterView: AdapterView<*>?) {
@@ -583,6 +603,33 @@ class FormDisplayPageFragment : BaseFragment() {
         return unanswered
     }
 
+    /**
+     * Checks every phone number question on this page whose field has a value against
+     * [PHONE_NUMBER_REGEX] - a blank, optional phone field is fine (that's [checkInputFields]'s
+     * job), but a filled-in one that isn't exactly 10 digits is not, matching the web form.
+     *
+     * @return the labels of phone questions with an invalid value, empty when all are valid
+     */
+    fun findInvalidPhoneNumberQuestions(): List<String> {
+        val invalid = mutableListOf<String>()
+        fun visit(questions: List<Question>) {
+            questions.forEach { question ->
+                if (question.questionOptions?.rendering == "group") {
+                    visit(question.questions)
+                    return@forEach
+                }
+                if (!viewModel.isPhoneNumberField(question)) return@forEach
+                val concept = question.questionOptions?.concept ?: return@forEach
+                val value = viewModel.findTextFieldById(concept)?.value?.trim()
+                if (!value.isNullOrEmpty() && !PHONE_NUMBER_REGEX.matches(value)) {
+                    invalid.add(question.label ?: question.id ?: "")
+                }
+            }
+        }
+        viewModel.page.sections.forEach { visit(it.questions) }
+        return invalid
+    }
+
     private fun isQuestionAnswered(question: Question): Boolean {
         val concept = question.questionOptions?.concept ?: return true
         return when (question.questionOptions?.rendering) {
@@ -646,6 +693,9 @@ class FormDisplayPageFragment : BaseFragment() {
     }
 
     companion object {
+        private const val PHONE_NUMBER_LENGTH = 10
+        private val PHONE_NUMBER_REGEX = Regex("^\\d{$PHONE_NUMBER_LENGTH}$")
+
         fun newInstance(page: Page, formFieldsWrapper: FormFieldsWrapper?, patientId: Long) = FormDisplayPageFragment().apply {
             arguments = bundleOf(
                     FORM_PAGE_BUNDLE to page,
