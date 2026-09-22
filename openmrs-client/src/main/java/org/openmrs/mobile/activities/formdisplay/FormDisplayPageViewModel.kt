@@ -157,15 +157,18 @@ class FormDisplayPageViewModel @Inject constructor(
 
     /**
      * True when [question]'s label identifies it as a patient-demographic field (name, age,
-     * gender, or national ID) - these are auto-populated from the patient record above and must
-     * be locked against manual editing rather than left free-text, per product requirement.
+     * gender, national ID, governorate, or neighbourhood) - these are auto-populated from the
+     * patient record above and must be locked against manual editing rather than left free-text,
+     * per product requirement.
      */
     fun isFixedPatientField(question: Question): Boolean {
         val label = question.label ?: return false
         return PARTICIPANT_NAME_PATTERN.containsMatchIn(label) ||
             ID_PATTERN.containsMatchIn(label) ||
             AGE_PATTERN.containsMatchIn(label) ||
-            GENDER_PATTERN.containsMatchIn(label)
+            GENDER_PATTERN.containsMatchIn(label) ||
+            NEIGHBOURHOOD_PATTERN.containsMatchIn(label) ||
+            GOVERNORATE_PATTERN.containsMatchIn(label)
     }
 
     /** True when [question]'s label identifies it as a phone number field. */
