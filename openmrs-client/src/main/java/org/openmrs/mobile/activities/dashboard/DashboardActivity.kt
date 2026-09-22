@@ -14,22 +14,23 @@
 
 package org.openmrs.mobile.activities.dashboard
 
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
+import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
+import androidx.activity.viewModels
 import androidx.navigation.fragment.NavHostFragment
+import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
+import org.openmrs.mobile.services.ConceptDownloadService
 
 @AndroidEntryPoint
 class DashboardActivity : ACBaseActivity() {
+
+    private val viewModel: DashboardViewModel by viewModels()
 
     /*TODO: Permission handling to be coded later, moving to SDK 22 for now.
     final private int REQUEST_CODE_ASK_PERMISSIONS = 123;
@@ -69,7 +70,7 @@ class DashboardActivity : ACBaseActivity() {
 
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
-        requestNotificationPermissionIfNeeded()
+        startConceptDownloadIfNeeded()
 
         // Create toolbar
         val actionBar = supportActionBar
@@ -113,19 +114,22 @@ class DashboardActivity : ACBaseActivity() {
         dashboardFragment?.bindDrawableResources()
     }
 
-    private val notificationPermissionLauncher =
-            registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* download runs either way */ }
-
     /**
-     * Asked here rather than at login, because the concept download is kicked off immediately
-     * before the login activity finishes - a permission dialog launched there would be torn down
-     * with it. Without the grant the download still runs, only its notification is suppressed.
+     * Kicks off the same "Download Concepts" action normally started manually from Settings,
+     * right after a successful login, so a device is primed for offline use (concept dictionary +
+     * every form's schema) from the start, rather than depending on the user remembering to visit
+     * Settings before their first time losing connectivity. Only runs when nothing has been
+     * downloaded yet (a genuinely fresh device/install) - hasNoConceptsDownloaded() makes this a
+     * no-op on every ordinary subsequent dashboard open, so it's safe to call unconditionally from
+     * onCreate. Runs silently, with no notification or permission prompt - ConceptDownloadService
+     * isn't a foreground service, by design (see its class comment).
      */
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    private fun startConceptDownloadIfNeeded() {
+        if (viewModel.hasNoConceptsDownloaded()) {
+            Intent(this, ConceptDownloadService::class.java)
+                    .apply { action = ApplicationConstants.ServiceActions.START_CONCEPT_DOWNLOAD_ACTION }
+                    .let { startService(it) }
+        }
     }
 
     private val onBackPressedCallback = object : OnBackPressedCallback(true) {

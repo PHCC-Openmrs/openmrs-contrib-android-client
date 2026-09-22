@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.RestServiceBuilder
 import com.openmrs.android_sdk.library.databases.AppDatabase
-import com.openmrs.android_sdk.library.api.repository.ConceptRepository
 import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
 import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
@@ -39,18 +38,9 @@ class LoginViewModel @Inject constructor(
         private val locationDAO: LocationDAO,
         private val userService: UserService,
         private val privilegeRepository: PrivilegeRepository,
-        private val conceptRepository: ConceptRepository,
         private val programRepository: ProgramRepository,
         private val visitAttributeTypeRepository: VisitAttributeTypeRepository
 ) : BaseViewModel<ResultType>() {
-
-    /**
-     * True when this device has no locally-cached concepts yet - i.e. "Download Concepts" (which
-     * also primes every form's schema for offline use) has never been run. Used to decide whether
-     * a successful online login should kick that off automatically, rather than requiring the
-     * user to remember to visit Settings before their first time going offline.
-     */
-    fun hasNoConceptsDownloaded(): Boolean = conceptRepository.getConceptCountFromDb() == 0L
 
     private val _warningDialogLiveData = MutableLiveData<Boolean>()
     val warningDialogLiveData: LiveData<Boolean> get() = _warningDialogLiveData
