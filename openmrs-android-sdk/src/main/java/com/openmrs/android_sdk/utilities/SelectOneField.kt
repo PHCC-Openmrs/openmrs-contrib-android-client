@@ -20,8 +20,10 @@ data class SelectOneField(var answerList: List<Answer>, var concept: String) : S
     var chosenAnswer: Answer? = null
 
     fun setAnswer(answerPosition: Int) {
-        if (answerPosition < answerList.size) chosenAnswer = answerList[answerPosition]
-        if (answerPosition == -1) chosenAnswer = null
+        // getOrNull, not answerList[answerPosition]: -1 (no selection - e.g. a dropdown's
+        // leading placeholder) must clear chosenAnswer instead of indexing the list with a
+        // negative position, which throws.
+        chosenAnswer = answerList.getOrNull(answerPosition)
     }
 
     val chosenAnswerPosition: Int get() = answerList.indexOf(chosenAnswer)
