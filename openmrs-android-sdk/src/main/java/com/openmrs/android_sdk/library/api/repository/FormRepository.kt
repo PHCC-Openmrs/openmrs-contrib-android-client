@@ -120,7 +120,6 @@ class FormRepository @Inject constructor() : BaseRepository() {
             val response = restApi.getForms().execute()
             if (!response.isSuccessful || response.body() == null) return null
             val formResourceList = response.body()!!.results
-            db.formResourceDAO().deleteAllForms()
             formResourceList.forEach { formResourceEntity ->
                 if (formResourceEntity.name == null) {
                     formResourceEntity.name = "Unnamed Form"
@@ -129,8 +128,12 @@ class FormRepository @Inject constructor() : BaseRepository() {
                 if (!encounterTypeUuid.isNullOrEmpty()) {
                     formResourceEntity.encounterTypeUuid = encounterTypeUuid
                 }
-                db.formResourceDAO().addFormResource(formResourceEntity)
             }
+            // A single transaction, not separate delete-then-insert calls: two syncs can run
+            // concurrently on a fresh device's first login (FormListService and
+            // ConceptDownloadService both call this), and un-transacted calls could interleave -
+            // see FormResourceDAO.replaceAllForms.
+            db.formResourceDAO().replaceAllForms(formResourceList)
             formResourceList
         } catch (e: Exception) {
             null
