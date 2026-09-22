@@ -1,9 +1,5 @@
 package org.openmrs.mobile.services;
 
-import static com.openmrs.android_sdk.utilities.ApplicationConstants.ConceptDownloadService.CHANNEL_DESC;
-import static com.openmrs.android_sdk.utilities.ApplicationConstants.ConceptDownloadService.CHANNEL_ID;
-import static com.openmrs.android_sdk.utilities.ApplicationConstants.ConceptDownloadService.CHANNEL_NAME;
-
 import javax.inject.Inject;
 import java.util.List;
 
@@ -11,21 +7,12 @@ import dagger.hilt.android.AndroidEntryPoint;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Build;
 import android.os.IBinder;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.openmrs.android_sdk.library.api.RestApi;
@@ -38,23 +25,29 @@ import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.SystemSetting;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 
-import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.settings.SettingsActivity;
 import org.openmrs.mobile.application.OpenMRS;
 import org.openmrs.mobile.utilities.PrivilegeUtils;
 
 import rx.Observable;
 import rx.schedulers.Schedulers;
 
+/**
+ * Downloads the concept dictionary (and primes every form's schema for offline use) silently -
+ * deliberately a plain background {@link Service}, not a foreground one, so it never shows a
+ * notification or needs POST_NOTIFICATIONS. It's only ever started while the app itself is
+ * already in the foreground (dashboard open on login, or the Settings "Download Concepts"
+ * button), the same way {@code FormListService}/{@code PatientService} already run their own
+ * background syncs, so the process has no need for a foreground service's process-priority boost
+ * to complete.
+ */
 @AndroidEntryPoint
 public class ConceptDownloadService extends Service {
     private int downloadedConcepts;
     private int maxConceptsInOneQuery = 100;
     // Concept downloading and form schema resolution run concurrently but independently (they
     // touch unrelated data, and one failing shouldn't affect the other) - these track whether
-    // each has finished, so the service stays alive (and its foreground notification visible)
-    // until both are done, rather than stopping - and losing its claim on the process - the
-    // moment whichever one happens to finish first does.
+    // each has finished, so the service stays alive until both are done, rather than stopping -
+    // and losing its claim on the process - the moment whichever one happens to finish first does.
     private volatile boolean conceptsDownloadFinished = false;
     private volatile boolean formSchemasResolved = false;
     @Inject
@@ -67,13 +60,11 @@ public class ConceptDownloadService extends Service {
         if (intent.getAction().equals(ApplicationConstants.ServiceActions.START_CONCEPT_DOWNLOAD_ACTION)) {
             conceptsDownloadFinished = false;
             formSchemasResolved = false;
-            showNotification(downloadedConcepts);
             startDownload();
             downloadConcepts(downloadedConcepts);
             resolveFormSchemasForOfflineUse();
         } else if (intent.getAction().equals(
                 ApplicationConstants.ServiceActions.STOP_CONCEPT_DOWNLOAD_ACTION)) {
-            stopForeground(true);
             stopSelf();
         }
         return START_STICKY;
@@ -108,39 +99,6 @@ public class ConceptDownloadService extends Service {
         });
     }
 
-    private void showNotification(int downloadedConcepts) {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channelPayment = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
-            channelPayment.setDescription(CHANNEL_DESC);
-            notificationManager.createNotificationChannel(channelPayment);
-        }
-
-        Intent notificationIntent = new Intent(this, SettingsActivity.class);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        notificationIntent.putExtra(ApplicationConstants.BroadcastActions.CONCEPT_DOWNLOAD_BROADCAST_INTENT_KEY_COUNT, downloadedConcepts);
-        int pendingIntentFlags = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            pendingIntentFlags |= PendingIntent.FLAG_IMMUTABLE;
-        }
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, pendingIntentFlags);
-
-        Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.ic_openmrs);
-
-        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.downloading_concepts_notification_message))
-                .setTicker(getString(R.string.app_name))
-                .setContentText(String.valueOf(downloadedConcepts))
-                .setSmallIcon(R.drawable.ic_stat_notify_download)
-                .setLargeIcon(Bitmap.createScaledBitmap(icon, 128, 128, false))
-                .setContentIntent(pendingIntent)
-                .setOngoing(true)
-                .build();
-        startForeground(ApplicationConstants.ServiceNotificationId.CONCEPT_DOWNLOADFOREGROUND_SERVICE,
-                notification);
-    }
-
     private void downloadConcepts(int startIndex) {
         Call<Results<ConceptEntity>> call = service.getConcepts(maxConceptsInOneQuery, startIndex);
         call.enqueue(new Callback<Results<ConceptEntity>>() {
@@ -155,7 +113,6 @@ public class ConceptDownloadService extends Service {
                         }
                     }
 
-                    showNotification(downloadedConcepts);
                     sendProgressBroadcast();
 
                     boolean isNextPage = false;
@@ -206,8 +163,7 @@ public class ConceptDownloadService extends Service {
      * that specific form while online, silently leaving it unusable offline until then. Targets a
      * different set of data than the concept download, so a failure here doesn't affect it (or
      * vice versa) - but the service must not stop (see [stopIfBothFinished]) until this finishes
-     * too, or the process could lose its foreground-service standing (and get killed) while these
-     * per-form network calls are still in flight.
+     * too, or the process could be killed while these per-form network calls are still in flight.
      *
      * Explicitly (re-)syncs the form list itself, synchronously, before resolving any schemas -
      * schema resolution only works on forms that already exist as local rows, and relying on

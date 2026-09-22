@@ -3,7 +3,6 @@ package org.openmrs.mobile.test.viewmodels
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.RestServiceBuilder
-import com.openmrs.android_sdk.library.api.repository.ConceptRepository
 import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
 import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
@@ -66,9 +65,6 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
     lateinit var privilegeRepository: PrivilegeRepository
 
     @Mock
-    lateinit var conceptRepository: ConceptRepository
-
-    @Mock
     lateinit var programRepository: ProgramRepository
 
     @Mock
@@ -95,7 +91,7 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         BCryptMock = Mockito.mockStatic(BCrypt::class.java)
 
         viewModel = LoginViewModel(loginRepository, visitRepository, locationRepository, locationDAO, userService,
-                privilegeRepository, conceptRepository, programRepository, visitAttributeTypeRepository)
+                privilegeRepository, programRepository, visitAttributeTypeRepository)
     }
 
     @After

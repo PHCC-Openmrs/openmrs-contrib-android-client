@@ -193,12 +193,7 @@ object ApplicationConstants {
 
     object BroadcastActions {
         const val CONCEPT_DOWNLOAD_BROADCAST_INTENT_ID = "com.openmrs.mobile.services.conceptdownloadservice.action.broadcastintent"
-        const val CONCEPT_DOWNLOAD_BROADCAST_INTENT_KEY_COUNT = "com.openmrs.mobile.services.conceptdownloadservice.broadcastintent.key.count"
         const val AUTHENTICATION_CHECK_BROADCAST_ACTION = "org.openmrs.mobile.services.AuthenticateCheckService"
-    }
-
-    object ServiceNotificationId {
-        const val CONCEPT_DOWNLOADFOREGROUND_SERVICE = 101
     }
 
     object SystemSettingKeys {
@@ -283,12 +278,6 @@ object ApplicationConstants {
         const val VITALS_TAB_POS = 4
         const val CHARTS_TAB_POS = 5
         const val TAB_COUNT = 6
-    }
-
-    object ConceptDownloadService {
-        const val CHANNEL_ID = "conceptCount"
-        const val CHANNEL_DESC = "This channel receives new concept count notifications"
-        const val CHANNEL_NAME = "Concepts Channel"
     }
 
     object AllergyModule {
