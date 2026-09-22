@@ -133,6 +133,15 @@ android {
     buildFeatures {
         viewBinding = true
     }
+
+    // The default output name is "<module>-<buildType>.apk" (openmrs-client-release.apk) - the
+    // module's Gradle name, not the app's branding (CARE, per the splash/onboarding logo). Rename
+    // it to what a user downloading the signed APK should actually see.
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "care-${variant.buildType.name}.apk"
+        }
+    }
 }
 
 repositories {
