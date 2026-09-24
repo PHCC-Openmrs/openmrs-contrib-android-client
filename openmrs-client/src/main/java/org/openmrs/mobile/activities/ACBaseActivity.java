@@ -494,12 +494,13 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     }
 
     private void setupLanguage() {
-        String lang = LanguageUtils.getLanguage();
-        Locale myLocale = new Locale(lang);
+        Locale myLocale = LanguageUtils.getLocale();
         Resources res = getResources();
         DisplayMetrics dm = res.getDisplayMetrics();
         Configuration conf = res.getConfiguration();
-        conf.locale = myLocale;
+        // setLocale, unlike assigning conf.locale, also sets the layout direction to match, so a
+        // right-to-left language such as Arabic mirrors the layouts.
+        conf.setLocale(myLocale);
         res.updateConfiguration(conf, dm);
     }
 

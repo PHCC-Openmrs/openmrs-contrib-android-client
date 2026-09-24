@@ -39,6 +39,7 @@
             <TextView
                 android:id="@+id/selectedTestLabel"
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:fontFamily="@font/roboto_medium"
@@ -62,6 +63,7 @@
             <EditText
                 android:id="@+id/accessionNumberEditText"
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/rectangle_transparent_box"

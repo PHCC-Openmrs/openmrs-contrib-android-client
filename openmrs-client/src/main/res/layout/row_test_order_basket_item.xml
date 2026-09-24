@@ -15,9 +15,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginLeft="@dimen/margin_short"
+    android:layout_marginStart="@dimen/margin_short"
     android:layout_marginTop="@dimen/margin_small"
-    android:layout_marginRight="@dimen/margin_short"
+    android:layout_marginEnd="@dimen/margin_short"
     android:layout_marginBottom="@dimen/margin_small"
     android:clickable="true"
     android:focusable="true">
@@ -45,6 +45,7 @@
         <TextView
             android:id="@+id/basketItemTestName"
             android:layout_width="0dp"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:fontFamily="@font/roboto_medium"
@@ -57,6 +58,7 @@
         <TextView
             android:id="@+id/basketItemSummary"
             android:layout_width="0dp"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textSize="14sp"

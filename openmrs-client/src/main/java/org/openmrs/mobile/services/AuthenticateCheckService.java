@@ -94,6 +94,7 @@ public class AuthenticateCheckService extends Service {
                 public void onResponse(@NonNull Call<Session> call, @NonNull Response<Session> response) {
                     if (response.isSuccessful()) {
                         Session session = response.body();
+                        OpenmrsAndroid.cacheSessionLocales(session);
                         if (session.isAuthenticated()) {
                             Log.i("Service Task ", "user authenticated");
                         } else {

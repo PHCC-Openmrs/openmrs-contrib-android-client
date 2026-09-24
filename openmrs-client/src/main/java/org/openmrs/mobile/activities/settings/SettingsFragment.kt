@@ -35,7 +35,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.SnackbarLayout
 import com.openmrs.android_sdk.utilities.ApplicationConstants
-import com.openmrs.android_sdk.utilities.ApplicationConstants.OpenMRSlanguage.LANGUAGE_LIST
 import com.openmrs.android_sdk.utilities.ApplicationConstants.ServiceActions.START_CONCEPT_DOWNLOAD_ACTION
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
@@ -198,11 +197,12 @@ class SettingsFragment : BaseFragment() {
 
     private fun setupLanguageSpinner() {
         with(binding.languageSpinner) {
-            adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, LANGUAGE_LIST)
+            adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1,
+                    viewModel.languageOptions.map { it.displayName })
             setSelection(viewModel.languageListPosition)
             onItemSelectedListener = object : OnItemSelectedListener {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                    viewModel.languageListPosition = position
+                    viewModel.onLanguageSelected(position)
                 }
 
                 override fun onNothingSelected(parent: AdapterView<*>?) {}

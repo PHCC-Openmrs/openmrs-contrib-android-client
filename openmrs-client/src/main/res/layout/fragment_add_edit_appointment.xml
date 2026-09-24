@@ -92,6 +92,7 @@
                     android:id="@+id/startDateEditText"
                     style="@style/AppointmentPickerField"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_weight="1"
                     android:hint="@string/date" />
 
@@ -99,6 +100,7 @@
                     android:id="@+id/startTimeEditText"
                     style="@style/AppointmentPickerField"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:hint="@string/time" />
@@ -107,6 +109,7 @@
             <EditText
                 android:id="@+id/durationEditText"
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/rectangle_transparent_box"
@@ -126,6 +129,7 @@
                 <TextView
                     style="@style/AppointmentFieldLabel"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_weight="1"
                     android:layout_marginTop="0dp"
                     android:text="@string/recurring_appointment_label" />
@@ -168,6 +172,7 @@
                 <EditText
                     android:id="@+id/recurringPeriodEditText"
                     android:layout_width="match_parent"
+                    android:textAlignment="viewStart"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/rectangle_transparent_box"
@@ -194,6 +199,7 @@
                     android:id="@+id/recurringEndDateEditText"
                     style="@style/AppointmentPickerField"
                     android:layout_width="match_parent"
+                    android:textAlignment="viewStart"
                     android:hint="@string/date" />
             </LinearLayout>
 
@@ -206,6 +212,7 @@
                 android:id="@+id/dateAppointmentScheduledEditText"
                 style="@style/AppointmentPickerField"
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:hint="@string/date" />
 
             <!-- Notes -->
@@ -275,8 +282,8 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

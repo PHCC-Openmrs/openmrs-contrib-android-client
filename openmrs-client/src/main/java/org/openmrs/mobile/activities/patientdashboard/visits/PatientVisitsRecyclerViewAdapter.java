@@ -58,13 +58,13 @@ public class PatientVisitsRecyclerViewAdapter extends RecyclerView.Adapter<Patie
 
             Drawable icon = mContext.getResources().getDrawable(R.drawable.past_visit_dot);
             icon.setBounds(0, 0, icon.getIntrinsicHeight(), icon.getIntrinsicWidth());
-            visitViewHolder.mVisitStatus.setCompoundDrawables(icon, null, null, null);
+            visitViewHolder.mVisitStatus.setCompoundDrawablesRelative(icon, null, null, null);
             visitViewHolder.mVisitStatus.setText(mContext.getString(R.string.past_visit_label));
         } else {
             visitViewHolder.mVisitEnd.setVisibility(View.INVISIBLE);
             Drawable icon = mContext.getResources().getDrawable(R.drawable.active_visit_dot);
             icon.setBounds(0, 0, icon.getIntrinsicHeight(), icon.getIntrinsicWidth());
-            visitViewHolder.mVisitStatus.setCompoundDrawables(icon, null, null, null);
+            visitViewHolder.mVisitStatus.setCompoundDrawablesRelative(icon, null, null, null);
             visitViewHolder.mVisitStatus.setText(mContext.getString(R.string.active_visit_label));
         }
         if (visit.getLocation() != null) {

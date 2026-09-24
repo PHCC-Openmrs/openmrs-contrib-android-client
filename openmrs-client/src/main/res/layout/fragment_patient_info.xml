@@ -24,8 +24,8 @@
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -38,8 +38,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/margin_short"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent">
 
                 <androidx.constraintlayout.widget.ConstraintLayout
@@ -50,6 +50,7 @@
                     <TextView
                         android:id="@+id/photo_title"
                         android:layout_width="match_parent"
+                        android:textAlignment="viewStart"
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="14dp"
                         android:layout_marginTop="14dp"
@@ -58,8 +59,8 @@
                         android:textColor="?android:attr/textColorPrimary"
                         android:textSize="18sp"
                         android:textStyle="bold"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintRight_toRightOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toTopOf="parent" />
 
                     <RelativeLayout
@@ -67,8 +68,8 @@
                         android:layout_height="wrap_content"
                         android:focusable="true"
                         android:focusableInTouchMode="true"
-                        app:layout_constraintLeft_toLeftOf="parent"
-                        app:layout_constraintRight_toRightOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintTop_toBottomOf="@id/photo_title">
 
                         <ImageView
@@ -87,9 +88,7 @@
                             android:layout_height="wrap_content"
                             android:layout_below="@id/patientPhoto"
                             android:layout_alignEnd="@id/patientPhoto"
-                            android:layout_alignRight="@id/patientPhoto"
                             android:layout_marginEnd="-25dp"
-                            android:layout_marginRight="-25dp"
                             android:layout_marginBottom="10dp"
                             android:backgroundTint="@color/color_accent"
                             android:tint="@color/color_accent"
@@ -108,8 +107,8 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:visibility="gone"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/photo_cardview">
 
                 <LinearLayout
@@ -153,8 +152,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/margin_short"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/deceased_cardview">
 
                 <LinearLayout
@@ -166,6 +165,7 @@
 
                     <TextView
                         android:layout_width="match_parent"
+                        android:textAlignment="viewStart"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/montserrat"
                         android:text="@string/demographics"
@@ -181,6 +181,7 @@
 
                         <TextView
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="20dp"
                             android:text="@string/reg_ques_name"
@@ -197,6 +198,7 @@
                             <EditText
                                 android:id="@+id/firstName"
                                 android:layout_width="match_parent"
+                                android:textAlignment="viewStart"
                                 android:layout_height="wrap_content"
                                 android:focusable="true"
                                 android:hint="@string/reg_firstname_hint"
@@ -216,6 +218,7 @@
                             <EditText
                                 android:id="@+id/middlename"
                                 android:layout_width="match_parent"
+                                android:textAlignment="viewStart"
                                 android:layout_height="wrap_content"
                                 android:focusable="true"
                                 android:hint="@string/reg_midname_hint"
@@ -235,6 +238,7 @@
                             <EditText
                                 android:id="@+id/surname"
                                 android:layout_width="match_parent"
+                                android:textAlignment="viewStart"
                                 android:layout_height="wrap_content"
                                 android:focusable="true"
                                 android:hint="@string/reg_surname_hint"
@@ -255,6 +259,7 @@
 
                         <TextView
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:text="@string/reg_ques_gender"
                             android:textSize="16sp"
@@ -300,6 +305,7 @@
 
                         <TextView
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:text="@string/reg_patient_status_hint"
                             android:textSize="16sp"
@@ -315,13 +321,13 @@
                             <AutoCompleteTextView
                                 android:id="@+id/patientStatusAutoComplete"
                                 android:layout_width="match_parent"
+                                android:textAlignment="viewStart"
                                 android:layout_height="48dp"
                                 android:focusable="true"
                                 android:hint="@string/reg_patient_status_hint"
                                 android:inputType="none"
                                 android:maxLines="1"
                                 android:paddingStart="12dp"
-                                android:paddingLeft="12dp"
                                 android:textSize="14sp" />
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -336,6 +342,7 @@
 
                         <TextView
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:text="@string/reg_ques_dob"
                             android:textSize="16sp"
@@ -362,13 +369,14 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_alignParentTop="true"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintTop_toTopOf="parent">
 
                                 <EditText
                                     android:id="@+id/dobEditText"
                                     android:layout_width="match_parent"
+                                    android:textAlignment="viewStart"
                                     android:layout_height="wrap_content"
                                     android:hint="@string/dob_hint"
                                     android:imeOptions="actionNext"
@@ -384,15 +392,13 @@
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
                                 android:layout_alignParentEnd="true"
-                                android:layout_alignParentRight="true"
                                 android:layout_centerVertical="true"
                                 android:layout_marginTop="8dp"
                                 android:layout_marginEnd="16dp"
-                                android:layout_marginRight="16dp"
                                 android:background="@drawable/ic_date_range_24dp"
                                 android:backgroundTint="?android:attr/textColorPrimary"
                                 app:layout_constraintBottom_toBottomOf="@id/textInputLayoutDOB"
-                                app:layout_constraintRight_toRightOf="@id/textInputLayoutDOB"
+                                app:layout_constraintEnd_toEndOf="@id/textInputLayoutDOB"
                                 app:layout_constraintTop_toTopOf="@id/textInputLayoutDOB" />
 
                             <TextView
@@ -405,8 +411,8 @@
                                 android:text="@string/label_or"
                                 android:textSize="18sp"
                                 android:textStyle="bold"
-                                app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
                                 app:layout_constraintTop_toBottomOf="@id/textInputLayoutDOB" />
 
                         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -428,6 +434,7 @@
                                 <EditText
                                     android:id="@+id/estimatedYear"
                                     android:layout_width="fill_parent"
+                                    android:textAlignment="viewStart"
                                     android:layout_height="wrap_content"
                                     android:focusable="true"
                                     android:hint="@string/estyr"
@@ -443,12 +450,12 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="8dp"
-                                android:layout_marginLeft="8dp"
                                 android:layout_weight="1">
 
                                 <EditText
                                     android:id="@+id/estimatedMonth"
                                     android:layout_width="fill_parent"
+                                    android:textAlignment="viewStart"
                                     android:layout_height="wrap_content"
                                     android:focusable="true"
                                     android:hint="@string/estmonth"
@@ -471,6 +478,7 @@
 
                         <TextView
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:text="@string/reg_national_id_hint"
                             android:textSize="16sp"
@@ -486,6 +494,7 @@
                             <EditText
                                 android:id="@+id/nationalId"
                                 android:layout_width="match_parent"
+                                android:textAlignment="viewStart"
                                 android:layout_height="wrap_content"
                                 android:focusable="true"
                                 android:hint="@string/reg_national_id_hint"
@@ -507,8 +516,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="@dimen/margin_short"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/demographic_cardview">
 
                 <LinearLayout
@@ -520,6 +529,7 @@
 
                     <TextView
                         android:layout_width="match_parent"
+                        android:textAlignment="viewStart"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/montserrat"
                         android:text="@string/patient_contact_info_label"
@@ -539,6 +549,7 @@
 
                     <TextView
                         android:layout_width="match_parent"
+                        android:textAlignment="viewStart"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="20dp"
                         android:text="@string/reg_ques_address"
@@ -555,6 +566,7 @@
                         <EditText
                             android:id="@+id/addressOne"
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:focusable="true"
                             android:hint="@string/addr1_hint"
@@ -580,18 +592,19 @@
                                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_toLeftOf="@id/city_progressBar">
+                                android:layout_toStartOf="@id/city_progressBar">
 
                                 <AutoCompleteTextView
                                     android:id="@+id/cityAutoComplete"
                                     android:layout_width="match_parent"
+                                    android:textAlignment="viewStart"
                                     android:layout_height="48dp"
                                     android:focusable="true"
                                     android:hint="@string/reg_neighbourhood_hint"
                                     android:imeOptions="actionNext"
                                     android:inputType="textCapWords"
                                     android:maxLines="1"
-                                    android:paddingLeft="12dp"
+                                    android:paddingStart="12dp"
                                     android:textSize="14sp" />
 
                             </com.google.android.material.textfield.TextInputLayout>
@@ -600,7 +613,7 @@
                                 android:id="@+id/city_progressBar"
                                 android:layout_width="24dp"
                                 android:layout_height="24dp"
-                                android:layout_alignParentRight="true"
+                                android:layout_alignParentEnd="true"
                                 android:layout_centerVertical="true"
                                 android:visibility="gone" />
 
@@ -616,13 +629,13 @@
                             <AutoCompleteTextView
                                 android:id="@+id/stateAutoComplete"
                                 android:layout_width="match_parent"
+                                android:textAlignment="viewStart"
                                 android:layout_height="48dp"
                                 android:focusable="true"
                                 android:hint="@string/reg_governorate_hint"
                                 android:inputType="none"
                                 android:maxLines="1"
                                 android:paddingStart="12dp"
-                                android:paddingLeft="12dp"
                                 android:textSize="14sp" />
 
                         </com.google.android.material.textfield.TextInputLayout>
@@ -639,6 +652,7 @@
                         <EditText
                             android:id="@+id/phoneNumber"
                             android:layout_width="match_parent"
+                            android:textAlignment="viewStart"
                             android:layout_height="wrap_content"
                             android:focusable="true"
                             android:hint="@string/reg_phone_hint"
@@ -670,8 +684,8 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

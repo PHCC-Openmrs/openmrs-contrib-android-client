@@ -30,7 +30,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
-            android:layout_marginLeft="20dp"
             android:text="@string/settings_concepts_in_db"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="18sp"
@@ -44,11 +43,10 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/concepts_textView"
             android:layout_marginStart="@dimen/activity_horizontal_margin"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="@+id/concepts_download_button"
-            app:layout_constraintLeft_toRightOf="@+id/concepts_textView"
+            app:layout_constraintStart_toEndOf="@+id/concepts_textView"
             app:layout_constraintTop_toTopOf="@+id/concepts_download_button" />
 
         <Button
@@ -57,13 +55,12 @@
             android:layout_height="30dp"
             android:layout_marginTop="24dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginRight="16dp"
             android:backgroundTint="@color/color_accent"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="@string/find_patients_row_checkbox_download_label"
             android:visibility="invisible"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/language_apply_button"
             tools:targetApi="lollipop" />
 
@@ -122,7 +119,6 @@
             android:layout_width="124dp"
             android:layout_height="40dp"
             android:layout_marginStart="@dimen/activity_horizontal_margin"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
             android:layout_marginTop="24dp"
             app:srcCompat="@drawable/care_toolbar_logo"
             app:layout_constraintStart_toStartOf="parent"
@@ -133,7 +129,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginLeft="8dp"
             android:layout_marginTop="24dp"
             android:text="@string/settings_app_name"
             android:textColor="?android:attr/textColorPrimary"
@@ -145,7 +140,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginLeft="8dp"
             app:layout_constraintStart_toEndOf="@+id/app_icon"
             app:layout_constraintTop_toBottomOf="@+id/app_name_textView" />
 
@@ -166,11 +160,11 @@
                 android:layout_width="@dimen/settings_icon_size"
                 android:layout_height="@dimen/settings_icon_size"
                 android:layout_marginEnd="@dimen/activity_horizontal_margin"
-                android:layout_marginRight="@dimen/activity_horizontal_margin"
                 app:srcCompat="@drawable/ic_favorite_black_24dp" />
 
             <TextView
                 android:layout_width="0dp"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
@@ -196,11 +190,11 @@
                 android:layout_width="20dp"
                 android:layout_height="25dp"
                 android:layout_marginEnd="@dimen/activity_horizontal_margin"
-                android:layout_marginRight="@dimen/activity_horizontal_margin"
                 app:srcCompat="@drawable/mail_setting" />
 
             <TextView
                 android:layout_width="0dp"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
@@ -226,11 +220,11 @@
                 android:layout_width="@dimen/settings_icon_size"
                 android:layout_height="@dimen/settings_icon_size"
                 android:layout_marginEnd="@dimen/activity_horizontal_margin"
-                android:layout_marginRight="@dimen/activity_horizontal_margin"
                 app:srcCompat="@drawable/ic_security_black_24dp" />
 
             <TextView
                 android:layout_width="0dp"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="1"
@@ -246,9 +240,7 @@
             android:layout_marginBottom="@dimen/margin_short"
             android:background="@color/dark_grey_6x"
             android:paddingStart="20dp"
-            android:paddingLeft="20dp"
             android:paddingEnd="16dp"
-            android:paddingRight="16dp"
             android:text="@string/label_dark_mode"
             android:textSize="18sp"
             app:layout_constraintTop_toTopOf="parent"
@@ -261,9 +253,7 @@
             android:layout_marginBottom="@dimen/margin_short"
             android:background="@color/dark_grey_6x"
             android:paddingStart="20dp"
-            android:paddingLeft="20dp"
             android:paddingEnd="16dp"
-            android:paddingRight="16dp"
             android:text="@string/label_auto_delete_synced_patients"
             android:textSize="18sp"
             app:layout_constraintTop_toBottomOf="@id/dark_mode_switch"
@@ -276,12 +266,11 @@
             android:layout_weight="1"
             android:gravity="center_vertical"
             android:paddingStart="20dp"
-            android:paddingLeft="20dp"
             android:text="@string/language"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="@+id/language_apply_button"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="@+id/language_apply_button"
             tools:ignore="RtlSymmetry" />
 
@@ -293,8 +282,8 @@
             android:layout_weight="1"
             android:background="@drawable/spinner_settings_page"
             app:layout_constraintBottom_toBottomOf="@+id/language_apply_button"
-            app:layout_constraintLeft_toRightOf="@+id/language_header"
-            app:layout_constraintRight_toLeftOf="@id/language_apply_button"
+            app:layout_constraintStart_toEndOf="@+id/language_header"
+            app:layout_constraintEnd_toStartOf="@id/language_apply_button"
             app:layout_constraintTop_toTopOf="@+id/language_apply_button" />
 
         <Button
@@ -303,14 +292,13 @@
             android:layout_height="30dp"
             android:layout_marginTop="24dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginRight="16dp"
             android:layout_weight="1"
             android:backgroundTint="@color/color_accent"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="@string/apply"
-            app:layout_constraintLeft_toLeftOf="@id/concepts_download_button"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintStart_toStartOf="@id/concepts_download_button"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/auto_delete_synced_patients_switch"
             tools:targetApi="lollipop" />
 

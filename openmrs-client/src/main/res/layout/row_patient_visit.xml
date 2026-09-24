@@ -15,9 +15,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginLeft="@dimen/margin_short"
+    android:layout_marginStart="@dimen/margin_short"
     android:layout_marginTop="@dimen/margin_small"
-    android:layout_marginRight="@dimen/margin_short"
+    android:layout_marginEnd="@dimen/margin_short"
     android:layout_marginBottom="@dimen/margin_small"
     android:clickable="true"
     android:focusable="true"
@@ -37,7 +37,7 @@
             android:text="@string/start"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="16sp"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -45,10 +45,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
-            android:layout_marginLeft="20dp"
             android:fontFamily="@font/roboto_medium"
             android:textSize="16sp"
-            app:layout_constraintLeft_toRightOf="@id/startDate"
+            app:layout_constraintStart_toEndOf="@id/startDate"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -60,7 +59,7 @@
             android:text="@string/end"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="16sp"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/startDate" />
 
         <TextView
@@ -71,7 +70,7 @@
             android:layout_marginTop="4dp"
             android:fontFamily="@font/roboto_medium"
             android:textSize="16sp"
-            app:layout_constraintLeft_toLeftOf="@id/patientVisitStartDate"
+            app:layout_constraintStart_toStartOf="@id/patientVisitStartDate"
             app:layout_constraintTop_toBottomOf="@id/patientVisitStartDate" />
 
         <TextView
@@ -81,7 +80,7 @@
             android:layout_marginTop="4dp"
             android:fontFamily="@font/montserrat"
             android:textSize="16sp"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/endDate" />
 
         <LinearLayout
@@ -91,7 +90,7 @@
             android:gravity="center"
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent">
 
             <TextView

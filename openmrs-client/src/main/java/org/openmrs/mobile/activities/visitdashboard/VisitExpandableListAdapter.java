@@ -185,7 +185,7 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
         final TextView detailsSelector = rowView.findViewById(R.id.listVisitGroupDetailsSelector);
         final Encounter encounter = mEncounters.get(groupPosition);
         encounterName.setText(encounter.getEncounterType().getDisplay());
-        encounterName.setCompoundDrawablesWithIntrinsicBounds(0, 0, 0, 0);
+        encounterName.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
         if (isExpanded) {
             detailsSelector.setText(mContext.getString(R.string.list_visit_selector_hide));
             bindDrawableResources(R.drawable.exp_list_hide_details, detailsSelector, RIGHT);
@@ -223,11 +223,11 @@ public class VisitExpandableListAdapter extends BaseExpandableListAdapter {
         if (direction == LEFT) {
             image.setBounds(0, 0, (int) (40 * scale + 0.5f), (int) (40 * scale + 0.5f));
             textView.setCompoundDrawablePadding((int) (13 * scale + 0.5f));
-            textView.setCompoundDrawables(image, null, null, null);
+            textView.setCompoundDrawablesRelative(image, null, null, null);
         } else {
             image.setBounds(0, 0, image.getIntrinsicWidth(), image.getIntrinsicHeight());
             textView.setCompoundDrawablePadding((int) (10 * scale + 0.5f));
-            textView.setCompoundDrawables(null, null, image, null);
+            textView.setCompoundDrawablesRelative(null, null, image, null);
         }
     }
 

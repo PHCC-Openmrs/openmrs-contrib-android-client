@@ -6,7 +6,6 @@ import android.net.Uri
 import com.openmrs.android_sdk.library.OpenMRSLogger
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.repository.ConceptRepository
-import com.openmrs.android_sdk.utilities.ApplicationConstants.OpenMRSlanguage.LANGUAGE_CODE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.PACKAGE_NAME
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.openmrs.mobile.R
@@ -25,22 +24,18 @@ class SettingsViewModel @Inject constructor(
     var logSize: Long = 0
     val appMarketUri: Uri = Uri.parse("market://details?id=${PACKAGE_NAME}")
     val appLinkUri: Uri = Uri.parse("http://play.google.com/store/apps/details?id=$PACKAGE_NAME")
-    var languageListPosition: Int = 0
-        get() {
-            val language = LanguageUtils.getLanguage()
-            var i = 0
-            while (i < LANGUAGE_CODE.size) {
-                if (language == LANGUAGE_CODE[i]) {
-                    return i
-                }
-                i++
-            }
-            return 0
-        }
-        set(position) {
-            LanguageUtils.setLanguage(LANGUAGE_CODE[position])
-            field = position
-        }
+    val languageOptions: List<LanguageUtils.LanguageOption> by lazy { LanguageUtils.getSelectableLanguages() }
+
+    val languageListPosition: Int
+        get() = LanguageUtils.indexOfLanguage(languageOptions, LanguageUtils.getLanguage())
+
+    fun onLanguageSelected(position: Int) {
+        // The spinner reports its initial selection as soon as it's laid out. Saving that would
+        // turn "never chose a language" into an explicit choice just by opening this screen,
+        // and the app would stop following the server's locale for the user.
+        if (position == languageListPosition) return
+        LanguageUtils.setLanguage(languageOptions[position].tag)
+    }
 
 
     init {

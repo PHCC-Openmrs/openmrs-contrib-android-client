@@ -55,6 +55,7 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/diagnosisSearchEditText"
                     android:layout_width="match_parent"
+                    android:textAlignment="viewStart"
                     android:layout_height="wrap_content"
                     android:inputType="text"
                     android:maxLines="1" />
@@ -108,8 +109,8 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

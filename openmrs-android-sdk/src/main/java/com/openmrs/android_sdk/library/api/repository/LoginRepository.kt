@@ -1,5 +1,6 @@
 package com.openmrs.android_sdk.library.api.repository
 
+import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.RestApi
 import com.openmrs.android_sdk.library.api.RestServiceBuilder
 import com.openmrs.android_sdk.library.databases.AppDatabaseHelper.createObservableIO
@@ -33,6 +34,7 @@ class LoginRepository @Inject constructor() : BaseRepository() {
                         ?.substringAfter("=")
                         ?.substringBefore(";")
                 response.body()?.sessionId = cookieSessionId ?: response.body()?.sessionId
+                OpenmrsAndroid.cacheSessionLocales(response.body())
                 return@Callable response.body()!!
             } else {
                 throw Exception("Error fetching session: ${response.message()}")

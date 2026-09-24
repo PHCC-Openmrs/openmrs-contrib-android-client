@@ -35,6 +35,23 @@ class Session(@field:SerializedName("sessionId")
               @field:Expose
               var currentProvider: Provider? = null) {
 
+    /**
+     * The server's locale for this request - for an authenticated user it's their
+     * `defaultLocale` user property if set, otherwise the server's `default_locale`.
+     */
+    @field:SerializedName("locale")
+    @field:Expose
+    var locale: String? = null
+
+    /**
+     * The server's `locale.allowed.list` global property - the same list the web client builds
+     * its language picker from. Entries the server can't parse arrive as `null`, and the same
+     * tag can arrive more than once, so this must be sanitised before use.
+     */
+    @field:SerializedName("allowedLocales")
+    @field:Expose
+    var allowedLocales: List<String?>? = null
+
     override fun toString(): String {
         return "\tsessionId: $sessionId\tauthenticated: $isAuthenticated"
     }

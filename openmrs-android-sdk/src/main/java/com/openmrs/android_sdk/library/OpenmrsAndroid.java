@@ -20,12 +20,15 @@ import android.preference.PreferenceManager;
 
 import androidx.annotation.Nullable;
 
+import com.openmrs.android_sdk.library.models.Session;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static android.content.Context.MODE_PRIVATE;
@@ -107,6 +110,71 @@ public class OpenmrsAndroid {
     public static SharedPreferences getOpenMRSSharedPreferences() {
         return instance.getSharedPreferences(ApplicationConstants.OpenMRSSharedPreferenceNames.SHARED_PREFERENCES_NAME,
                 MODE_PRIVATE);
+    }
+
+    /**
+     * Remembers the locale configuration a /session response carried, so the language picker
+     * works offline and between the moments the app actually talks to the server.
+     * <p>
+     * The allowed list is server configuration, so it's kept even from an unauthenticated
+     * response; the locale is only kept from an authenticated one, since only then does it
+     * reflect the user's own default. A response without the fields (an older server) leaves
+     * what was cached before untouched.
+     *
+     * @param session the session returned by the server
+     */
+    public static void cacheSessionLocales(@Nullable Session session) {
+        if (session == null) {
+            return;
+        }
+        SharedPreferences.Editor editor = getOpenMRSSharedPreferences().edit();
+        List<String> allowedLocales = session.getAllowedLocales();
+        if (allowedLocales != null) {
+            StringBuilder joined = new StringBuilder();
+            for (String locale : allowedLocales) {
+                // Locale tags never contain commas, so a comma is a safe separator.
+                if (locale == null || locale.trim().isEmpty()) {
+                    continue;
+                }
+                if (joined.length() > 0) {
+                    joined.append(',');
+                }
+                joined.append(locale.trim());
+            }
+            editor.putString(ApplicationConstants.OpenMRSlanguage.KEY_SERVER_ALLOWED_LOCALES, joined.toString());
+        }
+        if (session.isAuthenticated() && session.getLocale() != null) {
+            editor.putString(ApplicationConstants.OpenMRSlanguage.KEY_SERVER_LOCALE, session.getLocale());
+        }
+        editor.apply();
+    }
+
+    /**
+     * Gets the locales the server allows, as last reported by it.
+     *
+     * @return the allowed locale tags, exactly as the server sent them; empty if never received
+     */
+    public static List<String> getServerAllowedLocales() {
+        String joined = getOpenMRSSharedPreferences()
+                .getString(ApplicationConstants.OpenMRSlanguage.KEY_SERVER_ALLOWED_LOCALES, "");
+        List<String> locales = new ArrayList<>();
+        for (String locale : joined.split(",")) {
+            if (!locale.isEmpty()) {
+                locales.add(locale);
+            }
+        }
+        return locales;
+    }
+
+    /**
+     * Gets the server's locale for the logged-in user, as last reported by it.
+     *
+     * @return the locale tag, or null if never received
+     */
+    public static @Nullable
+    String getServerLocale() {
+        return getOpenMRSSharedPreferences()
+                .getString(ApplicationConstants.OpenMRSlanguage.KEY_SERVER_LOCALE, null);
     }
 
     /**

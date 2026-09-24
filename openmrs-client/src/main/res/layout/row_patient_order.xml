@@ -15,9 +15,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginLeft="@dimen/margin_short"
+    android:layout_marginStart="@dimen/margin_short"
     android:layout_marginTop="@dimen/margin_small"
-    android:layout_marginRight="@dimen/margin_short"
+    android:layout_marginEnd="@dimen/margin_short"
     android:layout_marginBottom="@dimen/margin_small">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -28,6 +28,7 @@
         <TextView
             android:id="@+id/orderConceptName"
             android:layout_width="0dp"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:fontFamily="@font/roboto_medium"
             android:textColor="?android:attr/textColorPrimary"
@@ -76,6 +77,7 @@
         <TextView
             android:id="@+id/orderInstructions"
             android:layout_width="0dp"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:textSize="13sp"

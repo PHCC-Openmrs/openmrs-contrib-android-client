@@ -32,8 +32,8 @@
             android:contentDescription="@string/openmrs_logo"
             android:src="@drawable/care_logo"
             android:visibility="visible"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -42,8 +42,8 @@
             android:layout_height="wrap_content"
             app:layout_constraintTop_toBottomOf="@id/openmrsLogo"
             android:layout_marginTop="30dp"
-            android:layout_marginLeft="35dp"
-            android:layout_marginRight="35dp"
+            android:layout_marginStart="35dp"
+            android:layout_marginEnd="35dp"
             android:textSize="18sp"
             android:gravity="center"
             android:textColor="?android:attr/textColorPrimary"
@@ -55,9 +55,9 @@
             android:id="@+id/aboutOpenmrsTextView2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="35dp"
+            android:layout_marginStart="35dp"
             android:layout_marginTop="15dp"
-            android:layout_marginRight="35dp"
+            android:layout_marginEnd="35dp"
             android:text="@string/about_openmrs_2"
             android:textSize="18sp"
             android:gravity="center"
@@ -72,7 +72,6 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
             android:background="@color/save_button"
             android:fontFamily="@font/montserrat"
             android:paddingHorizontal="20dp"
@@ -81,7 +80,7 @@
             android:textColor="@color/white"
             android:textSize="16sp"
             android:layout_marginTop="30dp"
-            android:layout_marginRight="40dp"
+            android:layout_marginEnd="40dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/aboutOpenmrsTextView2" />
     </androidx.constraintlayout.widget.ConstraintLayout>

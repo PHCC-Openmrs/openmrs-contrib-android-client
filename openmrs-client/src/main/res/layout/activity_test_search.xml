@@ -20,6 +20,7 @@
     <EditText
         android:id="@+id/testSearchEditText"
         android:layout_width="match_parent"
+        android:textAlignment="viewStart"
         android:layout_height="wrap_content"
         android:background="@drawable/rectangle_transparent_box"
         android:hint="@string/test_search_hint"
@@ -39,6 +40,7 @@
         <TextView
             android:id="@+id/resultsCountLabel"
             android:layout_width="0dp"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:textSize="13sp"

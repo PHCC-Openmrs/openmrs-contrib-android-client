@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ The contents of this file are subject to the OpenMRS Public License
+  ~ Version 1.0 (the "License"); you may not use this file except in
+  ~ compliance with the License. You may obtain a copy of the License at
+  ~ http://license.openmrs.org
+  ~
+  ~ Software distributed under the License is distributed on an "AS IS"
+  ~ basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+  ~ License for the specific language governing rights and limitations
+  ~ under the License.
+  ~
+  ~ Copyright (C) OpenMRS, LLC.  All Rights Reserved.
+  -->
+
+<resources>
+    <string name="app_name">عميل OpenMRS للأندرويد</string>
+    <string name="action_settings">الإعدادات</string>
+    <string name="action_logout">تسجيل الخروج</string>
+    <string name="action_location">الموقع</string>
+
+    <string name="alphanumeric_postal_code">ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 </string>
+
+    <!-- Login view -->
+    <string name="login_button">تسجيل الدخول</string>
+    <string name="login_username_hint">اسم المستخدم</string>
+    <string name="login_password_hint">كلمة المرور</string>
+    <string name="login_location_select">موقع الجلسة</string>
+    <string name="req_star"><![CDATA[<font color=\'#616161\'> * </font>]]></string>
+    <string name="warning_dialog_title">تحذير</string>
+    <string name="warning_lost_data_dialog">سيؤدي تغيير عنوان URL أو اسم المستخدم أو كلمة المرور إلى محو جميع البيانات. هل أنت متأكد؟</string>
+    <string name="forgot_button_ok">تجاهل</string>
+    <string name="login_offline">غير متصل</string>
+    <string name="login_online">متصل</string>
+
+    <string name="emptyerror">مطلوب</string>
+    <string name="fname_invalid_error">لا يمكن أن يحتوي الاسم الأول على رموز أو أرقام</string>
+    <string name="midname_invalid_error">لا يمكن أن يحتوي الاسم الأوسط على رموز أو أرقام</string>
+    <string name="lname_invalid_error">لا يمكن أن يحتوي اسم العائلة على رموز أو أرقام</string>
+    <string name="dob_error">يجب أن يكون التاريخ بين %1$s و %2$s</string>
+    <string name="reg_firstname_hint">الاسم الأول*</string>
+    <string name="reg_midname_hint">الاسم الأوسط</string>
+    <string name="reg_surname_hint">اسم العائلة*</string>
+    <string name="reg_ques_name">اسم المريض</string>
+    <string name="reg_ques_gender">جنس المريض*</string>
+    <string name="reg_ques_dob">تاريخ ميلاد المريض*</string>
+    <string name="label_or">أو</string>
+    <string name="reg_ques_address">العنوان</string>
+    <string name="addr1_hint">سطر العنوان 1*</string>
+    <string name="addr2_hint">سطر العنوان 2</string>
+    <string name="addr_invalid_error">لا يمكن أن يحتوي العنوان على أحرف غير صالحة</string>
+    <string name="atleastone">يرجى ملء حقل عنوان واحد على الأقل</string>
+
+    <string name="male">ذكر</string>
+    <string name="female">أنثى</string>
+    <string name="dob_hint">تاريخ الميلاد (الصيغة: dd / MM / yyyy)</string>
+    <string name="estyr">السنوات التقديرية</string>
+    <string name="estmonth">الأشهر التقديرية</string>
+
+    <!-- Offline Mode -->
+    <string name="offline_mode_unsupported_in_first_login">الوضع غير المتصل غير مدعوم أثناء تسجيل الدخول الأول. فعّل الوضع المتصل ثم أعد المحاولة.</string>
+    <string name="login_offline_toast_message">أنت الآن في الوضع غير المتصل.</string>
+
+    <!-- Authentication Failed dialog -->
+    <string name="auth_failed_dialog_message">تم إدخال اسم مستخدم أو كلمة مرور غير صحيحة. يرجى المحاولة مرة أخرى.</string>
+    <!-- No internet dialog -->
+    <string name="no_internet_conn_dialog_message">ليس لديك اتصال بالإنترنت. \n يرجى التحقق من اتصال الهاتف أو Wi-Fi وقوة الإشارة ثم أعد المحاولة.</string>
+
+    <!-- patientRepository-->
+    <string name="patient_update_unsuccessful_server_error">تعذر تحديث المريض %1$s بسبب خطأ في الخادم، ستتم إعادة محاولة المزامنة %2$s</string>
+    <string name="patient_cannot_be_synced_due_to_request_error_message">تعذرت مزامنة المريض [%1$i] بسبب خطأ في الطلب%2$s</string>
+    <string name="patient_cannot_be_synced_due_to_server_error_message">تعذرت مزامنة المريض [%1$i] بسبب خطأ في الخادم%2$s</string>
+
+    <!-- SimilarPatients dialog -->
+    <string name="similar_patients_dialog_title">تم العثور على مرضى مشابهين</string>
+
+    <!-- Logout dialog -->
+    <string name="logout_dialog_title">جارٍ تسجيل الخروج</string>
+    <string name="logout_dialog_message">هل أنت متأكد أنك تريد تسجيل الخروج من عميل OpenMRS؟</string>
+    <string name="logout_dialog_button">تسجيل الخروج</string>
+    <!--Credentials Changed dialog-->
+    <string name="credentials_changed_dialog_title">تم تغيير بيانات الاعتماد</string>
+    <string name="credentials_changed_dialog_message">تم تغيير بيانات اعتمادك في تطبيق الويب. تم تسجيل خروجك تلقائيًا</string>
+    <!-- End Visit dialog -->
+    <string name="end_visit_dialog_title">إنهاء الزيارة</string>
+    <string name="end_visit_dialog_message"> هل أنت متأكد أنك تريد إنهاء هذه الزيارة؟</string>
+    <!-- Start visit dialog -->
+    <string name="start_visit_dialog_title">بدء الزيارة </string>
+    <string name="start_visit_dialog_message">هل أنت متأكد أنك تريد بدء زيارة لـ %1$s الآن؟</string>
+    <!-- Start visit dialog unsuccessful-->
+    <string name="start_visit_unsuccessful_dialog_title">لم تبدأ الزيارة.</string>
+    <string name="start_visit_unsuccessful_dialog_message">لدى %1$s زيارة نشطة بالفعل. حاول مزامنة المريض أو إغلاق الزيارات السابقة</string>
+    <!-- Delete patient dialog message -->
+    <string name="delete_patient_dialog_message">هل أنت متأكد أنك تريد حذف هذا المريض؟</string>
+    <!-- Location dialog  -->
+    <string name="location_dialog_title">اختر الموقع </string>
+    <string name="location_dialog_current_location">الموقع الحالي:  </string>
+
+    <!-- Reset patient info dialog -->
+    <string name="reset_dialog_message">سيتم مسح جميع معلومات المريض المدخلة</string>
+
+    <!-- Buttons -->
+    <string name="dialog_button_cancel">إلغاء</string>
+    <string name="dialog_button_ok">موافق</string>
+    <string name="dialog_button_confirm"> تأكيد</string>
+    <string name="dialog_button_register_new">تسجيل جديد</string>
+    <string name="dialog_button_merge">دمج</string>
+    <string name="action_next">التالي</string>
+    <string name="dialog_button_select_location">اختر الموقع</string>
+
+    <!-- Settings activity -->
+    <string name="settings_logs">السجلات</string>
+    <string name="settings_concepts_in_db">المفاهيم في قاعدة البيانات:</string>
+    <string name="settings_no_concepts_toast">لا توجد مفاهيم في قاعدة البيانات!</string>
+
+    <!-- FindPatients activity -->
+    <string name="action_find_patients">البحث عن المرضى </string>
+    <string name="action_synced_patients">المرضى الذين تمت مزامنتهم</string>
+    <string name="action_download_patients">تنزيل المرضى</string>
+    <string name="search_patient_hint">اسم المريض</string>
+    <string name="search_patient_no_results">لا يوجد مرضى في قاعدة البيانات </string>
+    <string name="search_patient_no_result_for_query">لم يتم العثور على نتائج للاستعلام \"%1$s\"</string>
+    <string name="select_all_downloadable_data">تحديد الكل</string>
+    <string name="download_selected_patient_data">تنزيل بيانات المريض</string>
+    <string name="download_multiple">تنزيل متعدد</string>
+
+    <!-- Dashboard Activity -->
+    <string name="dashboard_search_icon_label">البحث عن المرضى </string>
+    <string name="dashboard_registry_icon_label">تسجيل مريض</string>
+    <string name="dashboard_visits_icon_label">الزيارات النشطة</string>
+    <string name="dashboard_forms_icon_label">إدخال النماذج</string>
+
+    <!-- row_find_synced_patients layout-->
+    <string name="find_patients_row_checkbox_download_label">تنزيل</string>
+
+    <!-- Patient Dashboard Activity -->
+    <string name="action_synchronize_patients">جارٍ مزامنة المريض</string>
+    <string name="action_update_patient_data">تحديث المريض</string>
+    <string name="synchronize_patient_successful">تمت مزامنة بيانات المريض بنجاح.</string>
+    <string name="synchronize_patient_error">فشلت مزامنة بيانات المريض</string>
+    <string name="synchronize_patient_network_error">لا يمكن المزامنة في الوضع غير المتصل</string>
+    <string name="get_patient_from_database_error">فشل في جلب المريض من قاعدة البيانات</string>
+    <string name="action_start_visit">بدء الزيارة </string>
+    <string name="action_create_allergy">إضافة حساسية</string>
+    <string name="patient_scroll_tab_details_label">التفاصيل</string>
+    <string name="patient_scroll_tab_allergy_label">الحساسية</string>
+    <string name="patient_scroll_tab_diagnosis_label">التشخيص</string>
+    <string name="patient_scroll_tab_visits_label">الزيارات</string>
+    <string name="patient_scroll_tab_vitals_label">العلامات الحيوية</string>
+    <string name="patient_scroll_tab_charts_label">الرسوم البيانية</string>
+    <string name="download_started">"جارٍ التنزيل…"</string>
+    <string name="action_starting_visit">"جارٍ بدء الزيارة"</string>
+
+    <!-- fragment_patient_details layout -->
+    <string name="patient_identifier"># %1$s</string>
+    <string name="patient_details_photo_label">صورة المريض</string>
+    <string name="patient_details_birth_date_label">تاريخ الميلاد</string>
+    <string name="patient_contact_info_label">معلومات الاتصال</string>
+    <string name="patient_address_label">العنوان</string>
+    <string name="patient_city_label">المدينة</string>
+    <string name="patient_postal_label">الرمز البريدي</string>
+    <string name="patient_state_label">الولاية</string>
+    <string name="patient_country_label">الدولة</string>
+    <string name="date_picker_title">اختر تاريخ الميلاد</string>
+
+    <!-- Find Active visit activity -->
+    <string name="action_active_visits">الزيارات النشطة</string>
+    <string name="action_form_entry">إدخال النماذج</string>
+    <string name="action_find_visits">البحث عن الزيارات النشطة</string>
+    <string name="search_visits_no_results">لا توجد زيارات في قاعدة البيانات</string>
+
+    <!-- ACBase activity -->
+    <string name="error_email_subject_app_crashed">تعطل عميل OpenMRS للأندرويد</string>
+    <string name="choose_a_email_client">اختر تطبيق بريد إلكتروني:</string>
+    <string name="no_internet_connection_message">لا يوجد اتصال بالإنترنت</string>
+
+    <!-- Patient Service Activity-->
+    <string name="activity_no_internet_connection">لا يوجد اتصال بالإنترنت. يتم حفظ بيانات تسجيل المريض محليًا </string>
+    <string name="activity_sync_after_connection">وستتم مزامنتها عند استعادة الاتصال بالإنترنت </string>
+
+    <!-- Patients Vitals Fragment -->
+    <string name="form_error">هذا النموذج غير مدعوم </string>
+
+    <!-- fragment_patient_visits layout -->
+    <string name="active_visit_label">الزيارة النشطة</string>
+    <string name="past_visit_label">الزيارة السابقة</string>
+    <string name="visit_in">في %1$s</string>
+
+    <!-- fragment_patient_vitals layout -->
+    <string name="last_vitals_label">آخر العلامات الحيوية: </string>
+    <string name="last_vitals_none_label">لا شيء</string>
+
+    <!-- fragment_patient_diagnosis layout -->
+    <string name="empty_diagnoses_list">ليس لدى المريض أي تشخيص حتى الآن.</string>
+    <string name="diagnosis_note_label">نص ملاحظة اللقاء</string>
+
+    <!--fragment_vitals_charts_layout-->
+    <string name="list_vital_selector_show">إظهار الرسم البياني</string>
+    <string name="list_vital_selector_hide">إخفاء الرسم البياني</string>
+
+    <!--fragment_patient_charts layout-->
+    <string name="no_vitals_recorded">لم يتم تسجيل أي علامات حيوية </string>
+
+    <!-- Visit dashboard activity -->
+    <string name="action_end_visit">إنهاء الزيارة</string>
+    <string name="visit_dashboard_label">اللقاءات</string>
+    <string name="list_visit_selector_show">إظهار التفاصيل</string>
+    <string name="list_visit_selector_hide">إخفاء التفاصيل</string>
+    <string name="visit_exp_list_empty">لم تشهد هذه الزيارة أي لقاء حتى الآن. </string>
+
+    <!-- Capture Vitals activity -->
+    <string name="action_delete_patient">حذف المريض</string>
+    <string name="action_register_patient">تسجيل مريض </string>
+    <string name="failed_to_open_vitals_form">حدث خطأ. ملف نموذج غير صالح أو تالف. </string>
+    <string name="active_visit_label_capture_vitals">في زيارة</string>
+
+    <!-- Form Entry Activity -->
+    <string name="empty_visits_list">ليس لدى المريض أي زيارات حتى الآن.</string>
+    <string name="title_activity_form_create">FormCreateActivity</string>
+
+    <!--Similar patient card strings-->
+    <string name="gender_hint">الجنس:</string>
+    <string name="birthdate_hint">تاريخ الميلاد:</string>
+    <string name="address_hint">العنوان:</string>
+    <string name="demographics">البيانات الديموغرافية</string>
+    <string name="unable_to_login">غير قادر على تسجيل الدخول؟</string>
+    <string name="no_patient_selected">لم يتم تحديد أي مريض</string>
+
+    <!--Matching Patient Activity-->
+    <string name="matching_patients_toolbar_title">دمج المرضى</string>
+    <string name="patient_registered_locally">تم تسجيل المريض محليًا </string>
+    <string name="similar_patients_on_server">يوجد مرضى مشابهون على الخادم</string>
+    <string name="registration_core_info">لاستخدام حل مطابقة مرضى أسرع وأكثر دقة، يلزم ترقية وحدة Registration Core إلى الإصدار 1.7 أو أعلى </string>
+
+    <!--ChartsView Activity-->
+    <string name="charts_view_toolbar_title">عرض الرسوم البيانية</string>
+
+    <!-- Image content description strings -->
+    <string name="openmrs_logo">شعار CARE</string>
+    <string name="toast_with_black_background">إشعار بخلفية سوداء</string>
+    <string name="edit_form">تعديل النموذج</string>
+    <string name="patient_photo">صورة المريض</string>
+    <string name="take_a_photo">التقط صورة</string>
+
+    <!--Snackbar strings-->
+    <string name="snackbar_action_open">فتح</string>
+    <string name="snackbar_info_patient_downloaded">تم تنزيل المريض</string>
+    <string name="invalid_login_or_password_message">اسم مستخدم أو كلمة مرور غير صالحة، يرجى المحاولة مرة أخرى.</string>
+    <string name="snackbar_no_internet_connection">لا يوجد اتصال بالإنترنت</string>
+
+    <!--permissions-->
+    <string name="permission_camera_rationale">يتطلب التقاط الصور إذن الكاميرا.</string>
+    <string name="permission_camera_denied">تم رفض إذن الكاميرا. يرجى النظر في منحه للوصول إلى الكاميرا</string>
+    <string name="permission_camera_neverask">تم رفض إذن الكاميرا مع تحديد عدم السؤال مرة أخرى </string>
+    <string name="button_allow">السماح</string>
+    <string name="button_deny">رفض</string>
+    <string name="patient_not_yet_registered">المريض غير مسجل بعد، لا يمكن إنشاء لقاء.</string>
+
+    <!-- Layout strings -->
+    <string name="sync">مزامنة</string>
+    <string name="snackbar_edit">تعديل</string>
+
+    <!--Activity Logs-->
+    <string name="title_activity_logs">السجلات</string>
+
+    <!--App Crash Dialog-->
+    <string name="crash_dialog_title">حدث خطأ</string>
+    <string name="crash_dialog_message">عذرًا! حدث عطل غير متوقع. يرجى تزويد المطورين بالتفاصيل حتى يتم حله في أقرب وقت ممكن</string>
+    <string name="crash_dialog_positive_button">إعادة التشغيل</string>
+    <string name="crash_dialog_negative_button">إغلاق</string>
+    <string name="crash_dialog_neutral_button">إرسال تقرير وإعادة التشغيل </string>
+
+    <!-- Syncbutton toasts -->
+    <string name="disconn_server">جارٍ قطع الاتصال بالخادم</string>
+    <string name="reconn_server">جارٍ إعادة الاتصال بالخادم</string>
+    <string name="connected_to_server_message">أنت متصل الآن!</string>
+
+    <string name="dialog_title_are_you_sure">هل أنت متأكد؟</string>
+    <string name="dialog_title_reset_patient">إعادة تعيين بيانات المريض؟</string>
+    <string name="dialog_message_data_lost">سيتم فقدان جميع معلومات المريض المدخلة.</string>
+    <string name="dialog_button_stay">البقاء</string>
+    <string name="dialog_button_leave">مغادرة</string>
+    <string name="snackbar_nonvisitting_patients">يمكن تسجيل العلامات الحيوية فقط للمرضى الحاليين في زيارة.</string>
+
+    <string name="logout_success">تم تسجيل الخروج بنجاح! </string>
+    <string name="url_privacy_policy">https://github.com/openmrs/openmrs-contrib-android-client/blob/master/privacy_policy.md#privacy-policy</string>
+    <string name="settings_privacy_policy">سياسة الخصوصية</string>
+
+    <string name="action_submit">إرسال</string>
+    <string name="action_reset">إعادة تعيين</string>
+
+    <string name="delete_multiple_patients">حذف المرضى؟</string>
+    <string name="delete_multiple_patients_dialog_message">هل أنت متأكد أنك تريد حذف هؤلاء المرضى؟</string>
+    <string name="multiple_patients_deleted">تم حذف المرضى بنجاح </string>
+    <string name="location_successfully_updated">تم تحديث الموقع بنجاح</string>
+    <string name="delete">حذف</string>
+    <string name="rate_us_string">قيّمنا</string>
+    <string name="settings_frag_size">الحجم:</string>
+    <string name="frag_settings_build">الإصدار:</string>
+    <string name="action_provider_management">إدارة مقدمي الخدمة</string>
+    <string name="unable_to_fetch_providers">غير قادر على جلب مقدمي الخدمة!</string>
+    <string name="device_offline_msg">الجهاز غير متصل!</string>
+
+    <!-- Provider Management -->
+    <string name="provider_manager">مدير مقدمي الخدمة</string>
+    <string name="action_find_providers">البحث عن مقدمي الخدمة</string>
+    <string name="delete_provider_success_msg">تم حذف مقدم الخدمة بنجاح!!</string>
+    <string name="delete_provider_failure_msg">فشل حذف مقدم الخدمة.</string>
+    <string name="first_name_hint">الاسم الأول</string>
+    <string name="last_name_hint">اسم العائلة</string>
+    <string name="identifier_hint">المعرّف</string>
+    <string name="identifier_description">* يمكن أن يكون المعرّف أي شيء. على سبيل المثال. طبيب، ممرضة، كاتب، إلخ</string>
+    <string name="add_provider_success_msg">تمت إضافة مقدم الخدمة بنجاح.</string>
+    <string name="add_provider_failure_msg">فشل في إضافة مقدم الخدمة.</string>
+    <string name="edit_provider_success_msg">تم التعديل بنجاح.</string>
+    <string name="edit_provider_failure_msg">فشل في تعديل مقدم الخدمة.</string>
+    <string name="title_provider_info">معلومات مقدم الخدمة</string>
+    <string name="dialog_provider_retired">سيتم إحالة مقدم الخدمة إلى التقاعد.</string>
+    <string name="title_dialog_matching_provider">تم العثور على مقدمي خدمة مشابهين</string>
+    <string name="dialog_matching_provider_positive_btn">إنشاء على أي حال </string>
+    <string name="label_dark_mode">الوضع الداكن</string>
+    <string name="provider_tab_title">مقدمو الخدمة</string>
+    <string name="patients_tab_title">المرضى</string>
+    <string name="failed_provider_details">فشل في جلب تفاصيل مقدم الخدمة!</string>
+    <string name="retry_action">إعادة المحاولة</string>
+    <!--activity_provider_dashboard  -->
+    <string name="surgeon">جراح</string>
+    <!--fragment_patient_relationship-->
+    <string name="provider_patient">علاقة مقدم الخدمة - المريض</string>
+    <!--row_provider_details-->
+    <string name="jake_smith">جيك سميث</string>
+    <string name="doctor">طبيب</string>
+    <!--fragment_provider_relationship-->
+    <string name="provider_provider">علاقة مقدم الخدمة - مقدم الخدمة</string>
+    <string name="language">اللغة</string>
+    <string name="apply">تطبيق</string>
+
+    <!-- introduction Activity -->
+    <string name="intro_welcome">مرحبًا</string>
+    <string name="intro_register">تسجيل المرضى</string>
+    <string name="intro_find">البحث عن المرضى</string>
+    <string name="intro_monitor">مراقبة الزيارات</string>
+    <string name="intro_manage">إدارة مقدمي الخدمة</string>
+    <string name="intro_location">الموقع</string>
+    <string name="intro_settings">الإعدادات</string>
+
+    <string name="intro_welcome_desc">يعمل مجتمع OpenMRS العالمي معًا لبناء نظام السجلات الطبية الإلكترونية مفتوح المصدر الرائد في العالم.</string>
+    <string name="intro_register_desc">سجّل مرضى جدد على خادمنا.</string>
+    <string name="intro_find_desc">يمكنك البحث عن هؤلاء المرضى وعرضهم.</string>
+    <string name="intro_monitor_desc">نساعدك أيضًا في متابعة زيارات المرضى.</string>
+    <string name="intro_manage_desc">يمكنك إدارة مقدمي الخدمة باستخدام تطبيقنا.</string>
+    <string name="intro_location_desc">يمكنك تغيير موقعك بنقرة واحدة بسيطة.</string>
+    <string name="intro_settings_desc">جرّب ميزة الوضع الداكن.\nمتحمس؟ لنبدأ.</string>
+    <string name="get_started_with_our_user_guide">ابدأ مع دليل المستخدم الخاص بنا</string>
+
+    <!--VisitExpandableListAdapter-->
+    <string name="hiv_yes">نعم</string>
+    <string name="hiv_no">لا</string>
+    <string name="hiv_unknown">غير معروف</string>
+
+    <!-- Contact Activity -->
+    <string name="go_to_forum">المنتدى</string>
+    <string name="go_to_irc">IRC</string>
+    <string name="open">انتقل إلى</string>
+    <string name="email_us">راسلنا عبر البريد الإلكتروني</string>
+    <string name="help_message">سيبذل فريقنا قصارى جهده لمساعدتك. يرجى التواصل معنا باستخدام الخدمات أعلاه.</string>
+    <string name="contact_us">اتصل بنا</string>
+    <string name="no_mailing_client_found">لا يوجد تطبيق بريد إلكتروني مثبت.</string>
+    <string name="contact_us_or">أو</string>
+
+    <!-- ShowCaseView -->
+    <string name="showcase_find_patients">اضغط هنا للبحث عن جميع المرضى</string>
+    <string name="showcase_active_visits">اضغط هنا للحصول على قائمة الزيارات النشطة حاليًا</string>
+    <string name="showcase_register_patient">اضغط هنا لتسجيل مريض جديد</string>
+    <string name="showcase_form_entry">اضغط هنا لتسجيل العلامات الحيوية لمريض في زيارة</string>
+    <string name="showcase_manage_providers">اضغط هنا لإدارة مقدمي الخدمة لمريض في زيارة</string>
+    <string name="offline_mode_not_supported">لا يمكن بدء زيارة المريض يدويًا في الوضع غير المتصل.</string>
+
+    <!-- Chart Activity -->
+    <string name="data_not_available_for_this_field">لا توجد بيانات متاحة لعرض الرسم البياني</string>
+    <string name="data_type_not_available_for_this_field">الرسم البياني غير متاح لهذا الحقل</string>
+    <string name="dialog_take_photo">التقط صورة</string>
+    <string name="dialog_choose_photo">اختر صورة</string>
+    <string name="dialog_remove_photo">إزالة الصورة</string>
+
+    <!--fragment_patient_Info.xml-->
+    <string name="unidentified_patient">مريض غير معروف</string>
+    <string name="dob_error_for_unidentified">يرجى تقدير عمر المريض</string>
+    <string name="patent_and_form_data_sync_resumed">تم تشغيل المزامنة، جارٍ محاولة مزامنة المرضى وبيانات النماذج</string>
+    <string name="offline_mode_patient_data_saved_locally_notification_message">المزامنة متوقفة. يتم حفظ بيانات تحديث المريض محليًا وستتم مزامنتها عند استعادة الوضع المتصل.</string>
+    <string name="only_one_patient_can_be_selected_notification_message">يمكنك تحديد مريض مشابه واحد فقط</string>
+    <string name="all_fields_empty_error_message">لا يمكن أن تكون جميع الحقول فارغة</string>
+    <string name="no_such_form_name_error_message">لا يوجد نوع لقاء باسم %1$s</string>
+    <string name="failed_fetching_patient_data_error_message">فشل في جلب بيانات المريض</string>
+    <string name="invalid_URL_message">عنوان URL غير صالح</string>
+    <string name="failed_fetching_visit_type_error_message">فشل في جلب نوع الزيارة</string>
+    <string name="logs_copied_to_clipboard_message">تم نسخ السجلات إلى الحافظة</string>
+    <string name="authenticate_check_service_error_response_message">خطأ في استجابة خدمة التحقق من المصادقة</string>
+    <string name="authenticate_service_error_message">خطأ في خدمة التحقق من المصادقة</string>
+    <string name="dataset_entry_label">تسمية</string>
+    <string name="downloading_concepts_notification_message">جارٍ تنزيل المفاهيم</string>
+    <string name="application_exit_logger_message">الخروج من التطبيق</string>
+
+    <string name="patient_update_successful">تم تحديث المريض %1$s</string>
+    <string name="patient_update_unsuccessful">تعذر تحديث المريض %1$s بسبب خطأ في الخادم، ستتم إعادة محاولة المزامنة</string>
+    <string name="patient_photo_update_unsuccessful">تعذرت مزامنة صورة المريض بسبب خطأ في الخادم: %1$s</string>
+    <string name="form_data_will_be_synced_later_error_message">المريض غير مسجل بعد. لا يوجد اتصال بالإنترنت. يتم حفظ بيانات النموذج محليًا وستتم مزامنتها عند استعادة الاتصال بالإنترنت.</string>
+    <string name="form_data_sync_is_off_message">المزامنة متوقفة. فعّل المزامنة لحفظ بيانات النموذج.</string>
+    <string name="unidentified_patient_name">غير معروف</string>
+    <string name="snackbar_server_error">الخادم المدخل غير متاح حاليًا، يرجى اختيار خادم آخر.</string>
+    <string name="snackbar_empty_visit_list">اختر إدخال النماذج من القائمة لبدء الفحص.</string>
+    <string name="snackbar_no_forms_found">لم يتم العثور على نماذج، حاول إعادة تشغيل التطبيق.</string>
+    <string name="snackbar_choose">اختر</string>
+    <string name="snackbar_select">تحديد</string>
+    <string name="offline_provider_fetch">تعذرت المزامنة مع قاعدة بيانات مقدمي الخدمة، الجهاز غير متصل</string>
+    <string name="offline_provider_add">ستتم مزامنة مقدم الخدمة مع الخادم عند اتصال الجهاز بالشبكة</string>
+    <string name="offline_provider_edit">ستتم مزامنة مقدم الخدمة المحدث مع الخادم عند اتصال الجهاز بالشبكة</string>
+    <string name="offline_provider_delete">سيتم حذف مقدم الخدمة من الخادم عند العودة إلى الاتصال بالإنترنت</string>
+    <string name="dashboard_exit_toast_message">يرجى الضغط على رجوع مرة أخرى للخروج</string>
+
+    <!--Admission Form -->
+    <string name="admission">القبول</string>
+    <string name="error_occurred">حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا!</string>
+    <string name="offline_error_message">أنت غير متصل حاليًا، يرجى المحاولة مرة أخرى عند الاتصال!</string>
+    <string name="admission_fields_required">يرجى تحديد الحقل المطلوب</string>
+    <string name="admission_date">تاريخ القبول:</string>
+    <string name="admission_admitted_by">تم القبول بواسطة:</string>
+    <string name="admission_provider_role">دور مقدم الخدمة:</string>
+    <string name="admission_admitted_to">تم القبول في:</string>
+
+    <!-- Marking Patient Deceased -->
+    <string name="no_death_concepts_in_server">يرجى إضافة الأسباب المحتملة للوفاة في الخادم</string>
+    <string name="mark_patient_deceased">تحديد المريض كمتوفى؟</string>
+    <string name="mark_patient_deceased_notice">سيتم تحديد المريض كمتوفى ولن يكون بالإمكان بدء أي زيارة أخرى.</string>
+    <string name="mark_patient_deceased_proceed">متابعة</string>
+    <string name="mark_patient_deceased_invalid_uuid">يرجى إضافة معرّف مفهوم (UUID) صالح في الخادم </string>
+    <string name="mark_patient_deceased_concept_has_no_answer">لم يتم العثور على أسباب محتملة للوفاة لهذا الإعداد</string>
+    <string name="marked_patient_deceased_successfully">تم تحديد المريض كمتوفى — %1$s</string>
+    <string name="cannot_start_visit_for_deceased">لا يمكن بدء زيارة لمريض متوفى</string>
+
+    <!--Allergies -->
+    <string name="allergy_comment">ملاحظة</string>
+    <string name="allergy_severity">الشدة</string>
+    <string name="allergy_reactions">ردود الفعل</string>
+    <string name="empty_allergy_list">ليس لدى المريض أي حساسية حتى الآن.</string>
+    <string name="unable_to_fetch_allergies">غير قادر على جلب أحدث الحساسيات المسجلة!</string>
+    <string name="delete_allergy_title">حذف %1$s؟</string>
+    <string name="delete_allergy_description">سيتم حذف حساسية المريض من الخادم. هل أنت متأكد أنك تريد المتابعة؟</string>
+    <string name="delete_allergy_success">تم حذف الحساسية بنجاح</string>
+    <string name="delete_allergy_failure">غير قادر على حذف الحساسية</string>
+    <string name="delete_allergy_offline">سيتم حذف الحساسية من الخادم عند العودة إلى الاتصال بالإنترنت</string>
+    <string name="allergy_heading">حساسية جديدة</string>
+    <string name="choose_category">اختر \nفئة</string>
+    <string name="allergen_drug">دواء</string>
+    <string name="allergen_food">طعام</string>
+    <string name="allergen_other">أخرى</string>
+    <string name="severity">الشدة</string>
+    <string name="severity_mild">خفيفة</string>
+    <string name="severity_moderate">متوسطة</string>
+    <string name="severity_severe">شديدة</string>
+    <string name="comment">ملاحظة</string>
+    <string name="add_comment">إضافة ملاحظة</string>
+    <string name="create_allergy_title">إضافة حساسية؟</string>
+    <string name="create_allergy_description">ستتم إضافة حساسية المريض إلى الخادم. هل أنت متأكد أنك تريد المتابعة؟</string>
+    <string name="warning_select_allergen">يرجى اختيار مسبب حساسية قبل المتابعة</string>
+    <string name="error_creating_allergy">حدث خطأ غير متوقع أثناء إنشاء الحساسية. يرجى المحاولة مرة أخرى!</string>
+    <string name="success_creating_allergy">تمت إضافة الحساسية بنجاح.</string>
+    <string name="delete_allergy_dialog">حذف الحساسية</string>
+    <string name="update_allergy_dialog">تحديث الحساسية</string>
+    <string name="allergy_already_selected">تم تحديد هذه الحساسية بالفعل!</string>
+    <string name="start">البداية:</string>
+    <string name="end">النهاية:</string>
+    <string name="about_openmrs_1">OpenMRS هو في الحقيقة مجتمع عالمي من المساهمين المتفانين والموهوبين والكرماء الذين يبنون ويصونون منصة OpenMRS وغيرها من منتجات OpenMRS التقنية الأساسية.</string>
+    <string name="about_openmrs_2">OpenMRS هو منصة يستخدمها البلدان والمنفذون لبناء نظام EMR مخصص استجابةً للاحتياجات الفعلية على أرض الواقع.</string>
+    <string name="more_about_openmrs">"المزيد"</string>
+    <string name="action_about_activity">حول</string>
+    <string name="action_about">حول</string>
+    <string name="patent_data_synced_successfully">تمت مزامنة المريض [ %1$i ] بنجاح مع الخادم</string>
+</resources>

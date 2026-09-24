@@ -34,8 +34,8 @@
             android:layout_margin="20dp"
             android:contentDescription="@string/contact_us"
             app:srcCompat="@drawable/contact_us"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -46,8 +46,8 @@
             android:background="@color/color_accent"
             android:elevation="4dp"
             android:paddingVertical="10dp"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/contact_image">
 
             <TextView
@@ -59,8 +59,8 @@
                 android:textAllCaps="true"
                 android:textColor="@color/white"
                 android:textSize="20sp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
@@ -70,8 +70,8 @@
                 android:text="@string/helpdesk_mail"
                 android:textColor="@color/white"
                 android:textSize="16sp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/contact_email_text" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -85,8 +85,6 @@
             android:text="@string/contact_us_or"
             android:textSize="22sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/emailLayout" />
 
@@ -94,16 +92,16 @@
             android:id="@+id/ahmedPhoneLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="34dp"
+            android:layout_marginStart="34dp"
             android:layout_marginTop="12dp"
-            android:layout_marginRight="10dp"
+            android:layout_marginEnd="10dp"
             android:background="@color/color_accent"
             android:elevation="4dp"
             android:minHeight="90dp"
             android:paddingVertical="10dp"
             app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/guideline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/guideline"
             app:layout_constraintTop_toBottomOf="@id/contact_or">
 
             <TextView
@@ -113,8 +111,8 @@
                 android:text="@string/contact_ahmed_name"
                 android:textColor="@color/white"
                 android:textSize="14sp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
@@ -125,8 +123,8 @@
                 android:text="@string/contact_ahmed_phone"
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/ahmed_phone_name" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -135,16 +133,16 @@
             android:id="@+id/hotlinePhoneLayout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
+            android:layout_marginStart="10dp"
             android:layout_marginTop="12dp"
-            android:layout_marginRight="34dp"
+            android:layout_marginEnd="34dp"
             android:background="@color/color_accent"
             android:elevation="4dp"
             android:minHeight="90dp"
             android:paddingVertical="10dp"
             app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintLeft_toRightOf="@id/guideline"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintStart_toEndOf="@id/guideline"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toBottomOf="@id/contact_or">
 
             <TextView
@@ -154,8 +152,8 @@
                 android:text="@string/contact_hotline_name"
                 android:textColor="@color/white"
                 android:textSize="14sp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
@@ -166,8 +164,8 @@
                 android:text="@string/contact_hotline_phone"
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/hotline_phone_name" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
@@ -181,8 +179,6 @@
             android:text="@string/help_message"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/hotlinePhoneLayout" />
 
