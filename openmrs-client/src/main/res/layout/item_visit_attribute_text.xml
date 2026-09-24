@@ -27,6 +27,7 @@
     <EditText
         android:id="@+id/attributeEditText"
         android:layout_width="match_parent"
+        android:textAlignment="viewStart"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:background="@drawable/rectangle_transparent_box"

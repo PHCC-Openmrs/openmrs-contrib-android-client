@@ -36,7 +36,7 @@
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="17sp"
             android:textStyle="bold"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -46,7 +46,7 @@
             android:fontFamily="@font/montserrat"
             android:textSize="15sp"
             android:textStyle="bold"
-            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/syncedPatientDisplayName" />
 
         <TextView
@@ -55,13 +55,12 @@
             android:layout_height="0dp"
             android:layout_gravity="bottom"
             android:layout_marginStart="20dp"
-            android:layout_marginLeft="20dp"
             android:fontFamily="@font/montserrat"
             android:paddingBottom="2dp"
             android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="@id/syncedPatientIdentifier"
-            app:layout_constraintLeft_toRightOf="@id/syncedPatientIdentifier" />
+            app:layout_constraintStart_toEndOf="@id/syncedPatientIdentifier" />
 
         <ImageView
             android:id="@+id/syncedPatientGender"
@@ -70,7 +69,7 @@
             android:contentDescription="@string/gender_hint"
             app:srcCompat="@drawable/patient_male"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

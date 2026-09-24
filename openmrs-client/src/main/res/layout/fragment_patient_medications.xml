@@ -25,6 +25,7 @@
         <TextView
             android:id="@+id/activeMedicationsHeader"
             android:layout_width="match_parent"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_short"
             android:layout_marginTop="@dimen/margin_small"
@@ -43,6 +44,7 @@
         <TextView
             android:id="@+id/emptyActiveMedications"
             android:layout_width="match_parent"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_short"
             android:layout_marginEnd="@dimen/margin_short"
@@ -52,6 +54,7 @@
         <TextView
             android:id="@+id/upcomingMedicationsHeader"
             android:layout_width="match_parent"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_short"
             android:layout_marginTop="@dimen/margin_small"
@@ -70,6 +73,7 @@
         <TextView
             android:id="@+id/emptyUpcomingMedications"
             android:layout_width="match_parent"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_short"
             android:layout_marginEnd="@dimen/margin_short"
@@ -79,6 +83,7 @@
         <TextView
             android:id="@+id/pastMedicationsHeader"
             android:layout_width="match_parent"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_short"
             android:layout_marginTop="@dimen/margin_small"
@@ -97,6 +102,7 @@
         <TextView
             android:id="@+id/emptyPastMedications"
             android:layout_width="match_parent"
+            android:textAlignment="viewStart"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/margin_short"
             android:layout_marginEnd="@dimen/margin_short"

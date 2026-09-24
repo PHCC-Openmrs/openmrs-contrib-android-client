@@ -18,6 +18,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -109,6 +110,7 @@ class VisitNoteActivity : ACBaseActivity() {
             }
 
             val label = TextView(this).apply {
+                textAlignment = View.TEXT_ALIGNMENT_VIEW_START
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                 val rankLabel = getString(
                     if (index == 0) R.string.visit_note_primary else R.string.visit_note_secondary
@@ -132,7 +134,7 @@ class VisitNoteActivity : ACBaseActivity() {
 
             val removeButton = TextView(this).apply {
                 text = "✕"
-                setPadding(20, 0, 0, 0)
+                setPaddingRelative(20, 0, 0, 0)
                 setOnClickListener { viewModel.removeDiagnosisAt(index) }
             }
             row.addView(removeButton)

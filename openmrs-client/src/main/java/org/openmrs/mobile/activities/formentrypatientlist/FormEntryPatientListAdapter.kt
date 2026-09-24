@@ -42,7 +42,7 @@ class FormEntryPatientListAdapter(
         val patient = this.mItems.get(position)
         val icon = mContext.resources.getDrawable(R.drawable.active_visit_dot)
         icon.setBounds(0, 0, icon.intrinsicHeight, icon.intrinsicWidth)
-        holder.mVisitStatus.setCompoundDrawables(icon, null, null, null)
+        holder.mVisitStatus.setCompoundDrawablesRelative(icon, null, null, null)
         holder.mVisitStatus.text = mContext.getString(R.string.active_visit_label_capture_vitals)
         holder.mRowLayout.setOnClickListener {
             Intent(mContext.activity, FormListActivity::class.java).apply {

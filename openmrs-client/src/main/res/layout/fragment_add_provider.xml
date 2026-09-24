@@ -37,6 +37,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/first_name_edit_text"
                 android:layout_width="fill_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:focusable="true"
                 android:fontFamily="@font/montserrat"
@@ -60,6 +61,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/last_name_edit_text"
                 android:layout_width="fill_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:focusable="true"
                 android:fontFamily="@font/montserrat"
@@ -83,6 +85,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/identifier_edit_text"
                 android:layout_width="fill_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:focusable="true"
                 android:fontFamily="@font/montserrat"
@@ -107,12 +110,12 @@
                 android:layout_height="20dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginEnd="10dp"
-                android:layout_marginRight="10dp"
                 android:contentDescription="@string/warning_dialog_title"
                 app:srcCompat="@drawable/error_symbol" />
 
             <TextView
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:text="@string/identifier_description"
                 android:textColor="?android:attr/textColorPrimary"
@@ -147,7 +150,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:layout_marginLeft="12dp"
                 android:background="@color/cancel_button"
                 android:fontFamily="@font/montserrat"
                 android:paddingHorizontal="20dp"

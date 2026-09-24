@@ -530,6 +530,10 @@
     <!--fragment_provider_relationship-->
     <string name="provider_provider">Provider - Provider Relationship</string>
     <string name="language">Language</string>
+    <!-- The language these strings are written in. Every translation must set it to its own
+         language code (values-ar: ar) - it's how the app tells which languages it can offer,
+         so a translation without it never shows up in the language picker. -->
+    <string name="language_tag">en</string>
 
     <string name="apply">Apply</string>
 

@@ -105,13 +105,14 @@ class FormDisplayPageFragment : BaseFragment() {
         }
         val layoutParams = getAndAdjustLinearLayoutParams(sectionContainer)
         val labelTextView = TextView(activity).apply {
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
             text = sectionLabel
             setTextSize(TypedValue.COMPLEX_UNIT_SP, if (isPageHeader) 24f else 20f)
             setTextColor(ContextCompat.getColor(requireActivity(), R.color.primary))
             setTypeface(null, Typeface.BOLD)
             if (isPageHeader) {
                 gravity = Gravity.START
-                setPadding(20, 0, 0, 0)
+                setPaddingRelative(20, 0, 0, 0)
             }
         }
 
@@ -151,7 +152,8 @@ class FormDisplayPageFragment : BaseFragment() {
 
     private fun createAndAttachExtendedSelectQuestion(question: Question, sectionContainer: LinearLayout) {
         val textView = TextView(activity).apply {
-            setPadding(20, 10, 0, 0)
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+            setPaddingRelative(20, 10, 0, 0)
             text = getLabel(question)
             setTypeface(null, Typeface.BOLD)
         }
@@ -223,6 +225,7 @@ class FormDisplayPageFragment : BaseFragment() {
         }
 
         val labelTextView = TextView(activity).apply {
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
             text = getLabel(question)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
             setTextColor(ContextCompat.getColor(requireActivity(), R.color.dark_grey_8x))
@@ -282,7 +285,8 @@ class FormDisplayPageFragment : BaseFragment() {
 
     private fun createAndAttachSelectQuestionDropdown(question: Question, sectionContainer: LinearLayout) {
         val textView = TextView(activity).apply {
-            setPadding(20, 10, 0, 0)
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+            setPaddingRelative(20, 10, 0, 0)
             text = getLabel(question)
             setTypeface(null, Typeface.BOLD)
         }
@@ -338,12 +342,13 @@ class FormDisplayPageFragment : BaseFragment() {
 
     private fun createAndAttachSelectQuestionRadioButton(question: Question, sectionContainer: LinearLayout) {
         val textView = TextView(activity).apply {
-            setPadding(20, 10, 0, 0)
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+            setPaddingRelative(20, 10, 0, 0)
             text = getLabel(question)
             setTypeface(null, Typeface.BOLD)
         }
         val radioGroup = RadioGroup(activity).apply {
-            setPadding(20, 0, 0, 0)
+            setPaddingRelative(20, 0, 0, 0)
         }
         question.questionOptions!!.answers!!.forEach {
             val radioButton = RadioButton(activity)
@@ -397,7 +402,7 @@ class FormDisplayPageFragment : BaseFragment() {
 
         question.questionOptions!!.answers!!.forEachIndexed { index, answer ->
             val checkBox = CheckBox(activity).apply {
-                setPadding(20, 0, 0, 0)
+                setPaddingRelative(20, 0, 0, 0)
                 text = answer.label ?: conceptLabelMapping[answer.concept] ?: answer.concept
                 isChecked = fieldToUse.isAnswerSelected(index)
                 setOnCheckedChangeListener { _, isChecked ->
@@ -537,8 +542,10 @@ class FormDisplayPageFragment : BaseFragment() {
     private fun generateTextView(text: CharSequence?, isBold: Boolean): View {
         val layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-        layoutParams.setMargins(20, 10, 0, 0)
+        layoutParams.setMargins(0, 10, 0, 0)
+        layoutParams.marginStart = 20
         val textView = TextView(activity)
+        textView.textAlignment = View.TEXT_ALIGNMENT_VIEW_START
         textView.text = text
         if (isBold) {
             textView.setTypeface(null, Typeface.BOLD)

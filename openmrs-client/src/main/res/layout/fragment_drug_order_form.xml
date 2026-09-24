@@ -39,6 +39,7 @@
             <TextView
                 android:id="@+id/selectedDrugLabel"
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:fontFamily="@font/roboto_medium"
@@ -58,6 +59,7 @@
                 <EditText
                     android:id="@+id/doseEditText"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/rectangle_transparent_box"
@@ -103,6 +105,7 @@
                 <TextView
                     style="@style/AppointmentFieldLabel"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_weight="1"
                     android:layout_marginTop="0dp"
                     android:text="@string/as_needed" />
@@ -126,6 +129,7 @@
                 <EditText
                     android:id="@+id/durationEditText"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/rectangle_transparent_box"
@@ -156,6 +160,7 @@
                 <EditText
                     android:id="@+id/quantityEditText"
                     android:layout_width="0dp"
+                    android:textAlignment="viewStart"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:background="@drawable/rectangle_transparent_box"
@@ -181,6 +186,7 @@
             <EditText
                 android:id="@+id/numRefillsEditText"
                 android:layout_width="match_parent"
+                android:textAlignment="viewStart"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/rectangle_transparent_box"
@@ -258,8 +264,8 @@
         android:layout_height="wrap_content"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
