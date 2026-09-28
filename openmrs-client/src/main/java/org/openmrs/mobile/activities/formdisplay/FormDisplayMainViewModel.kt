@@ -7,6 +7,8 @@
  * graphic logo is a trademark of OpenMRS Inc.
  */
 package org.openmrs.mobile.activities.formdisplay
+import com.openmrs.android_sdk.library.OpenmrsAndroid
+import org.openmrs.mobile.R
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -102,12 +104,12 @@ class FormDisplayMainViewModel @Inject constructor(
                 .subscribe(
                         { 
                             if (it == ResultType.EncounterSubmissionError) {
-                                ToastUtil.error("Submission failed: No active visit found for this patient locally.")
+                                ToastUtil.error(R.string.form_submission_no_active_visit)
                             }
                             resultLiveData.value = it 
                         },
                         { 
-                            ToastUtil.error("Submission error: " + it.message)
+                            ToastUtil.error(R.string.form_submission_error, it.message ?: "")
                             resultLiveData.value = ResultType.EncounterSubmissionError 
                         }
                 )

@@ -13,6 +13,7 @@
  */
 package org.openmrs.mobile.utilities
 
+import android.content.Context
 import android.content.res.Configuration
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.utilities.ApplicationConstants
@@ -67,10 +68,35 @@ object LanguageUtils {
     }
 
     /**
-     * Gets the locale to apply to the app's resources.
+     * Gets the locale to apply to the app's resources - with Latin digits (0-9) whatever the
+     * language, so a number in a message reads the same as the dates, IDs and phone numbers
+     * around it; Arabic would otherwise format numbers in Arabic-Indic digits (٣).
+     * The numbering extension doesn't affect which resources are picked or the text direction.
      */
     @JvmStatic
-    fun getLocale(): Locale = toLocale(getLanguage())
+    fun getLocale(): Locale = Locale.Builder()
+            .setLocale(toLocale(getLanguage()))
+            .setUnicodeLocaleKeyword("nu", "latn")
+            .build()
+
+    /**
+     * Applies the app's language to [context]'s resources, so strings it loads are in that
+     * language and layouts it inflates take that language's direction.
+     *
+     * Every activity applies it to itself, but the application context needs it too: toasts,
+     * services, receivers and repositories load their strings from it, and without this they'd
+     * stay in the device language whatever the app is set to.
+     */
+    @JvmStatic
+    fun applyLanguage(context: Context) {
+        val resources = context.resources
+        val configuration = resources.configuration
+        // setLocale, unlike assigning configuration.locale, also sets the layout direction to
+        // match, so a right-to-left language such as Arabic mirrors the layouts.
+        configuration.setLocale(getLocale())
+        @Suppress("DEPRECATION")
+        resources.updateConfiguration(configuration, resources.displayMetrics)
+    }
 
     /**
      * Gets the languages the user can pick from: the server's allowed locales that the app has

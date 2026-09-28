@@ -103,7 +103,7 @@ class StartVisitFragment : BaseFragment() {
     }
 
     private fun setupLocationSpinner() = with(binding.visitLocationSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, viewModel.locations.keys.toList())
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, viewModel.locations.keys.toList())
         setSelection(viewModel.locationListPosition)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -185,7 +185,7 @@ class StartVisitFragment : BaseFragment() {
         val answers = type.answers
         val labels = listOf(getString(R.string.select_an_option)) + answers.map { it.display }
         fieldBinding.attributeSpinner.adapter =
-            ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, labels)
+            ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, labels)
         fieldBinding.attributeSpinner.setSelection(
             answers.indexOfFirst { it.uuid == viewModel.attributeValues[type.uuid] }.let { if (it >= 0) it + 1 else 0 }
         )

@@ -28,7 +28,7 @@ import java.util.List;
 public class LocationArrayAdapter extends ArrayAdapter<String> {
     public LocationArrayAdapter(Context context, List<String> objects) {
         super(context, R.layout.spinner_item, objects);
-        setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        setDropDownViewResource(R.layout.aligned_simple_spinner_dropdown_item);
     }
 
     @Override

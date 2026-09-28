@@ -14,6 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import org.json.JSONException
 import org.json.JSONObject
 import org.openmrs.mobile.activities.BaseViewModel
+import org.openmrs.mobile.utilities.LanguageUtils
 import rx.android.schedulers.AndroidSchedulers
 import javax.inject.Inject
 import java.io.IOException
@@ -49,6 +50,13 @@ class FormListViewModel @Inject constructor(
 
                         val valueRefString = resolveFormFieldsJson(formResource)
                         if (!valueRefString.isNullOrBlank()) {
+                            // Cached for offline use alongside the schema - see
+                            // FormRepository.resolveFormTranslations.
+                            try {
+                                formRepository.resolveFormTranslations(formResource)
+                            } catch (e: Exception) {
+                                // The form still works, in the language its schema is written in.
+                            }
                             currentForms.add(formResource)
                         } else {
                             val formData = createFormDataFromAsset(formResource.name?.toLowerCase() ?: "")
@@ -98,7 +106,7 @@ class FormListViewModel @Inject constructor(
                     formResourceList.addAll(allowedForms)
 
                     val forms = ArrayList<String>(formResourceList.size)
-                    for (form in formResourceList) forms += form.name!!
+                    for (form in formResourceList) forms += displayName(form)
 
                     return@map forms.toTypedArray()
                 }
@@ -137,6 +145,23 @@ class FormListViewModel @Inject constructor(
             list.add(virtualForm)
         }
     }
+
+    /**
+     * The form's name in the app's language, when the form's translations include it - O3
+     * translation maps are keyed by the schema's English text, which names the form without
+     * the trailing " Form" the server-side form name often carries.
+     */
+    private fun displayName(formResource: FormResourceEntity): String {
+        val name = formResource.name!!
+        val translations = getTranslations(formResource)
+        return translations[name] ?: translations[name.removeSuffix(" Form").trim()] ?: name
+    }
+
+    // Translations are optional - if they can't be looked up for any reason, the form must still
+    // list and open, just untranslated, rather than failing the whole form list.
+    private fun getTranslations(formResource: FormResourceEntity): Map<String, String> =
+        runCatching { formRepository.getFormTranslations(formResource, LanguageUtils.getLanguage()) }
+            .getOrDefault(emptyMap())
 
     /**
      * True for the two native (virtual) form entries injected by [injectVirtualForm] - i.e. the
@@ -222,6 +247,9 @@ class FormListViewModel @Inject constructor(
             private set
         var isNativeForm: Boolean = false
             private set
+        /** The form's label translations for the app's language, English label to translated. */
+        var translations: HashMap<String, String> = HashMap()
+            private set
 
         init {
             click()
@@ -238,6 +266,7 @@ class FormListViewModel @Inject constructor(
             }
 
             formFieldsJson = resolveFormFieldsJson(formResource)
+            translations = HashMap(getTranslations(formResource))
 
             encounterName = resolveEncounterName(formResource)
 

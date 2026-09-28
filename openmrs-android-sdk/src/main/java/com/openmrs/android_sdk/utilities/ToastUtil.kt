@@ -20,6 +20,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.StringRes
 import com.openmrs.android_sdk.R
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.utilities.ImageUtils.decodeBitmapFromResource
@@ -51,6 +52,26 @@ object ToastUtil {
     @JvmStatic
     fun error(message: String) {
         showToast(OpenmrsAndroid.getInstance()!!, ToastType.ERROR, message, Toast.LENGTH_SHORT)
+    }
+
+    /**
+     * Shows a string resource, formatted with [formatArgs], in the app's language - looked up from
+     * the application context (which follows the app's language) only once the toast is actually
+     * going to show, so callers need no context of their own.
+     */
+    @JvmStatic
+    fun notify(@StringRes textId: Int, vararg formatArgs: Any?) =
+            showStringResource(ToastType.NOTICE, textId, formatArgs)
+
+    /** The error-styled counterpart of [notify] with a string resource. */
+    @JvmStatic
+    fun error(@StringRes textId: Int, vararg formatArgs: Any?) =
+            showStringResource(ToastType.ERROR, textId, formatArgs)
+
+    private fun showStringResource(type: ToastType, @StringRes textId: Int, formatArgs: Array<out Any?>) {
+        if (!isAppVisible) return
+        val context = OpenmrsAndroid.getInstance() ?: return
+        showToast(context, type, context.getString(textId, *formatArgs), Toast.LENGTH_SHORT)
     }
 
     @JvmStatic

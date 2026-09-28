@@ -103,7 +103,7 @@ class FormAdmissionFragment : BaseFragment() {
     }
 
     private fun setupProviderSpinner(providers: List<String>) = with(binding.admittedBySpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, providers)
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, providers)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 viewModel.selectProvider(selectedItem.toString(), selectedItemPosition)
@@ -114,7 +114,7 @@ class FormAdmissionFragment : BaseFragment() {
     }
 
     private fun setupEncounterRoleSpinner(encounterRoles: List<String>) = with(binding.encounterRoleSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, encounterRoles)
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, encounterRoles)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 viewModel.selectEncounterRole(selectedItem.toString(), selectedItemPosition)
@@ -125,7 +125,7 @@ class FormAdmissionFragment : BaseFragment() {
     }
 
     private fun setupTargetLocationSpinner(locations: List<String>) = with(binding.admittedToSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, locations)
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, locations)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 viewModel.selectTargetLocation(selectedItem.toString(), selectedItemPosition)

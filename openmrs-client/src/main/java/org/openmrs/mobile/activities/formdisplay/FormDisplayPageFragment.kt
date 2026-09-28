@@ -44,6 +44,7 @@ import com.openmrs.android_sdk.library.models.Question
 import com.openmrs.android_sdk.library.models.Section
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_PAGE_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_TRANSLATIONS_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.DateField
 import com.openmrs.android_sdk.utilities.InputField
@@ -106,7 +107,7 @@ class FormDisplayPageFragment : BaseFragment() {
         val layoutParams = getAndAdjustLinearLayoutParams(sectionContainer)
         val labelTextView = TextView(activity).apply {
             textAlignment = View.TEXT_ALIGNMENT_VIEW_START
-            text = sectionLabel
+            text = translate(sectionLabel)
             setTextSize(TypedValue.COMPLEX_UNIT_SP, if (isPageHeader) 24f else 20f)
             setTextColor(ContextCompat.getColor(requireActivity(), R.color.primary))
             setTypeface(null, Typeface.BOLD)
@@ -194,10 +195,10 @@ class FormDisplayPageFragment : BaseFragment() {
             selectOneField.answerList = answers
             // See createAndAttachSelectQuestionDropdown for why this placeholder is required, not
             // cosmetic - Spinner always defaults to (and reports) position 0 as selected.
-            val answerLabels = listOf(getString(R.string.select_an_option)) + answers.map { it.label ?: it.concept }
+            val answerLabels = listOf(getString(R.string.select_an_option)) + answers.map { translate(it.label ?: it.concept) }
 
             activity?.runOnUiThread {
-                spinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_spinner_item, answerLabels)
+                spinner.adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_spinner_item, answerLabels)
                 if (selectOneField.chosenAnswerPosition != -1) {
                     spinner.setSelection(selectOneField.chosenAnswerPosition + 1)
                 }
@@ -253,6 +254,7 @@ class FormDisplayPageFragment : BaseFragment() {
 
         val options = question.questionOptions!!
         val ed = RangeEditText(activity).apply {
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
             name = getLabel(question).toString()
             hint = if (options.min != null && options.max != null) {
                 "${getLabel(question)} (${options.min} - ${options.max})"
@@ -307,11 +309,11 @@ class FormDisplayPageFragment : BaseFragment() {
         val answerLabels = ArrayList<String?>()
         answerLabels.add(getString(R.string.select_an_option))
         question.questionOptions!!.answers!!.forEach {
-            answerLabels.add(it.label ?: conceptLabelMapping[it.concept] ?: it.concept)
+            answerLabels.add(translate(it.label ?: conceptLabelMapping[it.concept] ?: it.concept))
         }
 
         val spinner = layoutInflater.inflate(R.layout.form_dropdown, null) as Spinner
-        spinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_spinner_item, answerLabels as List<Any?>)
+        spinner.adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_spinner_item, answerLabels as List<Any?>)
 
         val spinnerField = SelectOneField(question.questionOptions!!.answers!!, question.questionOptions!!.concept!!)
 
@@ -352,7 +354,7 @@ class FormDisplayPageFragment : BaseFragment() {
         }
         question.questionOptions!!.answers!!.forEach {
             val radioButton = RadioButton(activity)
-            radioButton.text = it.label ?: conceptLabelMapping[it.concept] ?: it.concept
+            radioButton.text = translate(it.label ?: conceptLabelMapping[it.concept] ?: it.concept)
             radioGroup.addView(radioButton)
         }
         val radioGroupField = SelectOneField(question.questionOptions!!.answers!!, question.questionOptions!!.concept!!)
@@ -403,7 +405,7 @@ class FormDisplayPageFragment : BaseFragment() {
         question.questionOptions!!.answers!!.forEachIndexed { index, answer ->
             val checkBox = CheckBox(activity).apply {
                 setPaddingRelative(20, 0, 0, 0)
-                text = answer.label ?: conceptLabelMapping[answer.concept] ?: answer.concept
+                text = translate(answer.label ?: conceptLabelMapping[answer.concept] ?: answer.concept)
                 isChecked = fieldToUse.isAnswerSelected(index)
                 setOnCheckedChangeListener { _, isChecked ->
                     fieldToUse.setAnswer(index, isChecked)
@@ -421,9 +423,10 @@ class FormDisplayPageFragment : BaseFragment() {
         val fieldToUse = existingField ?: dateField.also { viewModel.dateFields.add(it) }
 
         val dateEditText = EditText(activity).apply {
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
             isFocusable = false
             isClickable = true
-            hint = "Select Date"
+            hint = getString(R.string.form_select_date_hint)
             setText(fieldToUse.date)
             setOnClickListener {
                 val calendar = Calendar.getInstance()
@@ -453,6 +456,7 @@ class FormDisplayPageFragment : BaseFragment() {
         }
 
         val editText = EditText(activity).apply {
+            textAlignment = View.TEXT_ALIGNMENT_VIEW_START
             hint = getLabel(question).toString()
             setText(fieldToUse.value)
             if (isTextArea) {
@@ -602,7 +606,7 @@ class FormDisplayPageFragment : BaseFragment() {
                 if (question.questionOptions?.rendering == "group") {
                     visit(question.questions)
                 } else if (question.isRequired && !isQuestionAnswered(question)) {
-                    unanswered.add(question.label ?: question.id ?: "")
+                    unanswered.add(translate(question.label) ?: question.id ?: "")
                 }
             }
         }
@@ -629,7 +633,7 @@ class FormDisplayPageFragment : BaseFragment() {
                 val concept = question.questionOptions?.concept ?: return@forEach
                 val value = viewModel.findTextFieldById(concept)?.value?.trim()
                 if (!value.isNullOrEmpty() && !PHONE_NUMBER_REGEX.matches(value)) {
-                    invalid.add(question.label ?: question.id ?: "")
+                    invalid.add(translate(question.label) ?: question.id ?: "")
                 }
             }
         }
@@ -666,9 +670,23 @@ class FormDisplayPageFragment : BaseFragment() {
         "CIEL:169403" to "Admitted to location (text/code)"
     )
 
+    /**
+     * The form's label translations for the app's language - English schema text to translated
+     * text, from the form's O3 "_translations_<locale>" resource (see
+     * FormRepository.resolveFormTranslations). Applied only where text is displayed: the schema
+     * itself stays English, since auto-fill and validation match on the English labels.
+     */
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
+    private val translations: Map<String, String> by lazy {
+        arguments?.getSerializable(FORM_TRANSLATIONS_BUNDLE) as? HashMap<String, String> ?: emptyMap()
+    }
+
+    /** [text] in the app's language, like the web form engine's t(label); unchanged when untranslated. */
+    private fun translate(text: String?): String? = text?.let { translations[it] ?: translations[it.trim()] ?: it }
+
     private fun getLabel(question: Question): CharSequence {
         val concept = question.questionOptions?.concept
-        val label = question.label ?: conceptLabelMapping[concept] ?: formatId(question.id) ?: concept ?: ""
+        val label = translate(question.label ?: conceptLabelMapping[concept] ?: formatId(question.id) ?: concept) ?: ""
         if (!question.isRequired) return label
 
         val builder = SpannableStringBuilder(label)
@@ -703,11 +721,13 @@ class FormDisplayPageFragment : BaseFragment() {
         private const val PHONE_NUMBER_LENGTH = 10
         private val PHONE_NUMBER_REGEX = Regex("^\\d{$PHONE_NUMBER_LENGTH}$")
 
-        fun newInstance(page: Page, formFieldsWrapper: FormFieldsWrapper?, patientId: Long) = FormDisplayPageFragment().apply {
+        fun newInstance(page: Page, formFieldsWrapper: FormFieldsWrapper?, patientId: Long,
+                        translations: HashMap<String, String>) = FormDisplayPageFragment().apply {
             arguments = bundleOf(
                     FORM_PAGE_BUNDLE to page,
                     FORM_FIELDS_BUNDLE to formFieldsWrapper,
-                    PATIENT_ID_BUNDLE to patientId
+                    PATIENT_ID_BUNDLE to patientId,
+                    FORM_TRANSLATIONS_BUNDLE to translations
             )
         }
     }

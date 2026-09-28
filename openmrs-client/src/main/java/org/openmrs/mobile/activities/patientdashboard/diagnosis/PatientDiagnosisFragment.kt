@@ -24,6 +24,7 @@ import androidx.lifecycle.Observer
 import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import dagger.hilt.android.AndroidEntryPoint
+import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity
 import org.openmrs.mobile.databinding.FragmentPatientDiagnosisBinding
@@ -60,7 +61,7 @@ class PatientDiagnosisFragment : BaseFragment() {
     }
 
     private fun showDiagnosesList(diagnoses: List<String>) {
-        val adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, diagnoses)
+        val adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, diagnoses)
         binding.patientDiagnosisList.adapter = adapter
     }
 

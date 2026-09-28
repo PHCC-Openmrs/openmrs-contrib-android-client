@@ -20,7 +20,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import rx.Observable;
@@ -31,13 +30,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -494,14 +490,10 @@ public abstract class ACBaseActivity extends AppCompatActivity {
     }
 
     private void setupLanguage() {
-        Locale myLocale = LanguageUtils.getLocale();
-        Resources res = getResources();
-        DisplayMetrics dm = res.getDisplayMetrics();
-        Configuration conf = res.getConfiguration();
-        // setLocale, unlike assigning conf.locale, also sets the layout direction to match, so a
-        // right-to-left language such as Arabic mirrors the layouts.
-        conf.setLocale(myLocale);
-        res.updateConfiguration(conf, dm);
+        LanguageUtils.applyLanguage(this);
+        // The application context too - toasts, services and receivers load their strings from
+        // it, so a language change made in Settings has to reach it as well.
+        LanguageUtils.applyLanguage(getApplicationContext());
     }
 
     @Override

@@ -32,6 +32,7 @@ import com.openmrs.android_sdk.utilities.StringUtils.notNull
 import com.openmrs.android_sdk.utilities.ToastUtil.error
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
+import org.openmrs.mobile.utilities.PatientStatusLabels
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity
 import org.openmrs.mobile.databinding.FragmentPatientDetailsBinding
@@ -148,11 +149,7 @@ class PatientDetailsFragment : BaseFragment() {
         }
     }
 
-    private fun patientStatusLabelForUuid(uuid: String?): String? = when (uuid) {
-        ApplicationConstants.PatientStatusAnswers.RESIDENT_UUID -> ApplicationConstants.PatientStatusAnswers.RESIDENT_LABEL
-        ApplicationConstants.PatientStatusAnswers.IDP_UUID -> ApplicationConstants.PatientStatusAnswers.IDP_LABEL
-        else -> null
-    }
+    private fun patientStatusLabelForUuid(uuid: String?): String? = PatientStatusLabels.labelFor(requireContext(), uuid)
 
     private fun showAddressDetailsViewElement(detailsViewLabel: TextView, detailsView: TextView, detailsText: String?) {
         if (notNull(detailsText) && notEmpty(detailsText)) {

@@ -98,7 +98,7 @@ class DrugOrderFormFragment : BaseFragment() {
         onSelected: (String?) -> Unit
     ) {
         val labels = options.map { it.display.orEmpty() }
-        spinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, labels)
+        spinner.adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, labels)
         val initialIndex = options.indexOfFirst { it.uuid == initialUuid }
         if (initialIndex >= 0) spinner.setSelection(initialIndex)
         spinner.onItemSelectedListener = object : OnItemSelectedListener {

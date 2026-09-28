@@ -23,12 +23,14 @@ import android.os.Build;
 
 import androidx.hilt.work.HiltWorkerFactory;
 import androidx.multidex.MultiDexApplication;
+import androidx.annotation.NonNull;
 import androidx.work.Configuration;
 
 import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
 
 import org.jetbrains.annotations.NotNull;
+import org.openmrs.mobile.utilities.LanguageUtils;
 import org.openmrs.mobile.api.ConnectivityStateMonitor;
 import org.openmrs.mobile.services.AuthenticateCheckService;
 import org.openmrs.mobile.services.FormListService;
@@ -53,6 +55,9 @@ public class OpenMRS extends MultiDexApplication implements Configuration.Provid
         super.onCreate();
         instance = this;
         OpenmrsAndroid.initializeSdk(this);
+        // Before anything below can load a string: services and receivers started here have no
+        // activity to take the app's language from - see LanguageUtils.applyLanguage.
+        applyAppLanguage();
 
         if (mExternalDirectoryPath == null) {
             mExternalDirectoryPath = this.getExternalFilesDir(null).toString();
@@ -76,6 +81,23 @@ public class OpenMRS extends MultiDexApplication implements Configuration.Provid
         }
 
         new ConnectivityStateMonitor(this).register();
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // A configuration change (rotation, the device language changing, ...) resets the
+        // application context to the device's own locale - put the app's language back.
+        applyAppLanguage();
+    }
+
+    private void applyAppLanguage() {
+        try {
+            LanguageUtils.applyLanguage(this);
+        } catch (Exception e) {
+            // The language is cosmetic - never let it take down app startup.
+            mLogger.e("Could not apply the app language: " + e.getMessage());
+        }
     }
 
     @NotNull

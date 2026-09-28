@@ -94,7 +94,7 @@
 
     <!-- Logout dialog -->
     <string name="logout_dialog_title">Logging out</string>
-    <string name="logout_dialog_message">Are you sure you want to logout from OpenMRS client?</string>
+    <string name="logout_dialog_message">Are you sure you want to logout from Care?</string>
     <string name="logout_dialog_button">Logout</string>
     <!--Credentials Changed dialog-->
     <string name="credentials_changed_dialog_title">Credentials changed</string>
@@ -569,6 +569,7 @@
 
     <!--FormDisplay-->
     <string name="form_data_sync_is_off_message">Form submitted locally and can\'t be viewed now. Turn on sync and internet connection to upload it.</string>
+    <string name="form_select_date_hint">Select Date</string>
     <string name="form_data_submit_error">Form submission error</string>
     <string name="invalid_inputs">Some inputs are invalid</string>
     <string name="all_fields_empty_error_message">All fields cannot be empty</string>
@@ -612,6 +613,8 @@
     <string name="helpdesk_mail" translatable="false">ahmad.ouda@care.org</string>
     <string name="email_us">Email CARE Digital Officer</string>
     <string name="contact_ahmed_name">Ahmed Ouda</string>
+    <!-- Phone numbers are shown with textDirection="ltr": in a right-to-left screen the bidi algorithm
+         would otherwise reverse the space-separated digit groups (+970 592 … read as … 592 970+). -->
     <string name="contact_ahmed_phone" translatable="false">+970 592 011 840</string>
     <string name="contact_hotline_name">CARE Hotline</string>
     <string name="contact_hotline_phone" translatable="false">180 080 0010</string>
@@ -736,4 +739,17 @@
     <string name="warning_select_visit_location">Please select a visit location</string>
     <string name="warning_select_visit_service">Please select at least one service</string>
     <string name="warning_visit_attribute_required">Please fill in %1$s</string>
+
+    <!-- Messages and labels that used to be hardcoded in English -->
+    <string name="forms_synced_message">Synced %1$d forms</string>
+    <string name="forms_fetch_error">Error fetching forms</string>
+    <string name="encounter_types_fetch_error">Error fetching encounter types: %1$s</string>
+    <string name="error_fetching_user_data_message">Couldn\'t fetch user data</string>
+    <string name="error_fetching_user_data_with_reason">Couldn\'t fetch user data: %1$s</string>
+    <string name="permission_denied_exiting">Permission denied, exiting</string>
+    <string name="form_submission_no_active_visit">Submission failed: no active visit found for this patient on this device.</string>
+    <string name="form_submission_error">Submission error: %1$s</string>
+    <string name="patient_deceased_switch">Patient deceased</string>
+    <string name="intro_activity_title">Introduction</string>
+    <string name="form_title">%1$s Form</string>
 </resources>

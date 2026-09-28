@@ -91,7 +91,7 @@ class VisitNoteActivity : ACBaseActivity() {
             } else {
                 binding.diagnosisSuggestionsListView.adapter = ArrayAdapter(
                     this,
-                    android.R.layout.simple_list_item_1,
+                    R.layout.aligned_simple_list_item_1,
                     results.map { it.display ?: it.uuid.orEmpty() }
                 )
                 binding.diagnosisSuggestionsListView.makeVisible()
