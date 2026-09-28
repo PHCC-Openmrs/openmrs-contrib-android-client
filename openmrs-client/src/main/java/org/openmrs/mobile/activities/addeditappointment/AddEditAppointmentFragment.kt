@@ -129,7 +129,7 @@ class AddEditAppointmentFragment : BaseFragment() {
     }
 
     private fun setupLocationSpinner() = with(binding.locationSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, viewModel.locations.keys.toList())
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, viewModel.locations.keys.toList())
         setSelection(viewModel.locationListPosition)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -141,7 +141,7 @@ class AddEditAppointmentFragment : BaseFragment() {
     }
 
     private fun setupProviderSpinner() = with(binding.providerSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, viewModel.providers.keys.toList())
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, viewModel.providers.keys.toList())
         setSelection(viewModel.providerListPosition)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -153,7 +153,7 @@ class AddEditAppointmentFragment : BaseFragment() {
     }
 
     private fun setupServiceSpinner() = with(binding.serviceSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, viewModel.services.keys.toList())
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, viewModel.services.keys.toList())
         setSelection(viewModel.serviceListPosition)
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -166,7 +166,7 @@ class AddEditAppointmentFragment : BaseFragment() {
     }
 
     private fun setupAppointmentTypeSpinner() = with(binding.appointmentTypeSpinner) {
-        adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, appointmentKindOptions.keys.toList())
+        adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, appointmentKindOptions.keys.toList())
         setSelection(appointmentKindOptions.values.toList().indexOf(viewModel.appointmentKind).coerceAtLeast(0))
         onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -187,7 +187,7 @@ class AddEditAppointmentFragment : BaseFragment() {
         appointmentStatusLabel.makeVisible()
         appointmentStatusSpinner.makeVisible()
         appointmentStatusSpinner.adapter =
-            ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, appointmentStatusOptions.keys.toList())
+            ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, appointmentStatusOptions.keys.toList())
         appointmentStatusSpinner.setSelection(
             appointmentStatusOptions.values.toList().indexOf(viewModel.status).coerceAtLeast(0)
         )

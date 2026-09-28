@@ -94,7 +94,7 @@ class AddTestResultFragment : BaseFragment() {
             ConceptDetails.DATATYPE_CODED -> {
                 codedValueSpinner.makeVisible()
                 val labels = conceptDetails.answers.map { it.display.orEmpty() }
-                codedValueSpinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, labels)
+                codedValueSpinner.adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, labels)
                 codedValueSpinner.onItemSelectedListener = object : OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                         viewModel.selectedAnswerUuid = conceptDetails.answers.getOrNull(position)?.uuid

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Same order as values/countries.xml - PatientStatusLabels maps these to the server's
+         concept uuids by position, so keep the order in step. -->
+    <string-array name="patient_status_options">
+        <item>مقيم</item>
+        <item>نازح</item>
+    </string-array>
+</resources>

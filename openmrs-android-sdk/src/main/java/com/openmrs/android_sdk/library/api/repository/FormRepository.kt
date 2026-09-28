@@ -5,6 +5,7 @@ import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity
 import com.openmrs.android_sdk.library.models.Form
 import com.openmrs.android_sdk.library.models.FormData
 import com.openmrs.android_sdk.utilities.FormUtils
+import org.json.JSONObject
 import rx.Observable
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -184,17 +185,88 @@ class FormRepository @Inject constructor() : BaseRepository() {
     }
 
     /**
+     * Resolves and caches a form's label translations - the "<form name>_translations_<locale>"
+     * resources O3 keeps next to the JSON schema, each holding `{"translations": {English label:
+     * translated label}}`. The web client gets these merged into the form by the o3forms module's
+     * `o3/forms/{uuid}` endpoint, but only for the session's locale; this app starts a fresh
+     * Basic-auth session per request, so that endpoint would only ever return the user's server
+     * default language. Fetching the resources directly - every locale, cached like the schema -
+     * lets the form render in whichever language the app is set to, offline too.
+     *
+     * Needs the network for resources not yet resolved; call it off the main thread.
+     */
+    fun resolveFormTranslations(formResource: FormResourceEntity) {
+        var resolvedAny = false
+        formResource.resources.filter { isTranslationsResource(it) }.forEach { resource ->
+            val value = resource.valueReference?.trim() ?: return@forEach
+            if (!CLOBDATA_UUID_PATTERN.matcher(value).matches()) return@forEach
+            val resolved = fetchClobData(value)?.trim()
+            if (!resolved.isNullOrBlank() && resolved.startsWith("{") && resolved.endsWith("}")) {
+                resource.valueReference = resolved
+                resolvedAny = true
+            }
+        }
+        if (resolvedAny) {
+            try {
+                updateFormResource(formResource)
+            } catch (e: Exception) {
+                // Not fatal - see resolveFormFieldsJson.
+            }
+        }
+    }
+
+    /**
+     * Gets a form's label translations for a language, from what [resolveFormTranslations] has
+     * already cached - never touches the network, so it's safe on the main thread.
+     *
+     * @param languageTag the app's language, e.g. "ar" or "en-GB"
+     * @return English label to translated label; empty when the form has none for that language
+     */
+    fun getFormTranslations(formResource: FormResourceEntity, languageTag: String): Map<String, String> {
+        val wanted = normalizeLocale(languageTag)
+        val candidates = formResource.resources.filter { isTranslationsResource(it) }
+        // An exact locale first (ar_SY for ar_SY), then any resource for the same language.
+        val resource = candidates.firstOrNull { resourceLocale(it) == wanted }
+                ?: candidates.firstOrNull { resourceLocale(it).substringBefore('_') == wanted.substringBefore('_') }
+                ?: return emptyMap()
+
+        val value = resource.valueReference?.trim()
+        if (value.isNullOrEmpty() || !value.startsWith("{")) return emptyMap()
+        return try {
+            val json = JSONObject(value)
+            val entries = json.optJSONObject("translations") ?: json
+            val translations = HashMap<String, String>()
+            entries.keys().forEach { key ->
+                val translated = entries.optString(key)
+                if (translated.isNotBlank()) translations[key] = translated
+            }
+            translations
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    private fun isTranslationsResource(resource: FormResourceEntity) =
+            resource.name?.contains(TRANSLATIONS_RESOURCE_MARKER) == true
+
+    private fun resourceLocale(resource: FormResourceEntity) =
+            normalizeLocale(resource.name!!.substringAfterLast(TRANSLATIONS_RESOURCE_MARKER))
+
+    private fun normalizeLocale(locale: String) = locale.trim().replace('-', '_').lowercase()
+
+    /**
      * Proactively resolves and caches every locally-known form's schema (including
-     * clobdata-backed ones), so all forms are available for offline filling rather than only
-     * the ones a user happened to open once while online. Meant to be run alongside another
-     * online "prep for offline use" action (e.g. the concept dictionary download), not on every
-     * Form List screen open.
+     * clobdata-backed ones) and its label translations, so all forms are available for offline
+     * filling rather than only the ones a user happened to open once while online. Meant to be
+     * run alongside another online "prep for offline use" action (e.g. the concept dictionary
+     * download), not on every Form List screen open.
      */
     fun resolveAllFormSchemas(): Observable<Unit> {
         return AppDatabaseHelper.createObservableIO(Callable {
             db.formResourceDAO().getFormResourceList().forEach { formResource ->
                 try {
                     resolveFormFieldsJson(formResource)
+                    resolveFormTranslations(formResource)
                 } catch (e: Exception) {
                     // Best-effort - one form's resolution failure shouldn't block the rest.
                 }
@@ -205,5 +277,8 @@ class FormRepository @Inject constructor() : BaseRepository() {
     companion object {
         private val CLOBDATA_UUID_PATTERN: Pattern =
             Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
+
+        /** How O3 names a form's translation resources: "<form name>_translations_<locale>". */
+        private const val TRANSLATIONS_RESOURCE_MARKER = "_translations_"
     }
 }

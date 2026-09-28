@@ -83,7 +83,7 @@
             android:theme="@style/AppThemeOrig"></activity>
         <activity
             android:name=".activities.introduction.IntroActivity"
-            android:label="Introduction"
+            android:label="@string/intro_activity_title"
             android:theme="@style/AppTheme"></activity>
         <activity
             android:name=".activities.syncedpatients.SyncedPatientsActivity"

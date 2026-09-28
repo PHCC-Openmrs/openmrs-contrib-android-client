@@ -74,7 +74,7 @@ class ModifyTestOrderFragment : BaseFragment() {
 
     private fun setupPrioritySpinner() = with(binding) {
         val labels = PRIORITY_OPTIONS.map { getString(it.second) }
-        prioritySpinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, labels)
+        prioritySpinner.adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, labels)
         val initialIndex = PRIORITY_OPTIONS.indexOfFirst { it.first == viewModel.urgency }
         if (initialIndex >= 0) prioritySpinner.setSelection(initialIndex)
         prioritySpinner.onItemSelectedListener = object : OnItemSelectedListener {

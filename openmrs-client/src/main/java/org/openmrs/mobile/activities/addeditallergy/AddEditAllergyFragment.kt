@@ -140,7 +140,7 @@ class AddEditAllergyFragment : BaseFragment() {
     }
 
     private fun setupAllergenSpinner(allergens: List<String>, allergenType: String) = with(binding.allergySpinner) {
-        adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, allergens)
+        adapter = ArrayAdapter(requireContext(), R.layout.aligned_simple_list_item_1, allergens)
         onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(adapterView: AdapterView<*>?, view: View?, i: Int, l: Long) {
                 viewModel.selectAllergen(selectedItem.toString(), selectedItemPosition, allergenType)
@@ -151,7 +151,7 @@ class AddEditAllergyFragment : BaseFragment() {
     }
 
     private fun setupReactionSpinner(reactions: List<String>) = with(binding) {
-        reactionSpinner.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, reactions)
+        reactionSpinner.adapter = ArrayAdapter(requireContext(), R.layout.aligned_simple_list_item_1, reactions)
         reactionSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(adapterView: AdapterView<*>?, view: View?, i: Int, l: Long) {
                 val selectedItem = reactionSpinner.selectedItem.toString()

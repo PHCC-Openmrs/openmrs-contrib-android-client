@@ -278,16 +278,14 @@ public class PatientRepository extends BaseRepository {
             public void onResponse(@NonNull Call<PatientPhoto> call, @NonNull Response<PatientPhoto> response) {
                 if (!response.isSuccessful()) {
                     getLogger().e(response.message());
-                    //string resource added "patient_photo_update_unsuccessful"
-                    ToastUtil.error("Patient photo cannot be synced due to server error " + response.message());
+                    ToastUtil.error(R.string.patient_photo_update_unsuccessful, response.message());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<PatientPhoto> call, @NonNull Throwable t) {
                 getLogger().e(t.getMessage());
-                //string resource added "patient_photo_update_unsuccessful"
-                ToastUtil.error("Patient photo cannot be synced due to server error " + t.toString());
+                ToastUtil.error(R.string.patient_photo_update_unsuccessful, t.toString());
             }
         });
     }

@@ -24,6 +24,7 @@ import com.openmrs.android_sdk.library.models.Page
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_LIST_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NAME
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_TRANSLATIONS_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VALUEREFERENCE
 import com.openmrs.android_sdk.utilities.FormUtils.getForm
@@ -59,11 +60,21 @@ class FormDisplayActivity : ACBaseActivity() {
 
         intent.extras?.let {
             val formName = it.getString(FORM_NAME)
-            supportActionBar!!.title = "$formName Form"
+            val translations = formTranslations()
+            // O3 translation maps name the form by its schema title, without a trailing " Form".
+            val translatedName = formName?.let { name ->
+                translations[name] ?: translations[name.removeSuffix(" Form").trim()]
+            }
+            supportActionBar!!.title = translatedName ?: getString(R.string.form_title, formName)
         }
 
         initViewComponents()
     }
+
+    /** The form's label translations for the app's language, from the form list; empty when it has none. */
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
+    private fun formTranslations(): HashMap<String, String> =
+        intent.extras?.getSerializable(FORM_TRANSLATIONS_BUNDLE) as? HashMap<String, String> ?: HashMap()
 
     private fun initViewComponents() {
         var pages: List<Page>? = null
@@ -77,7 +88,7 @@ class FormDisplayActivity : ACBaseActivity() {
             patientId = it.getLong(PATIENT_ID_BUNDLE)
         }
 
-        val formPageAdapter = FormPageAdapter(supportFragmentManager, pages!!, formFieldsWrappers, patientId)
+        val formPageAdapter = FormPageAdapter(supportFragmentManager, pages!!, formFieldsWrappers, patientId, formTranslations())
         with(binding) {
             btnNext.setOnClickListener { viewPager.currentItem = viewPager.currentItem + 1 }
             btnSubmit.setOnClickListener { submitForm() }

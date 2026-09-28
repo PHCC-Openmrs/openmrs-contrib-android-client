@@ -97,7 +97,7 @@ class DashboardActivity : ACBaseActivity() {
 
                 } else {
                     // Permission Denied
-                    Toast.makeText(DashboardActivity.this, "Permission Denied, Exiting", Toast.LENGTH_SHORT)
+                    Toast.makeText(DashboardActivity.this, getString(R.string.permission_denied_exiting), Toast.LENGTH_SHORT)
                             .show();
                     finish();
                 }

@@ -13,6 +13,7 @@
  */
 
 package org.openmrs.mobile.services;
+import org.openmrs.mobile.R;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -58,18 +59,17 @@ public class UserService {
                             }
                         }
                         if (!matchFound) {
-                            //string resource and translation added "error_fetching_user_data_message"
-                            ToastUtil.error("Couldn't fetch user data");
+                            ToastUtil.error(R.string.error_fetching_user_data_message);
                         }
                     }
                 } else {
-                    ToastUtil.error(response.message());
+                    ToastUtil.error(R.string.error_fetching_user_data_with_reason, response.message());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<Results<User>> call, @NonNull Throwable t) {
-                ToastUtil.error(t.getMessage());
+                ToastUtil.error(R.string.error_fetching_user_data_with_reason, t.getMessage());
             }
         });
     }
@@ -86,13 +86,13 @@ public class UserService {
                     userInfo.put(ApplicationConstants.UserKeys.USER_UUID, user.getPerson().getUuid());
                     OpenmrsAndroid.setCurrentUserInformation(userInfo);
                 } else {
-                    ToastUtil.error(response.message());
+                    ToastUtil.error(R.string.error_fetching_user_data_with_reason, response.message());
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<User> call, @NonNull Throwable t) {
-                ToastUtil.error(t.getMessage());
+                ToastUtil.error(R.string.error_fetching_user_data_with_reason, t.getMessage());
             }
         });
     }

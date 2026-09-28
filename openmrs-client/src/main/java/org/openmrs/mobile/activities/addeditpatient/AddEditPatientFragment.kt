@@ -85,6 +85,7 @@ import org.joda.time.DateTime
 import org.joda.time.LocalDate
 import org.joda.time.format.DateTimeFormat
 import org.openmrs.mobile.R
+import org.openmrs.mobile.utilities.PatientStatusLabels
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.dialog.CustomDialogModel
 import org.openmrs.mobile.activities.dialog.CustomFragmentDialog
@@ -653,11 +654,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
 
         // Governorate is a fixed list, matching the dropdown on the web app's registration form.
         stateAutoComplete.setAdapter(ArrayAdapter(
-                requireContext(), android.R.layout.simple_dropdown_item_1line, resources.getStringArray(R.array.gaza_governorates)))
+                requireContext(), R.layout.aligned_simple_dropdown_item_1line, resources.getStringArray(R.array.gaza_governorates)))
 
         // Patient Status (Resident/IDP), matching the dropdown on the web app's registration form.
         patientStatusAutoComplete.setAdapter(ArrayAdapter(
-                requireContext(), android.R.layout.simple_dropdown_item_1line, resources.getStringArray(R.array.patient_status_options)))
+                requireContext(), R.layout.aligned_simple_dropdown_item_1line, resources.getStringArray(R.array.patient_status_options)))
 
         // Check for cities available on searching
         cityAutoComplete.addTextChangedListener(object : TextWatcher {
@@ -756,7 +757,7 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             answerDisplays[i] = answers[i].display
         }
 
-        deceasedSpinner.adapter = ArrayAdapter(requireActivity(), android.R.layout.simple_list_item_1, answerDisplays)
+        deceasedSpinner.adapter = ArrayAdapter(requireActivity(), R.layout.aligned_simple_list_item_1, answerDisplays)
         deceasedSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(adapterView: AdapterView<*>?, view: View, pos: Int, l: Long) {
                 val display = deceasedSpinner.selectedItem.toString()
@@ -905,26 +906,11 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         viewModel.resetPatient()
     }
 
-    /**
-     * Maps the Patient Status dropdown's selected label to the concept uuid the server expects
-     * (Patient Status is a coded attribute), matching how the web app's registration form submits
-     * it. Returns an empty string for a blank/unrecognized selection.
-     */
-    private fun patientStatusUuidForLabel(label: String?): String = when (label) {
-        ApplicationConstants.PatientStatusAnswers.RESIDENT_LABEL -> ApplicationConstants.PatientStatusAnswers.RESIDENT_UUID
-        ApplicationConstants.PatientStatusAnswers.IDP_LABEL -> ApplicationConstants.PatientStatusAnswers.IDP_UUID
-        else -> ""
-    }
+    /** The concept uuid the server expects for a selected Patient Status label - see PatientStatusLabels. */
+    private fun patientStatusUuidForLabel(label: String?): String = PatientStatusLabels.uuidFor(requireContext(), label)
 
-    /**
-     * The inverse of [patientStatusUuidForLabel] - maps a previously-saved concept uuid back to
-     * its display label, for showing an existing patient's Patient Status in the dropdown.
-     */
-    private fun patientStatusLabelForUuid(uuid: String?): String = when (uuid) {
-        ApplicationConstants.PatientStatusAnswers.RESIDENT_UUID -> ApplicationConstants.PatientStatusAnswers.RESIDENT_LABEL
-        ApplicationConstants.PatientStatusAnswers.IDP_UUID -> ApplicationConstants.PatientStatusAnswers.IDP_LABEL
-        else -> ""
-    }
+    /** The Patient Status label, in the app's language, for a previously-saved concept uuid. */
+    private fun patientStatusLabelForUuid(uuid: String?): String = PatientStatusLabels.labelFor(requireContext(), uuid) ?: ""
 
     private fun scrollToTop() = binding.run { scrollView.smoothScrollTo(0, scrollView.paddingTop) }
 

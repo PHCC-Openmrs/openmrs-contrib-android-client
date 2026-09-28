@@ -197,7 +197,7 @@ class SettingsFragment : BaseFragment() {
 
     private fun setupLanguageSpinner() {
         with(binding.languageSpinner) {
-            adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1,
+            adapter = ArrayAdapter(requireContext(), R.layout.aligned_simple_list_item_1,
                     viewModel.languageOptions.map { it.displayName })
             setSelection(viewModel.languageListPosition)
             onItemSelectedListener = object : OnItemSelectedListener {

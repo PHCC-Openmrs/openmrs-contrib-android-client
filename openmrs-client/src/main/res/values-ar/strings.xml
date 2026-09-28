@@ -29,7 +29,7 @@
     <string name="warning_dialog_title">تحذير</string>
     <string name="warning_lost_data_dialog">سيؤدي تغيير عنوان URL أو اسم المستخدم أو كلمة المرور إلى محو جميع البيانات. هل أنت متأكد؟</string>
     <string name="forgot_button_ok">تجاهل</string>
-    <string name="login_offline">غير متصل</string>
+    <string name="login_offline">بدون اتصال</string>
     <string name="login_online">متصل</string>
     <string name="login_error">خطأ في تسجيل الدخول.</string>
     <string name="invalid_URL_message">عنوان URL غير صالح</string>
@@ -81,7 +81,7 @@
 
     <!-- Logout dialog -->
     <string name="logout_dialog_title">جارٍ تسجيل الخروج</string>
-    <string name="logout_dialog_message">هل أنت متأكد أنك تريد تسجيل الخروج من عميل OpenMRS؟</string>
+    <string name="logout_dialog_message">هل أنت متأكد أنك تريد تسجيل الخروج من Care؟</string>
     <string name="logout_dialog_button">تسجيل الخروج</string>
     <!--Credentials Changed dialog-->
     <string name="credentials_changed_dialog_title">تم تغيير بيانات الاعتماد</string>
@@ -131,12 +131,12 @@
 
     <!-- Dashboard Activity -->
     <string name="dashboard_search_icon_label">البحث عن المرضى </string>
-    <string name="dashboard_registry_icon_label">تسجيل مريض</string>
+    <string name="dashboard_registry_icon_label">تسجيل المريض</string>
     <string name="dashboard_visits_icon_label">الزيارات النشطة</string>
     <string name="dashboard_forms_icon_label">إدخال النماذج</string>
 
     <!-- row_find_synced_patients layout-->
-    <string name="find_patients_row_checkbox_download_label">تنزيل</string>
+    <string name="find_patients_row_checkbox_download_label">تحميل</string>
 
     <!-- Patient Dashboard Activity -->
     <string name="action_synchronize_patients">جارٍ مزامنة المريض</string>
@@ -222,7 +222,7 @@
 
     <!-- Capture Vitals activity -->
     <string name="action_delete_patient">حذف المريض</string>
-    <string name="action_register_patient">تسجيل مريض </string>
+    <string name="action_register_patient">تسجيل المريض</string>
     <string name="failed_to_open_vitals_form">حدث خطأ. ملف نموذج غير صالح أو تالف. </string>
     <string name="active_visit_label_capture_vitals">في زيارة</string>
 
@@ -324,14 +324,14 @@
     <string name="offline_provider_delete">سيتم حذف مقدم الخدمة من الخادم عند العودة إلى الاتصال بالإنترنت</string>
     <string name="first_name_hint">الاسم الأول</string>
     <string name="last_name_hint">اسم العائلة</string>
-    <string name="identifier_hint">المعرّف</string>
+    <string name="identifier_hint">المعرف</string>
     <string name="identifier_description">* يمكن أن يكون المعرّف أي شيء. على سبيل المثال. طبيب، ممرضة، كاتب، إلخ</string>
     <string name="title_provider_info">معلومات مقدم الخدمة</string>
     <string name="dialog_provider_retired">سيتم إحالة مقدم الخدمة إلى التقاعد.</string>
     <string name="title_dialog_matching_provider">تم العثور على مقدمي خدمة مشابهين</string>
     <string name="dialog_matching_provider_positive_btn">إنشاء على أي حال </string>
     <string name="label_dark_mode">الوضع الداكن</string>
-    <string name="provider_tab_title">مقدمو الخدمة</string>
+    <string name="provider_tab_title">مقدمي الخدمة</string>
     <string name="patients_tab_title">المرضى</string>
     <string name="failed_provider_details">فشل في جلب تفاصيل مقدم الخدمة!</string>
     <string name="retry_action">إعادة المحاولة</string>
@@ -361,7 +361,7 @@
     <string name="apply">تطبيق</string>
 
     <!-- introduction Activity -->
-    <string name="intro_welcome">مرحبًا</string>
+    <string name="intro_welcome">مرحبا</string>
     <string name="intro_register">تسجيل المرضى</string>
     <string name="intro_find">البحث عن المرضى</string>
     <string name="intro_monitor">مراقبة الزيارات</string>
@@ -433,6 +433,7 @@
 
     <!--FormDisplay Fragment-->
     <string name="form_data_sync_is_off_message">تم حفظ النموذج محليًا ولا يمكن عرضه الآن. فعّل المزامنة والاتصال بالإنترنت لرفعه.</string>
+    <string name="form_select_date_hint">اختر التاريخ</string>
     <string name="form_data_submit_error">خطأ في إرسال النموذج</string>
     <string name="invalid_inputs">بعض المدخلات غير صالحة</string>
 
@@ -473,9 +474,9 @@
     <string name="allergen_food">طعام</string>
     <string name="allergen_other">أخرى</string>
     <string name="severity">الشدة</string>
-    <string name="severity_mild">خفيفة</string>
-    <string name="severity_moderate">متوسطة</string>
-    <string name="severity_severe">شديدة</string>
+    <string name="severity_mild">خفيف</string>
+    <string name="severity_moderate">معتدل</string>
+    <string name="severity_severe">شديد</string>
     <string name="comment">ملاحظة</string>
     <string name="add_comment">إضافة ملاحظة</string>
     <string name="create_allergy_title">إضافة حساسية؟</string>
@@ -510,7 +511,7 @@
     <string name="start_visit_form_title">بدء الزيارة</string>
     <string name="start_visit_form_error">تعذر تحميل نموذج بدء الزيارة</string>
     <string name="visit_location_label">موقع الزيارة</string>
-    <string name="visit_service_label">الخدمة</string>
+    <string name="visit_service_label">خدمة</string>
     <string name="visit_service_hint">اختر الخدمات</string>
     <string name="visit_service_none_available">لا توجد خدمات متاحة في هذا الموقع</string>
     <string name="select_an_option">اختر خيارًا</string>
@@ -521,7 +522,7 @@
     <string name="warning_visit_attribute_required">يرجى ملء %1$s</string>
 
     <!-- National ID and registration -->
-    <string name="login_continue_button">متابعة</string>
+    <string name="login_continue_button">استمرار</string>
     <string name="reg_national_id_hint">رقم الهوية الوطنية*</string>
     <string name="patient_national_id_label">رقم الهوية الوطنية</string>
     <string name="reg_neighbourhood_hint">الحي*</string>
@@ -541,12 +542,12 @@
     <!-- Patient dashboard tabs -->
     <string name="patient_scroll_tab_appointments_label">المواعيد</string>
     <string name="patient_scroll_tab_medications_label">الأدوية</string>
-    <string name="patient_scroll_tab_orders_label">الطلبات</string>
+    <string name="patient_scroll_tab_orders_label">طلبات</string>
 
     <!-- Appointments -->
     <string name="appointments_tab_upcoming">القادمة</string>
     <string name="appointments_tab_today">اليوم</string>
-    <string name="appointments_tab_past">السابقة</string>
+    <string name="appointments_tab_past">الماضي</string>
     <string name="empty_appointments_list">لا توجد مواعيد لعرضها.</string>
     <string name="appointment_no_service">لم يتم تحديد خدمة</string>
     <string name="appointment_cancel_action">إلغاء الموعد</string>
@@ -556,7 +557,7 @@
     <string name="appointment_cancel_error">فشل إلغاء الموعد</string>
     <string name="new_appointment_title">إضافة موعد</string>
     <string name="location">الموقع</string>
-    <string name="service">الخدمة</string>
+    <string name="service">خدمة</string>
     <string name="provider">مقدم الخدمة</string>
     <string name="notes">ملاحظات</string>
     <string name="date">التاريخ</string>
@@ -576,7 +577,7 @@
     <string name="create_appointment_confirm_title">جدولة الموعد</string>
     <string name="create_appointment_confirm_message">هل أنت متأكد أنك تريد جدولة هذا الموعد؟</string>
     <string name="appointment_form_error">خطأ في جدولة الموعد</string>
-    <string name="appointment_form_success">تمت جدولة الموعد</string>
+    <string name="appointment_form_success">تم جدولة الموعد</string>
     <string name="appointment_conflict_error">يتعارض هذا الموعد مع موعد موجود أو يقع خارج ساعات الخدمة</string>
     <string name="warning_select_location">يرجى اختيار موقع</string>
     <string name="warning_select_service">يرجى اختيار خدمة</string>
@@ -596,22 +597,22 @@
     <string name="appointment_status_waitlist">قائمة الانتظار</string>
     <string name="appointment_status_scheduled">مجدول</string>
     <string name="appointment_status_arrived">وصل</string>
-    <string name="appointment_status_checked_in">تم تسجيل الحضور</string>
+    <string name="appointment_status_checked_in">تم تسجيل الوصول</string>
     <string name="appointment_status_completed">مكتمل</string>
-    <string name="appointment_status_cancelled">ملغى</string>
+    <string name="appointment_status_cancelled">تم الإلغاء</string>
     <string name="appointment_status_missed">فائت</string>
 
     <!-- Orders and medications -->
     <string name="empty_orders_list">لا توجد طلبات لعرضها اليوم.</string>
     <string name="get_orders_error">فشل في جلب الطلبات</string>
     <string name="new_drug_order_title">إضافة طلب دواء</string>
-    <string name="medications_section_active">الأدوية الحالية</string>
+    <string name="medications_section_active">الأدوية النشطة</string>
     <string name="medications_section_upcoming">الأدوية القادمة</string>
     <string name="medications_section_past">الأدوية السابقة</string>
     <string name="medications_empty_active">لا توجد أدوية حالية لعرضها.</string>
     <string name="medications_empty_upcoming">لا توجد أدوية قادمة لعرضها.</string>
     <string name="medications_empty_past">لا توجد أدوية سابقة لعرضها.</string>
-    <string name="order_basket_title">سلة الطلبات</string>
+    <string name="order_basket_title">سلة الطلب</string>
     <string name="drug_orders_section">طلبات الأدوية (%1$d)</string>
     <string name="lab_orders_section">طلبات المختبر (%1$d)</string>
     <string name="order_basket_add">إضافة</string>
@@ -621,7 +622,7 @@
     <string name="drug_search_title">إضافة طلب دواء</string>
     <string name="drug_search_results_for">%1$d نتيجة لـ \"%2$s\"</string>
     <string name="drug_search_clear_results">مسح النتائج</string>
-    <string name="drug_search_add_to_basket">إضافة إلى السلة</string>
+    <string name="drug_search_add_to_basket">أضف إلى السلة</string>
     <string name="drug_search_order_form">نموذج الطلب</string>
     <string name="drug">الدواء</string>
     <string name="drug_search_hint">ابحث عن دواء</string>
@@ -630,7 +631,7 @@
     <string name="frequency">التكرار</string>
     <string name="as_needed">عند الحاجة (PRN)</string>
     <string name="duration">المدة</string>
-    <string name="quantity_to_dispense">الكمية المراد صرفها</string>
+    <string name="quantity_to_dispense">الكمية للصرف</string>
     <string name="number_of_refills">عدد مرات إعادة الصرف</string>
     <string name="additional_instructions">تعليمات إضافية</string>
     <string name="create_drug_order_confirm_title">إنشاء طلب دواء</string>
@@ -647,7 +648,7 @@
     <string name="test_order_accession_number">الرقم المرجعي</string>
     <string name="order_action_modify">تعديل الطلب</string>
     <string name="order_action_add_result">إضافة نتيجة</string>
-    <string name="order_action_edit_results">تعديل النتائج</string>
+    <string name="order_action_edit_results">تحرير النتائج</string>
     <string name="order_action_cancel">إلغاء الطلب</string>
     <string name="order_cancel_confirm_title">إلغاء الطلب</string>
     <string name="order_cancel_confirm_message">هل أنت متأكد أنك تريد إلغاء هذا الطلب؟</string>
@@ -689,4 +690,17 @@
     <string name="visit_note_no_provider_error">لا يوجد مقدم خدمة مرتبط بحسابك. يرجى التواصل مع المسؤول.</string>
     <string name="visit_note_saved_successfully">تم حفظ ملاحظة الزيارة بنجاح.</string>
     <string name="visit_note_save_error">تعذر حفظ ملاحظة الزيارة. يرجى المحاولة مرة أخرى.</string>
+
+    <!-- Messages and labels that used to be hardcoded in English -->
+    <string name="forms_synced_message">تمت مزامنة النماذج: %1$d</string>
+    <string name="forms_fetch_error">خطأ في جلب النماذج</string>
+    <string name="encounter_types_fetch_error">خطأ في جلب أنواع اللقاءات: %1$s</string>
+    <string name="error_fetching_user_data_message">تعذر جلب بيانات المستخدم</string>
+    <string name="error_fetching_user_data_with_reason">تعذر جلب بيانات المستخدم: %1$s</string>
+    <string name="permission_denied_exiting">تم رفض الإذن، جارٍ الخروج</string>
+    <string name="form_submission_no_active_visit">فشل الإرسال: لا توجد زيارة نشطة لهذا المريض على هذا الجهاز.</string>
+    <string name="form_submission_error">خطأ في الإرسال: %1$s</string>
+    <string name="patient_deceased_switch">المريض متوفى</string>
+    <string name="intro_activity_title">مقدمة</string>
+    <string name="form_title">نموذج %1$s</string>
 </resources>

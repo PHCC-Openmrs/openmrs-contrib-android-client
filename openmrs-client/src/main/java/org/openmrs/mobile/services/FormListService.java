@@ -9,6 +9,7 @@
  */
 
 package org.openmrs.mobile.services;
+import org.openmrs.mobile.R;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -56,9 +57,9 @@ public class FormListService extends IntentService {
         if (PrivilegeUtils.hasAnyPrivilege(ApplicationConstants.Privileges.ADD_ENCOUNTERS, ApplicationConstants.Privileges.FORM_ENTRY)) {
             List<FormResourceEntity> formResourceList = formRepository.syncFormList();
             if (formResourceList != null) {
-                ToastUtil.notify("Synced " + formResourceList.size() + " forms");
+                ToastUtil.notify(R.string.forms_synced_message, formResourceList.size());
             } else {
-                ToastUtil.error("Error fetching forms");
+                ToastUtil.error(R.string.forms_fetch_error);
             }
         }
         // Refresh encounter types
@@ -72,10 +73,10 @@ public class FormListService extends IntentService {
                     encounterTypeRoomDAO.addEncounterType(encounterType);
                 }
             } else {
-                ToastUtil.error(response2.message());
+                ToastUtil.error(R.string.encounter_types_fetch_error, response2.message());
             }
         } catch (Exception e) {
-            ToastUtil.error("Error fetching encounter types: " + e.getMessage());
+            ToastUtil.error(R.string.encounter_types_fetch_error, e.getMessage());
         }
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_FORM_LIST_SYNCED));

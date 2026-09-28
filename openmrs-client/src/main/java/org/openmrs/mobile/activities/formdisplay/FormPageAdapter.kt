@@ -24,13 +24,14 @@ import org.openmrs.mobile.bundle.FormFieldsWrapper
 class FormPageAdapter(fm: FragmentManager,
                       private val pageList: List<Page>,
                       private val formFieldsWrapperList: List<FormFieldsWrapper>?,
-                      private val patientId: Long) : FragmentPagerAdapter(fm) {
+                      private val patientId: Long,
+                      private val translations: HashMap<String, String>) : FragmentPagerAdapter(fm) {
 
     val registeredFragments = SparseArray<Fragment>()
 
     override fun getItem(position: Int): Fragment {
         val formFieldWrapper = if (formFieldsWrapperList != null) formFieldsWrapperList[position] else null
-        return FormDisplayPageFragment.newInstance(pageList[position], formFieldWrapper, patientId)
+        return FormDisplayPageFragment.newInstance(pageList[position], formFieldWrapper, patientId, translations)
     }
 
     override fun instantiateItem(container: ViewGroup, position: Int): Any {
@@ -44,7 +45,7 @@ class FormPageAdapter(fm: FragmentManager,
     }
 
     override fun getPageTitle(position: Int): CharSequence? {
-        return pageList[position].label
+        return pageList[position].label?.let { translations[it] ?: it }
     }
 
     override fun destroyItem(container: ViewGroup, position: Int, `object`: Any) {

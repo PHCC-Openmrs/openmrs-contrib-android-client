@@ -92,7 +92,7 @@ class FormListFragment : BaseFragment() {
                     startVisitNoteActivity(patientId, encounterType!!)
                 } else {
                     if (formFieldsJson != null) {
-                        startFormDisplayActivity(formName!!, encounterName!!, patientId, formFieldsJson!!, encounterType!!)
+                        startFormDisplayActivity(formName!!, encounterName!!, patientId, formFieldsJson!!, encounterType!!, translations)
                     } else {
                         ToastUtil.error(getString(R.string.failed_to_open_vitals_form))
                     }
@@ -131,13 +131,15 @@ class FormListFragment : BaseFragment() {
             snackBarLayout.addView(customSnackBarView, 0)
             snackBar.show()
         } else {
-            binding.formlist.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, forms)
+            binding.formlist.adapter = ArrayAdapter(requireContext(), R.layout.aligned_simple_list_item_1, forms)
         }
     }
 
-    private fun startFormDisplayActivity(formName: String, encounterName: String, patientId: Long, valueRefString: String, encounterType: String) {
+    private fun startFormDisplayActivity(formName: String, encounterName: String, patientId: Long, valueRefString: String,
+                                         encounterType: String, translations: HashMap<String, String>) {
         Intent(context, FormDisplayActivity::class.java).apply {
             putExtra(FORM_NAME, formName)
+            putExtra(ApplicationConstants.BundleKeys.FORM_TRANSLATIONS_BUNDLE, translations)
             putExtra(ApplicationConstants.BundleKeys.ENCOUNTERTYPE_NAME, encounterName)
             putExtra(PATIENT_ID_BUNDLE, patientId)
             putExtra(VALUEREFERENCE, valueRefString)
