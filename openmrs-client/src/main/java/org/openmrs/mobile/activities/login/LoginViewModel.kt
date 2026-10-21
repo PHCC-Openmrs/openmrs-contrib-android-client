@@ -71,6 +71,12 @@ class LoginViewModel @Inject constructor(
         if (!isOnline()) {
             if (OpenmrsAndroid.isUserLoggedOnline() && url == OpenmrsAndroid.getLastLoginServerUrl()) {
                 if (OpenmrsAndroid.getUsername() == username && BCrypt.checkpw(password, OpenmrsAndroid.getHashedPassword())) {
+                    // The privileges cached at this user's last online login - so access revoked
+                    // on the server since then only takes effect once they next log in online.
+                    if (!privilegeRepository.cachedUserHasPrivilege(ApplicationConstants.Privileges.APP_MOBILE_CLIENT)) {
+                        setContent(ResultType.RoleAccessError)
+                        return
+                    }
                     OpenmrsAndroid.deleteSecretKey()
                     OpenmrsAndroid.setPasswordAndHashedPassword(password)
                     OpenmrsAndroid.setSessionToken(OpenmrsAndroid.getLastSessionToken())
@@ -91,6 +97,12 @@ class LoginViewModel @Inject constructor(
         addSubscription(loginRepository.getSession(username, password)
                 .map { session ->
                     if (!session.isAuthenticated) return@map ResultType.LoginInvalidCredentials
+                    // Checked before anything below persists this user's credentials or session,
+                    // so a user without app access leaves nothing behind on the device.
+                    if (!privilegeRepository.hasEffectivePrivilege(session.user, ApplicationConstants.Privileges.APP_MOBILE_CLIENT)) {
+                        loginRepository.endSession()
+                        return@map ResultType.RoleAccessError
+                    }
 
                     OpenmrsAndroid.deleteSecretKey()
                     if (wipeDatabase) {

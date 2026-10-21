@@ -104,6 +104,8 @@ object ApplicationConstants {
         const val MANAGE_APPOINTMENTS = "Manage Appointments"
         const val GET_ORDERS = "Get Orders"
         const val ADD_ORDERS = "Add Orders"
+        /** Custom privilege gating the whole app - users without it cannot log in at all. */
+        const val APP_MOBILE_CLIENT = "App: Mobile Client"
     }
 
     object UserKeys {

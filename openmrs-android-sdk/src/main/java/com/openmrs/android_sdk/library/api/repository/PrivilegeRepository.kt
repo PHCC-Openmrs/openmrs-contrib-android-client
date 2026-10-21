@@ -43,6 +43,31 @@ class PrivilegeRepository @Inject constructor(
             return
         }
 
+        privilegeCacheRoomDAO.insert(resolve(user))
+    }
+
+    /**
+     * Whether [user] holds [privilegeName], directly or through any (inherited) role. Unlike
+     * [com.openmrs.android_sdk.library.PrivilegeChecker] this fails CLOSED - a user whose
+     * roles/privileges the server didn't return is treated as not having it - and grants
+     * superusers nothing implicitly: the privilege has to be explicitly assigned, admins included.
+     * That makes it safe to use as an access gate rather than just a UI hint.
+     */
+    fun hasEffectivePrivilege(user: User?, privilegeName: String): Boolean {
+        if (user == null || (user.roles == null && user.privileges == null)) return false
+        return resolve(user).grants(privilegeName)
+    }
+
+    /** Fail-closed counterpart of [hasEffectivePrivilege] for the user cached at the last online login. */
+    fun cachedUserHasPrivilege(privilegeName: String): Boolean =
+        privilegeCacheRoomDAO.get()?.grants(privilegeName) ?: false
+
+    fun clearCache() = privilegeCacheRoomDAO.clear()
+
+    private fun PrivilegeCacheEntity.grants(privilegeName: String): Boolean =
+        privilegeNames.any { it.equals(privilegeName, ignoreCase = true) }
+
+    private fun resolve(user: User): PrivilegeCacheEntity {
         val privilegeNames = mutableSetOf<String>()
         val roleNames = mutableSetOf<String>()
         user.privileges?.forEach { it.name?.let(privilegeNames::add) }
@@ -50,17 +75,13 @@ class PrivilegeRepository @Inject constructor(
 
         val isSuperUser = roleNames.any { it.equals(ApplicationConstants.RBAC.SUPERUSER_ROLE_NAME, ignoreCase = true) }
 
-        privilegeCacheRoomDAO.insert(
-            PrivilegeCacheEntity(
-                privilegeNames = privilegeNames.toList(),
-                roleNames = roleNames.toList(),
-                isSuperUser = isSuperUser,
-                cachedAt = System.currentTimeMillis()
-            )
+        return PrivilegeCacheEntity(
+            privilegeNames = privilegeNames.toList(),
+            roleNames = roleNames.toList(),
+            isSuperUser = isSuperUser,
+            cachedAt = System.currentTimeMillis()
         )
     }
-
-    fun clearCache() = privilegeCacheRoomDAO.clear()
 
     /** Recursively walks [role] and its inherited roles, guarding against inheritance cycles. */
     private fun collectRole(

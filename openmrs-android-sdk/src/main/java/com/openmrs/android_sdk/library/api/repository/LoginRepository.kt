@@ -41,4 +41,17 @@ class LoginRepository @Inject constructor() : BaseRepository() {
             }
         })
     }
+
+    /**
+     * Best-effort end of the server session opened by [getSession] - used when an authenticated
+     * user turns out not to be allowed into the app, so no live session is left behind. Must run
+     * on a background thread; failures are only logged since the user is refused either way.
+     */
+    fun endSession() {
+        try {
+            restApi.deleteSession().execute()
+        } catch (e: Exception) {
+            logger.w("Could not end server session: " + e.message)
+        }
+    }
 }

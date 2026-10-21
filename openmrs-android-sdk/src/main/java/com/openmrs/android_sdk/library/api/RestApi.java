@@ -481,6 +481,14 @@ public interface RestApi {
     Call<Session> getSession();
 
     /**
+     * Ends the current server session.
+     *
+     * @return empty body
+     */
+    @DELETE("session")
+    Call<ResponseBody> deleteSession();
+
+    /**
      * Gets session against an explicit server URL, rather than the Retrofit instance's
      * pre-configured base URL - needed when checking a user's location restriction as part of
      * fetching login locations, since that happens before the newly-typed server URL has been

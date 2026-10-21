@@ -63,5 +63,6 @@ enum class ResultType {
     DrugOrderCreateSuccess,
     DrugOrderCreateError,
     OrderActionSuccess,
-    OrderActionError
+    OrderActionError,
+    RoleAccessError
 }
