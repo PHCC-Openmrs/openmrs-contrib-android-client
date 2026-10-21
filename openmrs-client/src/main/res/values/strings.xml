@@ -36,6 +36,7 @@
     <string name="login_offline">Offline</string>
     <string name="login_online">Online</string>
     <string name="login_error">Error with login</string>
+    <string name="login_no_app_access">You do not have access to this app. Please contact your administrator.</string>
     <string name="invalid_URL_message">Invalid URL</string>
 
     <!-- AddEditPatient -->

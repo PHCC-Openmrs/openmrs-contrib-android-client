@@ -23,6 +23,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.google.android.material.snackbar.Snackbar
@@ -103,6 +105,11 @@ class LoginFragment : BaseFragment() {
                         ResultType.LoginInvalidCredentials -> {
                             showInvalidLoginOrPasswordSnackbar()
                             hideLoadingAnimation()
+                        }
+                        ResultType.RoleAccessError -> {
+                            ToastUtil.error(getString(R.string.login_no_app_access))
+                            hideLoadingAnimation()
+                            resetToCredentialsStep()
                         }
                         ResultType.LoginOfflineUnsupported -> {
                             ToastUtil.error(getString(R.string.offline_mode_unsupported_in_first_login))
@@ -212,6 +219,10 @@ class LoginFragment : BaseFragment() {
                 textInputLayoutPassword.isHintAnimationEnabled = true
             }
         }
+        // Locations are fetched per user (a user's location restriction decides which ones they
+        // get), so once the credentials they were fetched with change, they no longer apply.
+        loginUsernameField.doAfterTextChanged { resetToCredentialsStep() }
+        loginPasswordField.doAfterTextChanged { resetToCredentialsStep() }
         continueButton.setOnClickListener { onContinueClicked() }
         loginButton.setOnClickListener {
             viewModel.showWarningOrLogin(loginUsernameField.text.toString(),
@@ -292,6 +303,18 @@ class LoginFragment : BaseFragment() {
         continueButton.isEnabled = true
         locationSpinner.makeGone()
         loginButton.makeGone()
+    }
+
+    /**
+     * Discards the locations fetched for the previous credentials and returns to the Continue
+     * step, so the next user's locations are fetched with their own credentials rather than
+     * offering them the previous user's. No-op while still on the credentials step.
+     */
+    private fun resetToCredentialsStep() = with(binding) {
+        if (!locationSpinner.isVisible) return@with
+        viewModel.locations = emptyList()
+        locationSpinner.adapter = null
+        showCredentialsStep()
     }
 
     /** Revealed once locations are fetched successfully - hides Continue, shows the real form. */

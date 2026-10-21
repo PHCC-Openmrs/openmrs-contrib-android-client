@@ -32,6 +32,7 @@
     <string name="login_offline">بدون اتصال</string>
     <string name="login_online">متصل</string>
     <string name="login_error">خطأ في تسجيل الدخول.</string>
+    <string name="login_no_app_access">ليس لديك صلاحية الوصول إلى هذا التطبيق. يرجى التواصل مع المسؤول.</string>
     <string name="invalid_URL_message">عنوان URL غير صالح</string>
 
     <!-- AddEditPatient -->

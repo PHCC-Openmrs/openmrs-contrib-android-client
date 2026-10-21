@@ -17,6 +17,7 @@ import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.library.models.Session
 import com.openmrs.android_sdk.library.models.User
 import com.openmrs.android_sdk.library.models.VisitType
+import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.NetworkUtils
 import org.junit.After
 import org.junit.Assert.*
@@ -208,6 +209,7 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         `when`(OpenmrsAndroid.getHashedPassword()).thenReturn(password)
         `when`(OpenmrsAndroid.getLastSessionToken()).thenReturn(lastSessionToken)
         `when`(BCrypt.checkpw(any(), any())).thenReturn(true)
+        `when`(privilegeRepository.cachedUserHasPrivilege(ApplicationConstants.Privileges.APP_MOBILE_CLIENT)).thenReturn(true)
 
         viewModel.login(username, password, url, false)
 
@@ -216,6 +218,26 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         OpenmrsAndroidMock.verify { OpenmrsAndroid.deleteSecretKey() }
         OpenmrsAndroidMock.verify { OpenmrsAndroid.setPasswordAndHashedPassword(password) }
         OpenmrsAndroidMock.verify { OpenmrsAndroid.setSessionToken(lastSessionToken) }
+    }
+
+    @Test
+    fun `login offline should result RoleAccessError when cached user lacks mobile client privilege`() {
+        val username = "username123"
+        val password = "password123"
+        val url = initialUrl
+        `when`(NetworkUtils.isOnline()).thenReturn(false)
+        `when`(OpenmrsAndroid.isUserLoggedOnline()).thenReturn(true)
+        `when`(OpenmrsAndroid.getLastLoginServerUrl()).thenReturn(url)
+        `when`(OpenmrsAndroid.getUsername()).thenReturn(username)
+        `when`(OpenmrsAndroid.getHashedPassword()).thenReturn(password)
+        `when`(BCrypt.checkpw(any(), any())).thenReturn(true)
+        `when`(privilegeRepository.cachedUserHasPrivilege(ApplicationConstants.Privileges.APP_MOBILE_CLIENT)).thenReturn(false)
+
+        viewModel.login(username, password, url, false)
+
+        val resultType = (viewModel.result.value as Result.Success).data
+        assertEquals(ResultType.RoleAccessError, resultType)
+        OpenmrsAndroidMock.verify({ OpenmrsAndroid.setSessionToken(any()) }, Mockito.never())
     }
 
     @Test
@@ -302,6 +324,27 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
     }
 
     @Test
+    fun `login online should result RoleAccessError and end session when user lacks mobile client privilege`() {
+        val username = "username123"
+        val password = "password123"
+        val url = initialUrl
+        val session = Session(sessionId = "123", isAuthenticated = true, user = User())
+
+        `when`(NetworkUtils.isOnline()).thenReturn(true)
+        `when`(loginRepository.getSession(username, password)).thenReturn(Observable.just(session))
+        `when`(privilegeRepository.hasEffectivePrivilege(session.user, ApplicationConstants.Privileges.APP_MOBILE_CLIENT)).thenReturn(false)
+
+        viewModel.login(username, password, url, false)
+
+        val resultType = (viewModel.result.value as Result.Success).data
+        assertEquals(ResultType.RoleAccessError, resultType)
+        verify(loginRepository).endSession()
+        // Rejected before anything about this user is persisted.
+        OpenmrsAndroidMock.verify({ OpenmrsAndroid.setSessionToken(any()) }, Mockito.never())
+        verify(privilegeRepository, Mockito.never()).cacheEffectivePrivileges(any())
+    }
+
+    @Test
     fun `login online should result LoginSuccess when succeeds`() {
         val username = "username123"
         val password = "password123"
@@ -315,6 +358,7 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         `when`(OpenmrsAndroid.getUsername()).thenReturn(username)
         `when`(OpenmrsAndroid.getServerUrl()).thenReturn(url)
         `when`(loginRepository.getSession(username, password)).thenReturn(Observable.just(session))
+        `when`(privilegeRepository.hasEffectivePrivilege(session.user, ApplicationConstants.Privileges.APP_MOBILE_CLIENT)).thenReturn(true)
         `when`(visitRepository.getVisitType()).thenReturn(Observable.just(visitType))
         // A successful login warms the start-visit form's caches; leaving these unstubbed would
         // have the prefetch fail rather than run.
