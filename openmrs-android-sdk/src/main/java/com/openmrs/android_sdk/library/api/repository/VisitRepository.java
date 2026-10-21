@@ -224,6 +224,13 @@ public class VisitRepository extends BaseRepository {
      * failure: the visit has already ended, and an enrollment left open is retried on the next
      * sync pass, whereas a thrown exception here would report the whole end-visit as failed.
      *
+     * <p>Shared by {@link #endVisit} and {@link #endExistingActiveVisit} - the latter ends a
+     * visit this device never locally tracked (another patient's stale active visit, found during
+     * a duplicate-identifier merge), so it has no local enrolment row to complete by id and always
+     * falls through to {@link ProgramEnrollmentRepository#completeEnrollmentsForVisit}'s
+     * read-the-visit's-Service-attribute fallback - exactly what the web client's `visit-ended`
+     * listener does for a visit it didn't start either.
+     *
      * @param visit        the visit that has just ended
      * @param stopDatetime when it ended
      */
@@ -391,7 +398,7 @@ public class VisitRepository extends BaseRepository {
                 // failure (nothing found, falls through unchanged below, exactly as before this
                 // check existed).
                 Visit existingActiveVisit = findExistingActiveVisit(patient);
-                if (existingActiveVisit != null && endExistingActiveVisit(existingActiveVisit, visit.getStartDatetime())) {
+                if (existingActiveVisit != null && endExistingActiveVisit(existingActiveVisit, visit.getStartDatetime(), patient)) {
                     Response<Visit> retryResponse = restApi.startVisit(visit).execute();
                     if (retryResponse.isSuccessful() && retryResponse.body() != null) {
                         Visit syncedVisit = retryResponse.body();
@@ -448,11 +455,15 @@ public class VisitRepository extends BaseRepository {
 
     /**
      * Ends a patient's existing active visit found by {@link #findExistingActiveVisit}, so a
-     * locally-queued new visit can be created in its place. Deliberately does not go through the
-     * public {@link #endVisit} (and its service-enrollment completion) - that method needs a
-     * locally-tracked visit with a known patient/local id, which this "foreign" server visit
-     * (never previously known to this device) doesn't have. Best-effort: swallows its own
-     * failures, since this already runs inside another method's own failure-handling path.
+     * locally-queued new visit can be created in its place. Does not go through the public
+     * {@link #endVisit} itself - that method also saves the visit into the local DAO by a known
+     * local id, which this "foreign" server visit (never previously known to this device) doesn't
+     * have - but does still complete whatever program-enrolment episode(s) it had open, via the
+     * same {@link #completeServiceEnrollments} as a normal end-visit, so a patient merged into
+     * mid-visit doesn't end up with a service enrollment that never got a completion date just
+     * because the visit that was carrying it got closed by this recovery path instead of a normal
+     * end-visit. Best-effort throughout: swallows its own failures, since this already runs inside
+     * another method's own failure-handling path.
      *
      * <p>Ends it just before the NEW visit's own start time, not "now" (real sync time) - the new
      * visit was started earlier (offline, then queued until this reconnect), so ending the old one
@@ -463,9 +474,13 @@ public class VisitRepository extends BaseRepository {
      * @param newVisitStartDatetime the locally-queued visit's own start time
      *                              ({@link com.openmrs.android_sdk.utilities.DateUtils#OPEN_MRS_REQUEST_FORMAT}), used to
      *                              pick a stop time for the old visit that can never overlap it
+     * @param patient               the patient both visits belong to - {@code existingActiveVisit}
+     *                              comes back from {@link #findExistingActiveVisit} without one
+     *                              (not part of that lookup's representation), but completing its
+     *                              enrolments needs the patient's uuid
      * @return true if the visit was ended successfully, false otherwise
      */
-    private boolean endExistingActiveVisit(Visit existingActiveVisit, String newVisitStartDatetime) {
+    private boolean endExistingActiveVisit(Visit existingActiveVisit, String newVisitStartDatetime, Patient patient) {
         try {
             Long newVisitStartMillis = newVisitStartDatetime != null
                     ? convertTime(newVisitStartDatetime, OPEN_MRS_REQUEST_FORMAT)
@@ -475,10 +490,14 @@ public class VisitRepository extends BaseRepository {
                     : System.currentTimeMillis();
 
             Visit emptyVisitWithStopDate = new Visit();
-            emptyVisitWithStopDate.setStopDatetime(convertTime(stopMillis, OPEN_MRS_REQUEST_FORMAT));
+            String stopDatetime = convertTime(stopMillis, OPEN_MRS_REQUEST_FORMAT);
+            emptyVisitWithStopDate.setStopDatetime(stopDatetime);
             Response<Visit> response = restApi.endVisitByUUID(existingActiveVisit.getUuid(), emptyVisitWithStopDate).execute();
             if (response.isSuccessful()) {
                 getLogger().i("Ended existing active visit (UUID: " + existingActiveVisit.getUuid() + ") to make way for the locally-queued one.");
+                existingActiveVisit.setPatient(patient);
+                existingActiveVisit.setStopDatetime(stopDatetime);
+                completeServiceEnrollments(existingActiveVisit, stopDatetime);
                 return true;
             }
             getLogger().e("Failed to end existing active visit: " + describeError(response));
