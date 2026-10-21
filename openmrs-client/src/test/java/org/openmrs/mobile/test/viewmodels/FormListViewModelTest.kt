@@ -76,11 +76,11 @@ class FormListViewModelTest : ACUnitTestBaseRx() {
     @Test
     fun `ViewModel should load only forms provided with json valueReference (form fields)`() {
         // Names must survive the ViewModel's allow-list, which admits only Health Promotion
-        // Session and IYCF Session forms - so the json valueReference is what decides here.
+        // Session forms - so the json valueReference is what decides here.
         val formName1 = "Health Promotion Session one"
         val formName2 = "Health Promotion Session two"
-        val formName3 = "IYCF Session three"
-        val formName4 = "IYCF Session four"
+        val formName3 = "Health Promotion Session three"
+        val formName4 = "Health Promotion Session four"
         val formResourceList = listOf(
                 createFormResource(formName1),
                 createFormResource(formName2),
@@ -102,11 +102,11 @@ class FormListViewModelTest : ACUnitTestBaseRx() {
     fun `click on a form should get data for that form`() {
         // Both names must be on the ViewModel's allow-list or the forms never reach the list.
         val formName1 = "Health Promotion Session (Simple)"
-        val formName2 = "IYCF Session"
+        val formName2 = "Health Promotion Session Extended"
         // No "encounter" key in the fixture json, so the encounter name is derived from the form
         // name with any parenthetical suffix stripped.
         val encounterName1 = "Health Promotion Session"
-        val encounterName2 = "IYCF Session"
+        val encounterName2 = "Health Promotion Session Extended"
         val encounterTypeUuid1 = "15789573219881759238790"
         val encounterTypeUuid2 = "45425454534354534354354"
         val encounterType1 = EncounterType(encounterName1).apply { uuid = encounterTypeUuid1 }

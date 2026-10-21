@@ -94,7 +94,7 @@ class FormListViewModel @Inject constructor(
                         }
                     }
 
-                    // Only Health Promotion Session and IYCF Session forms should appear in the
+                    // Only the Health Promotion Session form should appear in the
                     // form entry menu per product request - every other form is filtered out here
                     // rather than removed from the source list so it can be re-enabled later.
                     val allowedForms = visibleForms.filter { formResource ->
@@ -280,6 +280,6 @@ class FormListViewModel @Inject constructor(
     companion object {
         private const val VIRTUAL_FORM_UUID_PREFIX = "virtual-"
         private val FORMS_REQUIRING_ENCOUNTER_ROLE = setOf(EncounterType.ADMISSION, EncounterType.VISIT_NOTE)
-        private val ALLOWED_FORM_NAMES = setOf("health promotion session", "iycf session")
+        private val ALLOWED_FORM_NAMES = setOf("health promotion session")
     }
 }
