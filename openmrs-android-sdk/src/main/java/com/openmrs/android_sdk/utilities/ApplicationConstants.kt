@@ -320,9 +320,13 @@ object ApplicationConstants {
         /** Coded (concept) attribute type: whether the patient arrived on time. */
         const val PUNCTUALITY_UUID = "57ea0cbb-064f-4d09-8cf4-e8228700491c"
 
-        /** The configured attribute types shown on the start-visit form, in display order. */
+        /**
+         * The configured attribute types shown on the start-visit form, in display order.
+         * Punctuality is deliberately left out per product request - add [PUNCTUALITY_UUID]
+         * back here to show it again.
+         */
         @JvmField
-        val FORM_ATTRIBUTE_TYPE_UUIDS = listOf(PUNCTUALITY_UUID)
+        val FORM_ATTRIBUTE_TYPE_UUIDS = emptyList<String>()
 
         /** Of [FORM_ATTRIBUTE_TYPE_UUIDS], those the form refuses to submit without. */
         @JvmField

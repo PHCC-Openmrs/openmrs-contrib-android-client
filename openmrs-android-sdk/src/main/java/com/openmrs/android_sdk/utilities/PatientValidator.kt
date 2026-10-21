@@ -60,7 +60,7 @@ class PatientValidator(private val patient: Patient) {
         }
 
         // Validate address - Full Address (address1) is optional, matching the web app's
-        // registration form; Neighbourhood/Governorate are the actually-required address fields
+        // registration form; Governorate is the only required address field
         // (enforced at the UI layer, same as before). address2/country/postalCode are not
         // collected at all.
         val patientAddress = address
