@@ -447,8 +447,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             viewModel.setPhoneNumber(getInput(phoneNumber).orEmpty())
         }
 
-        /* Full Address - optional, matching the web app; Neighbourhood/Governorate below are the
-           actually-required address fields. */
+        /* Full Address - optional, matching the web app; Governorate below is the
+           only required address field. */
         if (!isEmpty(addressOne) && !validateText(getInput(addressOne), ILLEGAL_ADDRESS_CHARACTERS)) {
             addressError.makeVisible()
             addressError.text = getString(R.string.addr_invalid_error)
@@ -460,15 +460,8 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
             textInputLayoutAddress.isErrorEnabled = false
         }
 
-        // Neighbourhood and Governorate are required by the server's address template.
-        if (isEmpty(cityAutoComplete)) {
-            textInputLayoutCity.isErrorEnabled = true
-            textInputLayoutCity.error = getString(R.string.emptyerror)
-            scrollToTop()
-            isValid = false
-        } else {
-            textInputLayoutCity.isErrorEnabled = false
-        }
+        // Neighbourhood is optional; only Governorate is required.
+        textInputLayoutCity.isErrorEnabled = false
         if (isEmpty(stateAutoComplete)) {
             textInputLayoutState.isErrorEnabled = true
             textInputLayoutState.error = getString(R.string.emptyerror)

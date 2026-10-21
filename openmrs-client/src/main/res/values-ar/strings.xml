@@ -525,7 +525,7 @@
     <string name="login_continue_button">استمرار</string>
     <string name="reg_national_id_hint">رقم الهوية الوطنية*</string>
     <string name="patient_national_id_label">رقم الهوية الوطنية</string>
-    <string name="reg_neighbourhood_hint">الحي*</string>
+    <string name="reg_neighbourhood_hint">الحي</string>
     <string name="reg_governorate_hint">المحافظة*</string>
     <string name="national_id_empty_error">رقم الهوية الوطنية مطلوب</string>
     <string name="national_id_invalid_error">يجب أن يبدأ رقم الهوية الوطنية بـ 4 أو 7 أو 8 أو 9 وأن يتكون من 9 أرقام</string>
