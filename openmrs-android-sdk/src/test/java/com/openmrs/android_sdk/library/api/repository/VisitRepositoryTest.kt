@@ -26,10 +26,12 @@ import com.openmrs.android_sdk.library.models.Observation
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.Resource
 import com.openmrs.android_sdk.library.models.Visit
+import com.openmrs.android_sdk.library.models.VisitAttribute
 import com.openmrs.android_sdk.utilities.DateUtils
 import com.openmrs.android_sdk.utilities.NetworkUtils
 import com.openmrs.android_sdk.utilities.ObservationDeserializer
 import com.openmrs.android_sdk.utilities.ResourceSerializer
+import com.openmrs.android_sdk.utilities.VisitAttributeDeserializer
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.HiltTestApplication
@@ -37,6 +39,8 @@ import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.verify
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.buffer
@@ -108,6 +112,7 @@ class VisitRepositoryTest {
             .excludeFieldsWithoutExposeAnnotation()
             .registerTypeHierarchyAdapter(Resource::class.java, ResourceSerializer())
             .registerTypeHierarchyAdapter(Observation::class.java, ObservationDeserializer())
+            .registerTypeHierarchyAdapter(VisitAttribute::class.java, VisitAttributeDeserializer())
             .create()
 
         val retrofit = Retrofit.Builder()
@@ -184,6 +189,59 @@ class VisitRepositoryTest {
 
         assertEquals(visit.uuid, "46fa593e-b656-484e-9095-517c4ae8f193")
         assertEquals(visit.display, "Facility Visit @ Amani Hospital - 31/07/2023 17:45")
+    }
+
+    /**
+     * Regression test for a patient merged into an existing server record mid-visit - e.g. a
+     * patient registered offline whose National ID matches, and gets auto-linked to, an existing
+     * server patient who already has an active visit there. syncStartedVisit's own create is then
+     * rejected, so it ends the stale active visit and retries - this asserts that recovery path
+     * also completes whatever program-enrollment episode that stale visit had open, the same way a
+     * normal endVisit() does, instead of silently leaving it without a completion date.
+     */
+    @Test
+    fun `startVisit ends a stale active visit found after a duplicate-ID merge and completes its service enrollment`() {
+        // The patient already has an active visit on the server, so the first create is rejected.
+        mockWebServer.enqueue(MockResponse().setResponseCode(400).setBody("Bad Request"))
+        // That active visit, found by findExistingActiveVisit, carries its own open Service attribute.
+        enqueueMockResponse("mocked_responses/VisitRepository/ActiveVisitWithService-success.json")
+        // Ending it succeeds...
+        enqueueMockResponse("mocked_responses/VisitRepository/GetVisit.json")
+        // ...and the retried create succeeds.
+        enqueueMockResponse("mocked_responses/VisitRepository/GetVisit.json")
+
+        visitRepository.restApi = visitApi
+        visitRepository.locationDAO = mockk(relaxed = true)
+        val visitDAO: VisitDAO = mockk(relaxed = true)
+        every { visitDAO.saveOrUpdate(any(), any()) } returns Observable.just(55L)
+        every { visitDAO.saveNewVisitLocally(any(), any()) } returns Observable.just(55L)
+        visitRepository.visitDAO = visitDAO
+
+        val programEnrollmentRepository: ProgramEnrollmentRepository = mockk(relaxed = true)
+        visitRepository.programEnrollmentRepository = programEnrollmentRepository
+
+        val patient: Patient = mockk(relaxed = true)
+        every { patient.uuid } returns "b-server-uuid"
+        every { patient.isSynced } returns true
+        mockkStatic(NetworkUtils::class)
+        every { NetworkUtils.isOnline() } returns true
+
+        // Started offline a while before this reconnect, so ending the stale visit at "now" would
+        // still leave its date range overlapping this start time (see endExistingActiveVisit).
+        val newVisitStartDatetime = "2026-09-15T09:00:00.000+0530"
+
+        visitRepository.startVisit(patient, null, newVisitStartDatetime, emptyList()).toBlocking().first()
+
+        val completedVisit = slot<Visit>()
+        val completedStopDatetime = slot<String>()
+        verify { programEnrollmentRepository.completeEnrollmentsForVisit(capture(completedVisit), capture(completedStopDatetime)) }
+
+        assertEquals("b-server-uuid", completedVisit.captured.patient.uuid)
+        assertEquals(listOf("e5dc1d72-6f5e-4f1a-8a2b-8c8b1b5a0001"), completedVisit.captured.serviceProgramUuids())
+
+        val newVisitStartMillis = DateUtils.convertTime(newVisitStartDatetime, DateUtils.OPEN_MRS_REQUEST_FORMAT)!!
+        val stopMillis = DateUtils.convertTime(completedStopDatetime.captured, DateUtils.OPEN_MRS_REQUEST_FORMAT)
+        assertEquals(newVisitStartMillis - 60000, stopMillis)
     }
 
     fun `endVisit success return true`(){
