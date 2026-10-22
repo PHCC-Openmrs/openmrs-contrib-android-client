@@ -26,9 +26,12 @@ class FormListActivity : ACBaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_form_list)
 
+        // Group Entry picks a form for many patients at once, so it comes with no patient.
+        val isGroupEntry = intent.getBooleanExtra(ApplicationConstants.BundleKeys.GROUP_ENTRY, false)
+
         supportActionBar?.run {
             elevation = 0f
-            setTitle(R.string.action_form_entry)
+            setTitle(if (isGroupEntry) R.string.group_entry_title else R.string.action_form_entry)
         }
 
         var patientId: Long? = null
@@ -38,7 +41,7 @@ class FormListActivity : ACBaseActivity() {
 
         var formListFragment = supportFragmentManager.findFragmentById(R.id.formListContentFrame) as FormListFragment?
         if (formListFragment == null) {
-            formListFragment = FormListFragment.newInstance(patientId!!)
+            formListFragment = FormListFragment.newInstance(patientId ?: 0L, isGroupEntry)
         }
         if (!formListFragment.isActive) {
             addFragmentToActivity(supportFragmentManager, formListFragment, R.id.formListContentFrame)

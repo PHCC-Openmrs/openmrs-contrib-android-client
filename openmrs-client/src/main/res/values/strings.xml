@@ -753,4 +753,27 @@
     <string name="patient_deceased_switch">Patient deceased</string>
     <string name="intro_activity_title">Introduction</string>
     <string name="form_title">%1$s Form</string>
+
+    <!-- Group Entry: fill a form once for many patients with an active visit -->
+    <string name="group_entry_title">Group Entry</string>
+    <string name="group_entry_select_patients">Select patients</string>
+    <string name="group_entry_search_hint">Search patients</string>
+    <string name="group_entry_selected_count">%1$d selected</string>
+    <string name="group_entry_select_all">Select all</string>
+    <string name="group_entry_clear">Clear</string>
+    <string name="group_entry_save_button">Save for %1$d patients</string>
+    <string name="group_entry_no_patients">No patients with an active visit</string>
+    <string name="group_entry_no_forms">No forms are set up for Group Entry</string>
+    <string name="group_entry_form_blocked">%1$s can\'t be used for Group Entry: required field(s) %2$s are neither shared nor filled from the patient record. Ask an administrator to update the form.</string>
+    <string name="group_entry_no_shared_fields">%1$s has no shared fields set up for Group Entry. Ask an administrator to update the form.</string>
+    <string name="group_entry_confirm_title">Save the form for %1$d patients?</string>
+    <string name="group_entry_confirm_message">The same session details will be saved for each selected patient, with their own details filled in from their record.</string>
+    <string name="group_entry_confirm_save">Save</string>
+    <string name="group_entry_progress">Saving %1$d of %2$d…</string>
+    <string name="group_entry_wait_for_save">Please wait until saving finishes</string>
+    <string name="group_entry_summary_title">Group Entry finished</string>
+    <string name="group_entry_summary_uploaded">Uploaded: %1$d</string>
+    <string name="group_entry_summary_offline">Saved offline, will sync later: %1$d</string>
+    <string name="group_entry_summary_without_phone">Saved without a phone number (none or invalid in the patient record): %1$d</string>
+    <string name="group_entry_summary_failed">Not saved (%1$d) - check they still have an active visit: %2$s</string>
 </resources>

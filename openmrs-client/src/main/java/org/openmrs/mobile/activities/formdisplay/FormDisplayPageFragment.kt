@@ -328,7 +328,7 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnItemSelectedListenerWithPlaceholder(spinner, selectOneField)
         } else {
-            (viewModel.autoFillGenderAnswerIndex(question) ?: viewModel.autoFillGovernorateAnswerIndex(question))?.let {
+            viewModel.autoFillAnswerIndex(question)?.let {
                 spinnerField.setAnswer(it)
                 spinner.setSelection(it + 1)
             }
@@ -378,7 +378,7 @@ class FormDisplayPageFragment : BaseFragment() {
             }
             setOnCheckedChangeListener(radioGroup, selectOneField)
         } else {
-            (viewModel.autoFillGenderAnswerIndex(question) ?: viewModel.autoFillGovernorateAnswerIndex(question))?.let {
+            viewModel.autoFillAnswerIndex(question)?.let {
                 radioGroupField.setAnswer(it)
                 (radioGroup.getChildAt(it) as? RadioButton)?.isChecked = true
             }

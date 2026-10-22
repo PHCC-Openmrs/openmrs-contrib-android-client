@@ -704,4 +704,27 @@
     <string name="patient_deceased_switch">المريض متوفى</string>
     <string name="intro_activity_title">مقدمة</string>
     <string name="form_title">نموذج %1$s</string>
+
+    <!-- Group Entry: fill a form once for many patients with an active visit -->
+    <string name="group_entry_title">إدخال جماعي</string>
+    <string name="group_entry_select_patients">اختيار المرضى</string>
+    <string name="group_entry_search_hint">البحث عن المرضى</string>
+    <string name="group_entry_selected_count">تم اختيار %1$d</string>
+    <string name="group_entry_select_all">اختيار الكل</string>
+    <string name="group_entry_clear">مسح</string>
+    <string name="group_entry_save_button">حفظ لـ %1$d من المرضى</string>
+    <string name="group_entry_no_patients">لا يوجد مرضى لديهم زيارة نشطة</string>
+    <string name="group_entry_no_forms">لا توجد نماذج مُعدّة للإدخال الجماعي</string>
+    <string name="group_entry_form_blocked">لا يمكن استخدام %1$s للإدخال الجماعي: الحقول المطلوبة %2$s ليست مشتركة ولا تُملأ من سجل المريض. اطلب من المسؤول تحديث النموذج.</string>
+    <string name="group_entry_no_shared_fields">لا يحتوي %1$s على حقول مشتركة مُعدّة للإدخال الجماعي. اطلب من المسؤول تحديث النموذج.</string>
+    <string name="group_entry_confirm_title">حفظ النموذج لـ %1$d من المرضى؟</string>
+    <string name="group_entry_confirm_message">سيتم حفظ تفاصيل الجلسة نفسها لكل مريض محدد، مع ملء بياناته الخاصة من سجله.</string>
+    <string name="group_entry_confirm_save">حفظ</string>
+    <string name="group_entry_progress">جارٍ حفظ %1$d من %2$d…</string>
+    <string name="group_entry_wait_for_save">يرجى الانتظار حتى ينتهي الحفظ</string>
+    <string name="group_entry_summary_title">اكتمل الإدخال الجماعي</string>
+    <string name="group_entry_summary_uploaded">تم الرفع: %1$d</string>
+    <string name="group_entry_summary_offline">تم الحفظ دون اتصال، وستتم المزامنة لاحقاً: %1$d</string>
+    <string name="group_entry_summary_without_phone">تم الحفظ بدون رقم هاتف (غير موجود أو غير صالح في سجل المريض): %1$d</string>
+    <string name="group_entry_summary_failed">لم يتم الحفظ (%1$d) - تحقق من أن لديهم زيارة نشطة: %2$s</string>
 </resources>

@@ -17,7 +17,6 @@ import com.openmrs.android_sdk.library.api.repository.EncounterRepository
 import com.openmrs.android_sdk.library.api.repository.FormRepository
 import com.openmrs.android_sdk.library.dao.PatientDAO
 import com.openmrs.android_sdk.library.models.Encountercreate
-import com.openmrs.android_sdk.library.models.Obscreate
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.ResultType
 import com.openmrs.android_sdk.utilities.ApplicationConstants
@@ -34,7 +33,6 @@ import com.openmrs.android_sdk.utilities.SelectOneField
 import com.openmrs.android_sdk.utilities.TextField
 import com.openmrs.android_sdk.utilities.execute
 import dagger.hilt.android.lifecycle.HiltViewModel
-import org.joda.time.LocalDateTime
 import org.openmrs.mobile.activities.BaseViewModel
 import rx.Observable
 import rx.android.schedulers.AndroidSchedulers
@@ -75,11 +73,7 @@ class FormDisplayMainViewModel @Inject constructor(
         // to enforce Encounter.datetimeShouldBeBeforeCurrent, and can easily guess wrong and reject
         // an offline submission as being "in the future".
         enc.encounterDatetime = DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT)
-        enc.observations = createObservationsFromInputFields(inputFields) +
-                createObservationsFromRadioGroupFields(radioGroupFields) +
-                createObservationsFromCheckboxFields(checkboxFields) +
-                createObservationsFromDateFields(dateFields) +
-                createObservationsFromTextFields(textFields)
+        enc.observations = ObservationBuilder.build(inputFields, radioGroupFields, checkboxFields, dateFields, textFields, patient.uuid)
 
         return if (isUpdateEncounter) updateRecords(encounterUuid!!, enc) else createRecords(enc)
     }
@@ -130,98 +124,4 @@ class FormDisplayMainViewModel @Inject constructor(
         )
         return resultLiveData
     }
-
-    private fun createObservationsFromInputFields(inputFields: List<InputField>): List<Obscreate> {
-        val observations = mutableListOf<Obscreate>()
-
-        for (input in inputFields) {
-            if (input.value != InputField.DEFAULT_VALUE) {
-                observations += Obscreate().apply {
-                    concept = input.concept
-                    value = input.value.toString()
-                    obsDatetime = LocalDateTime().toString()
-                    person = patient.uuid
-                }
-            }
-        }
-
-        return observations
-    }
-
-    private fun createObservationsFromRadioGroupFields(radioGroupFields: List<SelectOneField>): List<Obscreate> {
-        val observations = mutableListOf<Obscreate>()
-
-        for (radioGroupField in radioGroupFields) {
-            if (radioGroupField.chosenAnswer != null) {
-                observations += Obscreate().apply {
-                    concept = radioGroupField.concept
-                    value = radioGroupField.chosenAnswer!!.concept
-                    obsDatetime = LocalDateTime().toString()
-                    person = patient.uuid
-                }
-            }
-        }
-
-        return observations
-    }
-
-    private fun createObservationsFromCheckboxFields(checkboxFields: List<SelectMultipleField>): List<Obscreate> {
-        val observations = mutableListOf<Obscreate>()
-
-        for (checkboxField in checkboxFields) {
-            for (answer in checkboxField.selectedAnswers) {
-                observations += Obscreate().apply {
-                    concept = checkboxField.concept
-                    value = answer.concept
-                    obsDatetime = LocalDateTime().toString()
-                    person = patient.uuid
-                }
-            }
-        }
-
-        return observations
-    }
-
-    private fun createObservationsFromDateFields(dateFields: List<DateField>): List<Obscreate> {
-        val observations = mutableListOf<Obscreate>()
-
-        for (dateField in dateFields) {
-            if (!dateField.date.isNullOrEmpty()) {
-                // Convert DD/MM/YYYY to YYYY-MM-DD
-                val parts = dateField.date!!.split("/")
-                val formattedDate = if (parts.size == 3) {
-                    "${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}"
-                } else {
-                    dateField.date
-                }
-                observations += Obscreate().apply {
-                    concept = dateField.concept
-                    value = formattedDate
-                    obsDatetime = LocalDateTime().toString()
-                    person = patient.uuid
-                }
-            }
-        }
-
-        return observations
-    }
-
-    private fun createObservationsFromTextFields(textFields: List<TextField>): List<Obscreate> {
-        val observations = mutableListOf<Obscreate>()
-
-        for (textField in textFields) {
-            if (!textField.value.isNullOrBlank()) {
-                observations += Obscreate().apply {
-                    concept = textField.concept
-                    value = textField.value
-                    obsDatetime = LocalDateTime().toString()
-                    person = patient.uuid
-                }
-            }
-        }
-
-        return observations
-    }
-
-
 }

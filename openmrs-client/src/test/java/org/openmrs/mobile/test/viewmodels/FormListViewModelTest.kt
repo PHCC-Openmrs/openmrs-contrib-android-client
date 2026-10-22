@@ -3,6 +3,7 @@ package org.openmrs.mobile.test.viewmodels
 import android.content.Context
 import android.content.res.AssetManager
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.SavedStateHandle
 import com.google.gson.Gson
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.repository.FormRepository
@@ -92,7 +93,7 @@ class FormListViewModelTest : ACUnitTestBaseRx() {
         `when`(formRepository.fetchFormResourceList()).thenReturn(Observable.just(formResourceList))
 
 
-        viewModel = FormListViewModel(encounterDAO, formRepository)
+        viewModel = FormListViewModel(encounterDAO, formRepository, SavedStateHandle())
 
         val result = viewModel.result.value as Result.Success
         assertArrayEquals(expectedFormsArray, result.data)
@@ -119,7 +120,7 @@ class FormListViewModelTest : ACUnitTestBaseRx() {
         `when`(encounterDAO.getEncounterTypeByFormName(encounterName1)).thenReturn(encounterType1)
         `when`(encounterDAO.getEncounterTypeByFormName(encounterName2)).thenReturn(encounterType2)
 
-        viewModel = FormListViewModel(encounterDAO, formRepository)
+        viewModel = FormListViewModel(encounterDAO, formRepository, SavedStateHandle())
 
         val selectedForm1 = viewModel.SelectedForm(0)
         assertEquals(formName1, selectedForm1.formName)

@@ -41,4 +41,24 @@ class Form : Resource(), Serializable {
     @Expose
     var valueReference: String? = null
 
+    /**
+     * Group Entry settings: `"groupEntryForm": { "enabled": true }` lets this form be filled in
+     * once for many patients with an active visit. Not part of the O3 schema - set in the Form
+     * Builder's JSON editor, ignored by the web form. Null for every other form.
+     */
+    @SerializedName("groupEntryForm")
+    @Expose
+    var groupEntryForm: GroupEntryFormConfig? = null
+
+    val isGroupEntryEnabled: Boolean get() = groupEntryForm?.isEnabled == true
+
+}
+
+/** The form-level `"groupEntryForm"` block - see [Form.groupEntryForm]. */
+class GroupEntryFormConfig : Serializable {
+
+    @SerializedName("enabled")
+    @Expose
+    var isEnabled: Boolean = false
+
 }
