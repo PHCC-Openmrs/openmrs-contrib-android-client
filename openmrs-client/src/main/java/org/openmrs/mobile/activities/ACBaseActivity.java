@@ -56,7 +56,6 @@ import androidx.fragment.app.FragmentTransaction;
 import com.google.android.material.snackbar.Snackbar;
 import com.openmrs.android_sdk.library.OpenMRSLogger;
 import com.openmrs.android_sdk.library.OpenmrsAndroid;
-import com.openmrs.android_sdk.library.PrivilegeChecker;
 import com.openmrs.android_sdk.library.dao.LocationDAO;
 import com.openmrs.android_sdk.library.databases.entities.LocationEntity;
 import com.openmrs.android_sdk.library.models.Patient;
@@ -312,7 +311,9 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     public void logout() {
         OpenmrsAndroid.clearUserPreferencesData();
-        PrivilegeChecker.clearCache();
+        // The privilege cache is deliberately kept, like the hashed password: offline login checks
+        // "App: Mobile Client" against it (LoginViewModel), so clearing it here locked every user
+        // out of offline login after logging out. The next online login replaces it.
         mAuthorizationManager.moveToLoginActivity();
         ToastUtil.showShortToast(getApplicationContext(), ToastUtil.ToastType.SUCCESS, R.string.logout_success);
     }
