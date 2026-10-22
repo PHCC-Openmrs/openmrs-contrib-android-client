@@ -25,6 +25,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.TextView
 import androidx.annotation.Nullable
+import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
@@ -36,14 +37,17 @@ import com.openmrs.android_sdk.library.models.Result
 import com.openmrs.android_sdk.utilities.ApplicationConstants
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.ENCOUNTERTYPE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NAME
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.GROUP_ENTRY
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VALUEREFERENCE
+import com.openmrs.android_sdk.utilities.FormUtils
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
 import org.openmrs.mobile.activities.formadmission.FormAdmissionActivity
 import org.openmrs.mobile.activities.formdisplay.FormDisplayActivity
+import org.openmrs.mobile.activities.groupentry.GroupEntryForms
 import org.openmrs.mobile.activities.visitnote.VisitNoteActivity
 import org.openmrs.mobile.databinding.FragmentFormListBinding
 import org.openmrs.mobile.services.FormListService
@@ -85,6 +89,10 @@ class FormListFragment : BaseFragment() {
                     ToastUtil.error(getString(R.string.no_such_form_name_error_message, formName))
                     return@setOnItemClickListener
                 }
+                if (viewModel.isGroupEntry) {
+                    startGroupEntry(formName!!, encounterName!!, formFieldsJson, encounterType!!, translations)
+                    return@setOnItemClickListener
+                }
                 val patientId: Long = requireArguments().get(PATIENT_ID_BUNDLE) as Long
                 if (isNativeForm && encounterName == EncounterType.ADMISSION) {
                     startAdmissionFormActivity(formName!!, patientId, encounterType!!)
@@ -122,7 +130,7 @@ class FormListFragment : BaseFragment() {
             val typeface = Typeface.createFromAsset(requireActivity().assets, ApplicationConstants.TypeFacePathConstants.ROBOTO_MEDIUM)
 
             val noticeField = customSnackBarView.findViewById<TextView>(R.id.snackbar_text)
-            noticeField.setText(R.string.snackbar_no_forms_found)
+            noticeField.setText(if (viewModel.isGroupEntry) R.string.group_entry_no_forms else R.string.snackbar_no_forms_found)
 
             val dismissButton = customSnackBarView.findViewById<TextView>(R.id.snackbar_action_button)
             dismissButton.typeface = typeface
@@ -148,6 +156,45 @@ class FormListFragment : BaseFragment() {
         }
     }
 
+    /**
+     * Opens a Group Entry form on its shared questions - unless the form can't work that way: it
+     * has no shared questions, or a required question nobody would get to answer (see
+     * GroupEntryForms.blockingQuestions). Both are form setup problems, explained to the user.
+     */
+    private fun startGroupEntry(formName: String, encounterName: String, formFieldsJson: String?,
+                                encounterType: String, translations: HashMap<String, String>) {
+        val form = formFieldsJson?.let { runCatching { FormUtils.getForm(it) }.getOrNull() }
+        if (form == null) {
+            ToastUtil.error(getString(R.string.failed_to_open_vitals_form))
+            return
+        }
+        val displayName = translations[formName] ?: translations[formName.removeSuffix(" Form").trim()] ?: formName
+        val blocking = GroupEntryForms.blockingQuestions(form)
+        val message = when {
+            blocking.isNotEmpty() -> getString(R.string.group_entry_form_blocked, displayName,
+                    blocking.joinToString(", ") { translations[it] ?: it })
+            GroupEntryForms.sharedPages(form).isEmpty() -> getString(R.string.group_entry_no_shared_fields, displayName)
+            else -> null
+        }
+        if (message != null) {
+            AlertDialog.Builder(requireContext(), R.style.AlertDialogTheme)
+                .setTitle(R.string.group_entry_title)
+                .setMessage(message)
+                .setPositiveButton(R.string.dialog_button_ok) { dialog, _ -> dialog.dismiss() }
+                .show()
+            return
+        }
+        Intent(context, FormDisplayActivity::class.java).apply {
+            putExtra(GROUP_ENTRY, true)
+            putExtra(FORM_NAME, formName)
+            putExtra(ApplicationConstants.BundleKeys.FORM_TRANSLATIONS_BUNDLE, translations)
+            putExtra(ApplicationConstants.BundleKeys.ENCOUNTERTYPE_NAME, encounterName)
+            putExtra(VALUEREFERENCE, formFieldsJson)
+            putExtra(ENCOUNTERTYPE, encounterType)
+            startActivity(this)
+        }
+    }
+
     private fun startAdmissionFormActivity(formName: String, patientId: Long, encounterType: String) {
         Intent(context, FormAdmissionActivity::class.java).apply {
             putExtra(FORM_NAME, formName)
@@ -166,8 +213,8 @@ class FormListFragment : BaseFragment() {
     }
 
     companion object {
-        fun newInstance(patientId: Long) = FormListFragment().apply {
-            arguments = bundleOf(PATIENT_ID_BUNDLE to patientId)
+        fun newInstance(patientId: Long, isGroupEntry: Boolean = false) = FormListFragment().apply {
+            arguments = bundleOf(PATIENT_ID_BUNDLE to patientId, GROUP_ENTRY to isGroupEntry)
         }
     }
 

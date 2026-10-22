@@ -1,6 +1,7 @@
 
 package org.openmrs.mobile.activities.formlist
 
+import androidx.lifecycle.SavedStateHandle
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.PrivilegeChecker
 import com.openmrs.android_sdk.library.api.repository.FormRepository
@@ -8,7 +9,9 @@ import com.openmrs.android_sdk.library.dao.EncounterDAO
 import com.openmrs.android_sdk.library.databases.entities.FormResourceEntity
 import com.openmrs.android_sdk.library.models.EncounterType
 import com.openmrs.android_sdk.library.models.FormData
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.GROUP_ENTRY
 import com.openmrs.android_sdk.utilities.ApplicationConstants.Privileges.GET_ENCOUNTER_ROLES
+import com.openmrs.android_sdk.utilities.FormUtils
 import com.openmrs.android_sdk.utilities.execute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import org.json.JSONException
@@ -24,8 +27,12 @@ import kotlin.math.abs
 @HiltViewModel
 class FormListViewModel @Inject constructor(
         private val encounterDAO: EncounterDAO,
-        private val formRepository: FormRepository
+        private val formRepository: FormRepository,
+        savedStateHandle: SavedStateHandle
 ) : BaseViewModel<Array<String>>() {
+
+    /** Group Entry lists the forms enabled for it in their own JSON instead of the usual forms. */
+    val isGroupEntry: Boolean = savedStateHandle.get<Boolean>(GROUP_ENTRY) == true
 
     private val formResourceList = mutableListOf<FormResourceEntity>()
 
@@ -94,12 +101,20 @@ class FormListViewModel @Inject constructor(
                         }
                     }
 
-                    // Only the Health Promotion Session form should appear in the
-                    // form entry menu per product request - every other form is filtered out here
-                    // rather than removed from the source list so it can be re-enabled later.
-                    val allowedForms = visibleForms.filter { formResource ->
-                        val name = formResource.name?.trim()?.lowercase() ?: return@filter false
-                        ALLOWED_FORM_NAMES.any { allowed -> name.contains(allowed) }
+                    val allowedForms = if (isGroupEntry) {
+                        // Configured per form in the Form Builder ("groupEntryForm"), not by name -
+                        // see GroupEntryForms. Native screens have no schema to configure.
+                        visibleForms.filter { formResource ->
+                            !isNativeForm(formResource) && isGroupEntryEnabled(formResource)
+                        }
+                    } else {
+                        // Only the Health Promotion Session form should appear in the
+                        // form entry menu per product request - every other form is filtered out here
+                        // rather than removed from the source list so it can be re-enabled later.
+                        visibleForms.filter { formResource ->
+                            val name = formResource.name?.trim()?.lowercase() ?: return@filter false
+                            ALLOWED_FORM_NAMES.any { allowed -> name.contains(allowed) }
+                        }
                     }
 
                     formResourceList.clear()
@@ -171,6 +186,11 @@ class FormListViewModel @Inject constructor(
      */
     private fun isNativeForm(formResource: FormResourceEntity): Boolean =
         formResource.uuid?.startsWith(VIRTUAL_FORM_UUID_PREFIX) == true
+
+    private fun isGroupEntryEnabled(formResource: FormResourceEntity): Boolean {
+        val json = resolveFormFieldsJson(formResource) ?: return false
+        return runCatching { FormUtils.getForm(json).isGroupEntryEnabled }.getOrDefault(false)
+    }
 
     /**
      * Resolves a form's "json"/"JSON schema" resource value, including clobdata-backed schemas

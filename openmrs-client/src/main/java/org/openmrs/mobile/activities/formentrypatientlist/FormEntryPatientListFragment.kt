@@ -13,10 +13,12 @@
  */
 package org.openmrs.mobile.activities.formentrypatientlist
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
@@ -25,10 +27,12 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.openmrs.android_sdk.library.models.Patient
 import com.openmrs.android_sdk.library.models.Result
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.GROUP_ENTRY
 import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.BaseFragment
+import org.openmrs.mobile.activities.formlist.FormListActivity
 import org.openmrs.mobile.databinding.FragmentFormEntryPatientListBinding
 import org.openmrs.mobile.utilities.makeGone
 import org.openmrs.mobile.utilities.makeVisible
@@ -121,6 +125,15 @@ class FormEntryPatientListFragment : BaseFragment() {
                 return true
             }
         })
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.actionGroupEntry) {
+            // Group Entry: fill a form once for many of the patients listed here.
+            startActivity(Intent(activity, FormListActivity::class.java).putExtra(GROUP_ENTRY, true))
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onDestroyView() {

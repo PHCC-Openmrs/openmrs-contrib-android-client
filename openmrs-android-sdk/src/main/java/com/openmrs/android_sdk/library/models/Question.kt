@@ -47,4 +47,22 @@ class Question : Serializable {
     @Expose
     var questions: List<Question> = ArrayList()
 
+    /**
+     * Group Entry (see [Form.groupEntryForm]): true when this question is filled in once for the
+     * whole group and the same answer is saved for every selected patient (e.g. session date).
+     * Not part of the O3 schema - set in the Form Builder's JSON editor, ignored by the web form.
+     */
+    @SerializedName("groupShared")
+    @Expose
+    var isGroupShared: Boolean = false
+
+    /**
+     * Optional: which patient-record value auto-fills this question - one of "name", "age",
+     * "gender", "nationalId", "phone", "governorate", "neighbourhood". When absent the app falls
+     * back to recognising the field by its label.
+     */
+    @SerializedName("groupPatientField")
+    @Expose
+    var groupPatientField: String? = null
+
 }

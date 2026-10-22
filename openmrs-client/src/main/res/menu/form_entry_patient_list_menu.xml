@@ -24,4 +24,8 @@
         app:showAsAction="ifRoom|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView"/>
 
+    <item android:id="@+id/actionGroupEntry"
+        android:title="@string/group_entry_title"
+        app:showAsAction="always|withText"/>
+
 </menu>

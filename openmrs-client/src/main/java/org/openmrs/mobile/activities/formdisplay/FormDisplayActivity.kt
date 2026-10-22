@@ -10,8 +10,10 @@ http://www.androprogrammer.com/2015/06/view-pager-with-circular-indicator.html*/
  */
 package org.openmrs.mobile.activities.formdisplay
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import androidx.activity.result.contract.ActivityResultContracts
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -22,9 +24,12 @@ import androidx.lifecycle.Observer
 import androidx.viewpager.widget.ViewPager
 import com.openmrs.android_sdk.library.models.Page
 import com.openmrs.android_sdk.library.models.ResultType
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.ENCOUNTERTYPE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_FIELDS_LIST_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_NAME
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.FORM_TRANSLATIONS_BUNDLE
+import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.GROUP_ENTRY
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.PATIENT_ID_BUNDLE
 import com.openmrs.android_sdk.utilities.ApplicationConstants.BundleKeys.VALUEREFERENCE
 import com.openmrs.android_sdk.utilities.FormUtils.getForm
@@ -37,6 +42,8 @@ import com.openmrs.android_sdk.utilities.ToastUtil
 import dagger.hilt.android.AndroidEntryPoint
 import org.openmrs.mobile.R
 import org.openmrs.mobile.activities.ACBaseActivity
+import org.openmrs.mobile.activities.groupentry.GroupEntryActivity
+import org.openmrs.mobile.activities.groupentry.GroupEntryForms
 import org.openmrs.mobile.bundle.FormFieldsWrapper
 import org.openmrs.mobile.databinding.ActivityFormDisplayBinding
 import org.openmrs.mobile.utilities.makeGone
@@ -68,7 +75,22 @@ class FormDisplayActivity : ACBaseActivity() {
             supportActionBar!!.title = translatedName ?: getString(R.string.form_title, formName)
         }
 
+        if (isGroupEntry) {
+            supportActionBar!!.subtitle = getString(R.string.group_entry_title)
+            binding.btnSubmit.text = getString(R.string.group_entry_select_patients)
+        }
+
         initViewComponents()
+    }
+
+    /**
+     * Group Entry mode (see GroupEntryForms): only the form's shared questions are shown, there is
+     * no patient, and "submit" moves on to choosing the patients instead of saving.
+     */
+    private val isGroupEntry: Boolean by lazy { intent.getBooleanExtra(GROUP_ENTRY, false) }
+
+    private val groupEntryLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) finish()
     }
 
     /** The form's label translations for the app's language, from the form list; empty when it has none. */
@@ -83,9 +105,10 @@ class FormDisplayActivity : ACBaseActivity() {
         intent.extras?.let {
             val valueRef = it.getString(VALUEREFERENCE)!!
             val form = getForm(valueRef)
-            pages = form.pages
+            pages = if (isGroupEntry) GroupEntryForms.sharedPages(form) else form.pages
             formFieldsWrappers = it.getSerializable(FORM_FIELDS_LIST_BUNDLE) as? List<FormFieldsWrapper>
-            patientId = it.getLong(PATIENT_ID_BUNDLE)
+            // No patient in Group Entry: -1 matches no patient, so nothing is auto-filled.
+            patientId = if (isGroupEntry) NO_PATIENT_ID else it.getLong(PATIENT_ID_BUNDLE)
         }
 
         val formPageAdapter = FormPageAdapter(supportFragmentManager, pages!!, formFieldsWrappers, patientId, formTranslations())
@@ -175,6 +198,17 @@ class FormDisplayActivity : ACBaseActivity() {
             return
         }
 
+        if (isGroupEntry) {
+            startGroupEntry(FormFieldsWrapper().apply {
+                this.inputFields = inputFields
+                this.selectOneFields = radioGroupFields
+                this.selectMultipleFields = checkboxFields
+                this.dateFields = dateFields
+                this.textFields = textFields
+            })
+            return
+        }
+
         enableSubmitButton(false)
         viewModel.submitForm(inputFields, radioGroupFields, checkboxFields, dateFields, textFields).observeOnce(this, Observer { result ->
             when (result) {
@@ -194,7 +228,22 @@ class FormDisplayActivity : ACBaseActivity() {
         })
     }
 
+    /** Hands the shared answers to the attendee step, along with what it needs to save the form. */
+    private fun startGroupEntry(sharedAnswers: FormFieldsWrapper) {
+        val extras = intent.extras ?: return
+        groupEntryLauncher.launch(Intent(this, GroupEntryActivity::class.java).apply {
+            putExtra(VALUEREFERENCE, extras.getString(VALUEREFERENCE))
+            putExtra(FORM_NAME, extras.getString(FORM_NAME))
+            putExtra(ENCOUNTERTYPE, extras.getString(ENCOUNTERTYPE))
+            putExtra(FORM_FIELDS_BUNDLE, sharedAnswers)
+        })
+    }
+
     private fun enableSubmitButton(enabled: Boolean) {
         binding.btnSubmit.isEnabled = enabled
+    }
+
+    companion object {
+        private const val NO_PATIENT_ID = -1L
     }
 }

@@ -222,6 +222,17 @@
             android:enabled="true" />
 
         <activity
+            android:name=".activities.groupentry.GroupEntryActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:label="@string/group_entry_title"
+            android:parentActivityName=".activities.formdisplay.FormDisplayActivity"
+            android:theme="@style/AppThemeOrig"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="org.openmrs.mobile.activities.formdisplay.FormDisplayActivity" />
+        </activity>
+        <activity
             android:name=".activities.formdisplay.FormDisplayActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_form_create"
