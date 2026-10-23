@@ -67,30 +67,18 @@ class LoginViewModel @Inject constructor(
     fun login(username: String, password: String, url: String, wipeDatabase: Boolean) {
         setLoading(OperationType.Login)
 
-        // Offline login
+        // Offline login - the login screen's default for a user who has logged in on this device
+        // before (see OpenmrsAndroid.clearUserPreferencesData).
         if (!isOnline()) {
-            if (OpenmrsAndroid.isUserLoggedOnline() && url == OpenmrsAndroid.getLastLoginServerUrl()) {
-                if (OpenmrsAndroid.getUsername() == username && BCrypt.checkpw(password, OpenmrsAndroid.getHashedPassword())) {
-                    // The privileges cached at this user's last online login - so access revoked
-                    // on the server since then only takes effect once they next log in online.
-                    if (!privilegeRepository.cachedUserHasPrivilege(ApplicationConstants.Privileges.APP_MOBILE_CLIENT)) {
-                        setContent(ResultType.RoleAccessError)
-                        return
-                    }
-                    OpenmrsAndroid.deleteSecretKey()
-                    OpenmrsAndroid.setPasswordAndHashedPassword(password)
-                    OpenmrsAndroid.setSessionToken(OpenmrsAndroid.getLastSessionToken())
-                    setContent(ResultType.LoginOfflineSuccess)
-                } else {
-                    setContent(ResultType.LoginInvalidCredentials)
-                }
-            } else if (hasNetwork()) {
-                setContent(ResultType.LoginOfflineUnsupported)
-            } else {
-                setContent(ResultType.LoginNoInternetConnection)
+            val offlineResult = loginOffline(username, password, url)
+            if (offlineResult == ResultType.LoginOfflineSuccess || !hasNetwork()) {
+                setContent(offlineResult)
+                return
             }
-
-            return
+            // Offline login can't let this user in (someone else, another server, a password
+            // changed on the server, ...) but the device has internet - ask the server instead.
+            // A successful online login then syncs and switches back to offline by itself.
+            OpenmrsAndroid.setSyncState(true)
         }
 
         // Online login
@@ -190,6 +178,25 @@ class LoginViewModel @Inject constructor(
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({}, {})
         )
+    }
+
+    /** Checks [username]/[password] against the user who last logged in online on this device. */
+    private fun loginOffline(username: String, password: String, url: String): ResultType {
+        if (!OpenmrsAndroid.isUserLoggedOnline() || url != OpenmrsAndroid.getLastLoginServerUrl()) {
+            return ResultType.LoginNoInternetConnection
+        }
+        if (OpenmrsAndroid.getUsername() != username || !BCrypt.checkpw(password, OpenmrsAndroid.getHashedPassword())) {
+            return ResultType.LoginInvalidCredentials
+        }
+        // The privileges cached at this user's last online login - so access revoked on the
+        // server since then only takes effect once they next log in online.
+        if (!privilegeRepository.cachedUserHasPrivilege(ApplicationConstants.Privileges.APP_MOBILE_CLIENT)) {
+            return ResultType.RoleAccessError
+        }
+        OpenmrsAndroid.deleteSecretKey()
+        OpenmrsAndroid.setPasswordAndHashedPassword(password)
+        OpenmrsAndroid.setSessionToken(OpenmrsAndroid.getLastSessionToken())
+        return ResultType.LoginOfflineSuccess
     }
 
     fun fetchLocations(url: String, username: String? = null, password: String? = null) {

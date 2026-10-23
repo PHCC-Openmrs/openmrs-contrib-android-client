@@ -438,8 +438,12 @@ public class OpenmrsAndroid {
      * a "pause sync" side effect of backing out of the matching-patients screen) - any of which
      * could leave a stale "false" saved across app restarts (or app updates) with no way for the
      * user to know why sync had silently stopped working, since nothing but the toggle itself
-     * ever explains its own state. Scoping it to the process instead means every fresh app launch
-     * starts with sync enabled by default, and a manual pause never outlives the session that set it.
+     * ever explains its own state. Scoping it to the process instead means a stale value never
+     * outlives the session that set it.
+     *
+     * Starts enabled only for a device's first login, which needs the server. Otherwise offline is
+     * the default: the app sets it off at launch and after login, and it is switched back off once
+     * a sync has uploaded everything (the app's SyncModeManager).
      */
     private static volatile boolean syncEnabled = true;
 
@@ -513,6 +517,10 @@ public class OpenmrsAndroid {
         editor.remove(ApplicationConstants.UserKeys.PASSWORD);
         OpenmrsAndroid.deleteSecretKey();
         editor.apply();
+        // The login screen starts offline too once someone has logged in online on this device,
+        // so that user logs back in offline; only a device's first login needs the server.
+        // (Anyone else who can't log in offline falls back to online login - LoginViewModel.)
+        syncEnabled = !isUserLoggedOnline();
     }
 
     /**

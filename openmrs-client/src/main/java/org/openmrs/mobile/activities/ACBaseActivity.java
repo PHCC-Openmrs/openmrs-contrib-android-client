@@ -52,6 +52,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.android.material.snackbar.Snackbar;
 import com.openmrs.android_sdk.library.OpenMRSLogger;
@@ -77,6 +78,7 @@ import org.openmrs.mobile.net.AuthorizationManager;
 import org.openmrs.mobile.utilities.ForceClose;
 import org.openmrs.mobile.utilities.LanguageUtils;
 import org.openmrs.mobile.utilities.PrivilegeUtils;
+import org.openmrs.mobile.utilities.SyncModeManager;
 import org.openmrs.mobile.utilities.ThemeUtils;
 
 @AndroidEntryPoint
@@ -95,6 +97,14 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             showCredentialChangedDialog();
+        }
+    };
+    // Sync switching itself back off after uploading everything (SyncModeManager) happens in a
+    // background service - refresh the toolbar's sync icon when it does.
+    private final BroadcastReceiver mSyncStateChangedReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            invalidateOptionsMenu();
         }
     };
     @Inject
@@ -179,12 +189,15 @@ public abstract class ACBaseActivity extends AppCompatActivity {
         } else {
             registerReceiver(mPasswordChangedReceiver, mIntentFilter);
         }
+        LocalBroadcastManager.getInstance(this).registerReceiver(mSyncStateChangedReceiver,
+                new IntentFilter(SyncModeManager.ACTION_SYNC_STATE_CHANGED));
         ToastUtil.setAppVisible(true);
     }
 
     @Override
     protected void onPause() {
         unregisterReceiver(mPasswordChangedReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mSyncStateChangedReceiver);
         super.onPause();
         ToastUtil.setAppVisible(false);
     }
@@ -420,6 +433,9 @@ public abstract class ACBaseActivity extends AppCompatActivity {
 
     public void moveUnauthorizedUserToLoginScreen() {
         OpenmrsAndroid.clearUserPreferencesData();
+        // The server no longer accepts the saved credentials, so the next login must be checked by
+        // the server, not offline.
+        OpenmrsAndroid.setSyncState(true);
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         this.startActivity(intent);

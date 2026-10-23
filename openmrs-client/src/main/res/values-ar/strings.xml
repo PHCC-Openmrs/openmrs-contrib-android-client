@@ -727,4 +727,5 @@
     <string name="group_entry_summary_offline">تم الحفظ دون اتصال، وستتم المزامنة لاحقاً: %1$d</string>
     <string name="group_entry_summary_without_phone">تم الحفظ بدون رقم هاتف (غير موجود أو غير صالح في سجل المريض): %1$d</string>
     <string name="group_entry_summary_failed">لم يتم الحفظ (%1$d) - تحقق من أن لديهم زيارة نشطة: %2$s</string>
+    <string name="sync_completed_switched_offline">تمت مزامنة جميع البيانات. تم التحويل إلى وضع عدم الاتصال.</string>
 </resources>

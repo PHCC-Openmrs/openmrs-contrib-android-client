@@ -106,6 +106,9 @@ public class AuthenticateCheckService extends Service {
                             } else {
                                 OpenmrsAndroid.clearUserPreferencesData();
                                 OpenmrsAndroid.clearCurrentLoggedInUserInfo();
+                                // The server no longer accepts the saved password, so the next
+                                // login must be checked by the server, not offline.
+                                OpenmrsAndroid.setSyncState(true);
                             }
                         }
                     } else {

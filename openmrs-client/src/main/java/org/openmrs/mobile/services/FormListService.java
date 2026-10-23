@@ -31,11 +31,18 @@ import com.openmrs.android_sdk.utilities.ApplicationConstants;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
+import org.openmrs.mobile.api.ConnectivityStateMonitor;
 import org.openmrs.mobile.utilities.PrivilegeUtils;
 
 @AndroidEntryPoint
 public class FormListService extends IntentService {
     public static final String ACTION_FORM_LIST_SYNCED = "org.openmrs.mobile.ACTION_FORM_LIST_SYNCED";
+    /**
+     * Set right after an online login: once the forms are downloaded, run a full data sync, which
+     * then switches the app to offline - its default mode (see SyncModeManager). Doing it after,
+     * not alongside, this download keeps the switch from cutting the download short.
+     */
+    public static final String EXTRA_SYNC_AFTER = "syncAfter";
 
     @Inject
     RestApi apiService;
@@ -80,5 +87,9 @@ public class FormListService extends IntentService {
         }
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(new Intent(ACTION_FORM_LIST_SYNCED));
+
+        if (intent != null && intent.getBooleanExtra(EXTRA_SYNC_AFTER, false)) {
+            ConnectivityStateMonitor.triggerSync(getApplicationContext());
+        }
     }
 }
