@@ -32,6 +32,7 @@ import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import org.jetbrains.annotations.NotNull;
 import org.openmrs.mobile.utilities.LanguageUtils;
 import org.openmrs.mobile.api.ConnectivityStateMonitor;
+import org.openmrs.mobile.net.AuthorizationManager;
 import org.openmrs.mobile.services.AuthenticateCheckService;
 import org.openmrs.mobile.services.FormListService;
 
@@ -58,6 +59,13 @@ public class OpenMRS extends MultiDexApplication implements Configuration.Provid
         // Before anything below can load a string: services and receivers started here have no
         // activity to take the app's language from - see LanguageUtils.applyLanguage.
         applyAppLanguage();
+        // Offline is the default mode: sync is switched on by the toolbar cloud button or by
+        // connectivity coming back, and switches itself off again once everything is uploaded
+        // (SyncModeManager). Only a device's very first login starts online - it needs the server
+        // (see OpenmrsAndroid.clearUserPreferencesData for the login screen).
+        if (new AuthorizationManager().isUserLoggedIn() || OpenmrsAndroid.isUserLoggedOnline()) {
+            OpenmrsAndroid.setSyncState(false);
+        }
 
         if (mExternalDirectoryPath == null) {
             mExternalDirectoryPath = this.getExternalFilesDir(null).toString();

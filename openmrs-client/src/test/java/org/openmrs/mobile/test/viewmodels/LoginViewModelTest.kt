@@ -260,7 +260,7 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
     }
 
     @Test
-    fun `login should result LoginOfflineUnsupported when not online but has network and not logged in before`() {
+    fun `login in offline mode falls back to online login when not logged in before but has network`() {
         val username = "username123"
         val password = "password123"
         val url = initialUrl
@@ -268,15 +268,19 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         `when`(NetworkUtils.hasNetwork()).thenReturn(true)
         `when`(OpenmrsAndroid.isUserLoggedOnline()).thenReturn(false)
         `when`(OpenmrsAndroid.getLastLoginServerUrl()).thenReturn(url)
+        `when`(loginRepository.getSession(username, password))
+                .thenReturn(Observable.just(Session(sessionId = "123", isAuthenticated = false, user = null)))
 
         viewModel.login(username, password, url, false)
 
         val resultType = (viewModel.result.value as Result.Success).data
-        assertEquals(ResultType.LoginOfflineUnsupported, resultType)
+        assertEquals(ResultType.LoginInvalidCredentials, resultType)
+        OpenmrsAndroidMock.verify { OpenmrsAndroid.setSyncState(true) }
+        Mockito.verify(loginRepository).getSession(username, password)
     }
 
     @Test
-    fun `login should result LoginOfflineUnsupported when not online but has network and changes url`() {
+    fun `login in offline mode falls back to online login when url changes and has network`() {
         val username = "username123"
         val password = "password123"
         val url1 = initialUrl
@@ -285,11 +289,31 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         `when`(NetworkUtils.hasNetwork()).thenReturn(true)
         `when`(OpenmrsAndroid.isUserLoggedOnline()).thenReturn(true)
         `when`(OpenmrsAndroid.getLastLoginServerUrl()).thenReturn(url1)
+        `when`(loginRepository.getSession(username, password))
+                .thenReturn(Observable.just(Session(sessionId = "123", isAuthenticated = false, user = null)))
 
         viewModel.login(username, password, url2, false)
 
-        val resultType = (viewModel.result.value as Result.Success).data
-        assertEquals(ResultType.LoginOfflineUnsupported, resultType)
+        OpenmrsAndroidMock.verify { OpenmrsAndroid.setSyncState(true) }
+        Mockito.verify(loginRepository).getSession(username, password)
+    }
+
+    @Test
+    fun `login in offline mode falls back to online login when a different user logs in and has network`() {
+        val password = "password123"
+        val url = initialUrl
+        `when`(NetworkUtils.isOnline()).thenReturn(false)
+        `when`(NetworkUtils.hasNetwork()).thenReturn(true)
+        `when`(OpenmrsAndroid.isUserLoggedOnline()).thenReturn(true)
+        `when`(OpenmrsAndroid.getLastLoginServerUrl()).thenReturn(url)
+        `when`(OpenmrsAndroid.getUsername()).thenReturn("previousUser")
+        `when`(loginRepository.getSession("otherUser", password))
+                .thenReturn(Observable.just(Session(sessionId = "123", isAuthenticated = false, user = null)))
+
+        viewModel.login("otherUser", password, url, false)
+
+        OpenmrsAndroidMock.verify { OpenmrsAndroid.setSyncState(true) }
+        Mockito.verify(loginRepository).getSession("otherUser", password)
     }
 
     @Test

@@ -22,7 +22,10 @@ import com.openmrs.android_sdk.library.OpenmrsAndroid;
 import com.openmrs.android_sdk.library.api.repository.EncounterRepository;
 import com.openmrs.android_sdk.library.databases.AppDatabase;
 import com.openmrs.android_sdk.library.models.Encountercreate;
+import com.openmrs.android_sdk.library.models.ResultType;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
+
+import org.openmrs.mobile.utilities.SyncModeManager;
 
 /**
  * The type Encounter service.
@@ -33,6 +36,8 @@ public class EncounterService extends IntentService {
 
     @Inject
     EncounterRepository encounterRepository;
+    @Inject
+    SyncModeManager syncModeManager;
 
     /**
      * Instantiates a new Encounter service.
@@ -49,6 +54,7 @@ public class EncounterService extends IntentService {
                 .encounterCreateRoomDAO()
                 .getAllCreatedEncounters();
 
+        boolean allEncountersSynced = true;
         for (final Encountercreate encounterCreate : encounterCreateList) {
             if (encounterCreate.getSynced()) {
                 continue;
@@ -58,9 +64,25 @@ public class EncounterService extends IntentService {
             // own attempt for the same visit (both running concurrently, unaware of each other)
             // and can create a duplicate visit on the server. saveEncounter() below already
             // handles an unsynced visit gracefully by just queuing for the next reconnect.
-            encounterRepository.saveEncounter(encounterCreate)
-                    .subscribe(result -> { }, throwable ->
-                            Log.e(ENCOUNTER_SERVICE_TAG, "Failed to sync encounter " + encounterCreate.getId(), throwable));
+            //
+            // Waits for each upload (rather than fire-and-forget) so that, once this loop is done,
+            // it's known whether the whole sync chain succeeded - see below.
+            try {
+                ResultType result = encounterRepository.saveEncounter(encounterCreate).toBlocking().first();
+                if (result != ResultType.EncounterSubmissionSuccess) {
+                    allEncountersSynced = false;
+                }
+            } catch (Exception e) {
+                allEncountersSynced = false;
+                Log.e(ENCOUNTER_SERVICE_TAG, "Failed to sync encounter " + encounterCreate.getId(), e);
+            }
+        }
+
+        // The last stage of the PatientService -> VisitService -> ProgramEnrollmentService ->
+        // EncounterService chain: with everything uploaded the app goes back to offline mode,
+        // its default for a logged-in user.
+        if (allEncountersSynced) {
+            syncModeManager.switchOfflineIfFullySynced(getApplicationContext());
         }
     }
 }

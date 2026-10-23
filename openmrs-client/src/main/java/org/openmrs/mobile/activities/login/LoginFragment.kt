@@ -95,6 +95,8 @@ class LoginFragment : BaseFragment() {
                     when (result.data) {
                         ResultType.LoginOfflineSuccess -> {
                             ToastUtil.notify(getString(R.string.login_offline_toast_message))
+                            // Offline is the default mode after login (see SyncModeManager).
+                            OpenmrsAndroid.setSyncState(false)
                             onUserAuthenticated()
                             finishLoginActivity()
                         }
@@ -330,7 +332,10 @@ class LoginFragment : BaseFragment() {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             startActivity(intent)
 
+            // After an online login: download the forms, then run a full sync, which switches
+            // the app to offline - its default mode - once everything is uploaded.
             val formListServiceIntent = Intent(this, FormListService::class.java)
+                    .putExtra(FormListService.EXTRA_SYNC_AFTER, OpenmrsAndroid.getSyncState())
             startService(formListServiceIntent)
 
             viewModel.saveLocationsToDatabase(viewModel.locations, binding.locationSpinner.selectedItem.toString())
