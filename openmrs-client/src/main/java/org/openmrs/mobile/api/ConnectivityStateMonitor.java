@@ -27,7 +27,8 @@ import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil;
 /**
  * Watches system connectivity and automatically resumes the patient/encounter sync -
  * the same trigger the toolbar sync button uses - as soon as the network comes back,
- * instead of requiring the user to notice and tap sync manually.
+ * instead of requiring the user to notice and tap sync manually. Only applies while sync is
+ * switched on: with the cloud icon off, the network returning never syncs anything.
  */
 public class ConnectivityStateMonitor {
 
@@ -39,8 +40,10 @@ public class ConnectivityStateMonitor {
     private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
         public void onAvailable(Network network) {
-            if (wasDisconnected.compareAndSet(true, false)) {
-                OpenmrsAndroid.setSyncState(true);
+            // Only resumes a sync the user already had switched on. Offline is the default mode,
+            // so the network coming back must never switch sync on by itself - that would upload
+            // data while the cloud icon still shows sync off.
+            if (wasDisconnected.compareAndSet(true, false) && OpenmrsAndroid.getSyncState()) {
                 triggerSync(appContext);
             }
         }

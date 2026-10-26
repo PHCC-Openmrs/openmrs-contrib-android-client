@@ -23,6 +23,7 @@ import com.openmrs.android_sdk.library.models.ProgramEnrollmentUpdate
 import com.openmrs.android_sdk.library.models.Visit
 import com.openmrs.android_sdk.utilities.DateUtils
 import com.openmrs.android_sdk.utilities.NetworkUtils
+import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil
 import java.util.Calendar
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -120,7 +121,20 @@ class ProgramEnrollmentRepository @Inject constructor(
         if (!NetworkUtils.isOnline()) return
         programEnrollmentDAO.getUnsyncedEnrollments().forEach { enrollment ->
             try {
-                pushEnrollment(enrollment, patientDAO.findPatientByID(enrollment.patientId))
+                val patient = patientDAO.findPatientByID(enrollment.patientId)
+                if (patient == null) {
+                    // Its patient was deleted from the device (by hand, or by an auto-delete that
+                    // ran before this enrollment was pushed). With no patient uuid it can never be
+                    // sent, and left queued it would keep the app from returning to offline mode
+                    // after every sync.
+                    logger.e("Dropping service enrollment ${enrollment.id}: its patient ${enrollment.patientId} is no longer on the device")
+                    programEnrollmentDAO.deleteEnrollmentsByPatientId(enrollment.patientId)
+                    return@forEach
+                }
+                pushEnrollment(enrollment, patient)
+                // Pushed last in the sync chain after the patient and visit, so this may be what
+                // completes the patient for auto-delete.
+                SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(enrollment.patientId)
             } catch (e: Exception) {
                 logger.e("Could not sync the service enrollment ${enrollment.id}", e)
             }
