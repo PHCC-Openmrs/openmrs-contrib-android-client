@@ -493,6 +493,27 @@ public class OpenmrsAndroid {
     }
 
     /**
+     * Gets the logged in user's person name (e.g. for a form's "CHW Name"), as of their last
+     * online login - kept across logout so it is still there after an offline login.
+     *
+     * @return the person name, or an empty string when not known
+     */
+    public static String getCurrentUserPersonName() {
+        return getOpenMRSSharedPreferences().getString(ApplicationConstants.UserKeys.USER_PERSON_NAME, ApplicationConstants.EMPTY_STRING);
+    }
+
+    /**
+     * Sets the logged in user's person name - see {@link #getCurrentUserPersonName()}.
+     *
+     * @param name the person name
+     */
+    public static void setCurrentUserPersonName(String name) {
+        getOpenMRSSharedPreferences().edit()
+                .putString(ApplicationConstants.UserKeys.USER_PERSON_NAME, name == null ? ApplicationConstants.EMPTY_STRING : name)
+                .apply();
+    }
+
+    /**
      * Clear current logged in user info.
      */
     public static void clearCurrentLoggedInUserInfo() {
@@ -513,7 +534,8 @@ public class OpenmrsAndroid {
                 prefs.getString(ApplicationConstants.SESSION_TOKEN, ApplicationConstants.EMPTY_STRING));
         editor.remove(ApplicationConstants.SESSION_TOKEN);
         editor.remove(ApplicationConstants.AUTHORIZATION_TOKEN);
-        OpenmrsAndroid.clearCurrentLoggedInUserInfo();
+        // The current user's info is kept: only this same user can log back in offline (anyone
+        // else has to log in online, which replaces it), and forms fill "CHW Name" from it.
         editor.remove(ApplicationConstants.UserKeys.PASSWORD);
         OpenmrsAndroid.deleteSecretKey();
         editor.apply();

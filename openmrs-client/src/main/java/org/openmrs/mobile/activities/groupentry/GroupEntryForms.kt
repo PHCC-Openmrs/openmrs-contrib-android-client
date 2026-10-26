@@ -1,5 +1,6 @@
 package org.openmrs.mobile.activities.groupentry
 
+import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.models.Form
 import com.openmrs.android_sdk.library.models.Page
 import com.openmrs.android_sdk.library.models.Patient
@@ -15,7 +16,8 @@ import org.openmrs.mobile.activities.formdisplay.PatientFieldAutoFill
  * Group Entry: a form enabled with `"groupEntryForm": { "enabled": true }` is filled in once and
  * saved as one encounter per selected patient. Every question in such a form is one of:
  * - shared (`"groupShared": true`, or inside a shared group) - asked once, same answer for all;
- * - a patient field (see [PatientFieldAutoFill]) - filled from each patient's own record;
+ * - a patient field (see [PatientFieldAutoFill]) - filled from each patient's own record (or,
+ *   for the current-user field such as "CHW Name", the logged-in user's name);
  * - anything else - left blank. A required one of those blocks the form from Group Entry, since
  *   nobody would ever get to answer it.
  *
@@ -95,7 +97,11 @@ object GroupEntryForms {
      * form would. A phone number is only kept when it is exactly 10 digits (the form's own
      * rule); otherwise the form is saved without it and [PatientAnswers.isPhoneOmitted] is set.
      */
-    fun patientAnswers(form: Form, patient: Patient): PatientAnswers {
+    fun patientAnswers(
+        form: Form,
+        patient: Patient,
+        currentUserName: () -> String? = OpenmrsAndroid::getCurrentUserPersonName
+    ): PatientAnswers {
         val answers = PatientAnswers()
         fun visit(questions: List<Question>) {
             questions.forEach { question ->
@@ -115,7 +121,7 @@ object GroupEntryForms {
                         answers.selectOneFields += SelectOneField(options.answers.orEmpty(), concept).apply { setAnswer(it) }
                     }
                     "text", "textarea" -> {
-                        val value = PatientFieldAutoFill.textValue(question, patient)?.trim()
+                        val value = PatientFieldAutoFill.textValue(question, patient, currentUserName)?.trim()
                         if (field == PatientField.PHONE && (value == null || !PHONE_NUMBER_REGEX.matches(value))) {
                             answers.isPhoneOmitted = true
                         } else if (!value.isNullOrEmpty()) {

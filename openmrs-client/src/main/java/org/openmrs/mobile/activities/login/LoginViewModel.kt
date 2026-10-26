@@ -114,6 +114,9 @@ class LoginViewModel @Inject constructor(
                     OpenmrsAndroid.setVisitTypeUUID(visitTypeUuid)
 
                     setLogin(true, url)
+                    // From /session too, not only updateUserInformation: that one reads /user,
+                    // which needs "Get Users" - a privilege a CHW's role usually doesn't have.
+                    OpenmrsAndroid.setCurrentUserPersonName(session.user?.person?.display)
                     userService.updateUserInformation(username)
                     // The /session response already carries the fully-resolved effective
                     // privileges/roles for the current user and requires no privilege beyond

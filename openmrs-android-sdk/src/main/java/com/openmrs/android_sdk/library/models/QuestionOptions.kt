@@ -49,4 +49,8 @@ class QuestionOptions : Serializable {
     @SerializedName("datasource")
     @Expose
     var datasource: DataSource? = null
+
+    @SerializedName("calculate")
+    @Expose
+    var calculate: Calculate? = null
 }
