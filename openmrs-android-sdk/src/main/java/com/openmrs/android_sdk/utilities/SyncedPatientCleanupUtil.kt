@@ -11,6 +11,7 @@ package com.openmrs.android_sdk.utilities
 
 import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.dao.PatientDAO
+import com.openmrs.android_sdk.library.dao.ProgramEnrollmentDAO
 import com.openmrs.android_sdk.library.dao.VisitDAO
 import com.openmrs.android_sdk.library.databases.AppDatabase
 
@@ -22,12 +23,13 @@ import com.openmrs.android_sdk.library.databases.AppDatabase
  * it on).
  *
  * [checkAndCleanupIfFullySynced] is called right at the point each of
- * `PatientRepository#syncPatient`/`#updatePatient`, `VisitRepository#syncStartedVisit`, and
- * `EncounterRepository#saveEncounter` actually confirms a successful push - deliberately at this
+ * `PatientRepository#syncPatient`/`#updatePatient`, `VisitRepository#syncStartedVisit`,
+ * `EncounterRepository#saveEncounter`, and `ProgramEnrollmentRepository#syncPendingEnrollments`
+ * actually confirms a successful push - deliberately at this
  * shared, low level (not just from the background IntentServices that process the offline
  * backlog) so it fires uniformly whether that push happened directly while online, or was queued
  * offline and caught up later; either path runs through these exact methods. A patient is left
- * completely alone if ANY of their visits or forms still haven't reached the server yet, so a
+ * completely alone if ANY of their visits, forms or service enrollments still haven't reached the server yet, so a
  * partially-synced patient is never partially deleted.
  */
 object SyncedPatientCleanupUtil {
@@ -83,12 +85,19 @@ object SyncedPatientCleanupUtil {
             val encounters = db.encounterCreateRoomDAO().getCreatedEncountersByPatientId(patientId)
             if (encounters.any { !it.synced }) return
 
+            // A visit's service enrollment is pushed after the visit itself (ProgramEnrollmentService
+            // runs after VisitService), so the visit syncing alone must not delete the patient -
+            // the enrollment would then have no patient to attach to and never reach the server.
+            val programEnrollmentDAO = ProgramEnrollmentDAO()
+            if (programEnrollmentDAO.getUnsyncedEnrollments().any { it.patientId == patientId }) return
+
             val uuid = patient.uuid
             logger.i("Patient $patientId is fully synced - removing local data (auto-delete enabled)")
 
             patientDAO.deletePatient(patientId)
             visitDAO.deleteVisitsByPatientId(patientId).execute()
             db.encounterCreateRoomDAO().deleteEncountersByPatientId(patientId)
+            programEnrollmentDAO.deleteEnrollmentsByPatientId(patientId)
             if (!uuid.isNullOrEmpty()) {
                 db.allergyRoomDAO().deleteAllPatientAllergy(uuid)
             }
