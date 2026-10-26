@@ -74,6 +74,8 @@ class FormDisplayMainViewModel @Inject constructor(
         // an offline submission as being "in the future".
         enc.encounterDatetime = DateUtils.convertTime(System.currentTimeMillis(), DateUtils.OPEN_MRS_REQUEST_FORMAT)
         enc.observations = ObservationBuilder.build(inputFields, radioGroupFields, checkboxFields, dateFields, textFields, patient.uuid)
+        // The logged-in user as the encounter's provider, as the web form engine does.
+        enc.encounterProvider = OpenmrsAndroid.getCurrentEncounterProviders()
 
         return if (isUpdateEncounter) updateRecords(encounterUuid!!, enc) else createRecords(enc)
     }

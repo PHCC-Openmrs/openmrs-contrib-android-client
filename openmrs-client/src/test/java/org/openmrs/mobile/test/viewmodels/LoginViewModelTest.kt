@@ -7,6 +7,7 @@ import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
 import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
 import com.openmrs.android_sdk.library.api.repository.ProgramRepository
+import com.openmrs.android_sdk.library.api.repository.ProviderRepository
 import com.openmrs.android_sdk.library.api.repository.VisitAttributeTypeRepository
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.LocationDAO
@@ -71,6 +72,9 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
     @Mock
     lateinit var visitAttributeTypeRepository: VisitAttributeTypeRepository
 
+    @Mock
+    lateinit var providerRepository: ProviderRepository
+
     lateinit var viewModel: LoginViewModel
 
     private val initialUrl = "http://www.some_server_url.com"
@@ -92,7 +96,7 @@ class LoginViewModelTest : ACUnitTestBaseRx() {
         BCryptMock = Mockito.mockStatic(BCrypt::class.java)
 
         viewModel = LoginViewModel(loginRepository, visitRepository, locationRepository, locationDAO, userService,
-                privilegeRepository, programRepository, visitAttributeTypeRepository)
+                privilegeRepository, programRepository, visitAttributeTypeRepository, providerRepository)
     }
 
     @After

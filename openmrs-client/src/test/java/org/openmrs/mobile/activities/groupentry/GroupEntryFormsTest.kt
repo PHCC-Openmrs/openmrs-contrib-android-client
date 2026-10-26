@@ -42,10 +42,38 @@ class GroupEntryFormsTest {
 
     @Test
     fun `a required question that is neither shared nor a patient field blocks the form`() {
-        val json = HPS_JSON.replace("\"id\": \"chwName\", \"label\": \"CHW Name\", \"type\": \"obs\", \"groupShared\": true,",
-            "\"id\": \"chwName\", \"label\": \"CHW Name\", \"type\": \"obs\", \"required\": true,")
+        val json = HPS_JSON.replace("\"id\": \"topic\", \"label\": \"Topic\", \"type\": \"obs\", \"groupShared\": true,",
+            "\"id\": \"topic\", \"label\": \"Topic\", \"type\": \"obs\",")
 
-        assertEquals(listOf("CHW Name"), GroupEntryForms.blockingQuestions(FormUtils.getForm(json)))
+        assertEquals(listOf("Topic"), GroupEntryForms.blockingQuestions(FormUtils.getForm(json)))
+    }
+
+    @Test
+    fun `chw name is the current user - by the web's currentUserName() expression, or by label`() {
+        val chwName = FormUtils.getForm(HPS_V12_JSON).pages[0].sections[1].questions.single { it.id == "chwName" }
+        assertEquals(PatientField.CURRENT_USER, PatientFieldAutoFill.fieldOf(chwName.apply { label = "Facilitator" }))
+
+        val byLabel = hpsForm().pages[0].sections[1].questions.single { it.id == "chwName" }
+        assertEquals(PatientField.CURRENT_USER, PatientFieldAutoFill.fieldOf(byLabel))
+        assertTrue(PatientFieldAutoFill.isFixedPatientField(byLabel))
+    }
+
+    @Test
+    fun `chw name is filled with the logged-in user's name, with or without a patient`() {
+        val chwName = FormUtils.getForm(HPS_V12_JSON).pages[0].sections[1].questions.single { it.id == "chwName" }
+
+        assertEquals("Huda Nasser", PatientFieldAutoFill.textValue(chwName, null) { "Huda Nasser" })
+        assertEquals(null, PatientFieldAutoFill.textValue(chwName, patient(phone = null)) { "" })
+    }
+
+    @Test
+    fun `a non-shared chw name is saved with every patient's answers`() {
+        val form = FormUtils.getForm(HPS_V12_JSON)
+        assertTrue(GroupEntryForms.blockingQuestions(form).isEmpty())
+
+        val answers = GroupEntryForms.patientAnswers(form, patient(phone = "0599123456")) { "Huda Nasser" }
+
+        assertEquals(listOf("Amal Saleh", "0599123456", "Huda Nasser"), answers.textFields.map { it.value })
     }
 
     @Test
@@ -101,6 +129,17 @@ class GroupEntryFormsTest {
     }
 
     companion object {
+        /** v1.2: CHW Name filled the way the web does it, and no longer shared. */
+        private val HPS_V12_JSON by lazy {
+            HPS_JSON
+                .replace("\"id\": \"chwName\", \"label\": \"CHW Name\", \"type\": \"obs\", \"groupShared\": true,",
+                    "\"id\": \"chwName\", \"label\": \"CHW Name\", \"type\": \"obs\", \"readonly\": true,")
+                .replace("\"concept\": \"8f129f81-e078-4664-be97-649b66162a50\" }",
+                    "\"concept\": \"8f129f81-e078-4664-be97-649b66162a50\", " +
+                        "\"calculate\": { \"calculateExpression\": \"mode === 'enter' ? currentUserName() : ''\" } }")
+                .also { check("currentUserName" in it && "\"CHW Name\", \"type\": \"obs\", \"readonly\"" in it) }
+        }
+
         private val HPS_JSON = """
             {
               "name": "Health Promotion Session Form",

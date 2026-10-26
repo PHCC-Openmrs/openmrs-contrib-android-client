@@ -33,6 +33,10 @@ object ApplicationConstants {
     const val DB_PASSWORD_BCRYPT_PEPPER = "$2a$08\$iUp3M1VapYpjcAXQBNX6uu"
     const val DB_PASSWORD_LITERAL_PEPPER = "Open Sesame"
     const val DEFAULT_VISIT_TYPE_UUID = "7b0f5697-27e3-40c4-8bae-f4049abfb4ed"
+
+    // Core OpenMRS's "Unknown" encounter role, present on every server - used when the roles
+    // couldn't be fetched (e.g. a user without "Get Encounter Roles").
+    const val UNKNOWN_ENCOUNTER_ROLE_UUID = "a0b03050-c99b-11e0-9572-0800200c9a66"
     const val DEFAULT_BCRYPT_ROUND = 8
     const val SPLASH_TIMER = 3500
     const val PACKAGE_NAME = "org.openmrs.mobile"
@@ -114,6 +118,8 @@ object ApplicationConstants {
         const val HASHED_PASSWORD = "hashedPassword"
         const val USER_PERSON_NAME = "userDisplay"
         const val USER_UUID = "userUUID"
+        const val CURRENT_PROVIDER_UUID = "currentProviderUuid"
+        const val ENCOUNTER_ROLE_UUID = "encounterRoleUuid"
         const val LOGIN = "login"
         const val FIRST_TIME = "firstTime"
     }

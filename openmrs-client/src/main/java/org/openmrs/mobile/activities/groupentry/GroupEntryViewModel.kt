@@ -3,6 +3,7 @@ package org.openmrs.mobile.activities.groupentry
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
+import com.openmrs.android_sdk.library.OpenmrsAndroid
 import com.openmrs.android_sdk.library.api.repository.EncounterRepository
 import com.openmrs.android_sdk.library.api.repository.FormRepository
 import com.openmrs.android_sdk.library.dao.VisitDAO
@@ -170,6 +171,7 @@ class GroupEntryViewModel @Inject constructor(
                 sharedAnswers.textFields + patientAnswers.textFields,
                 patient.uuid
             )
+            encounterProvider = OpenmrsAndroid.getCurrentEncounterProviders()
         }
 
     class Summary {

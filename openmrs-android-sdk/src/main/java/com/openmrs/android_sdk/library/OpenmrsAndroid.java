@@ -20,6 +20,7 @@ import android.preference.PreferenceManager;
 
 import androidx.annotation.Nullable;
 
+import com.openmrs.android_sdk.library.models.EncounterProviderCreate;
 import com.openmrs.android_sdk.library.models.Session;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 
@@ -493,6 +494,67 @@ public class OpenmrsAndroid {
     }
 
     /**
+     * Gets the encounter providers a form encounter is saved with: the logged in user's provider
+     * in the encounter role chosen at login, as the web form engine does. Kept across logout like
+     * the user's name, so offline-filled forms get them too.
+     *
+     * @return the encounter providers, or an empty list when the user has no linked provider
+     */
+    public static List<EncounterProviderCreate> getCurrentEncounterProviders() {
+        SharedPreferences prefs = getOpenMRSSharedPreferences();
+        String providerUuid = prefs.getString(ApplicationConstants.UserKeys.CURRENT_PROVIDER_UUID, ApplicationConstants.EMPTY_STRING);
+        if (providerUuid.isEmpty()) return new ArrayList<>();
+        String roleUuid = prefs.getString(ApplicationConstants.UserKeys.ENCOUNTER_ROLE_UUID, ApplicationConstants.EMPTY_STRING);
+        if (roleUuid.isEmpty()) roleUuid = ApplicationConstants.UNKNOWN_ENCOUNTER_ROLE_UUID;
+        List<EncounterProviderCreate> providers = new ArrayList<>();
+        providers.add(new EncounterProviderCreate(providerUuid, roleUuid));
+        return providers;
+    }
+
+    /**
+     * Sets the logged in user's provider - see {@link #getCurrentEncounterProviders()}.
+     *
+     * @param providerUuid the provider UUID, or null when the user has no linked provider
+     */
+    public static void setCurrentProviderUuid(String providerUuid) {
+        getOpenMRSSharedPreferences().edit()
+                .putString(ApplicationConstants.UserKeys.CURRENT_PROVIDER_UUID, providerUuid == null ? ApplicationConstants.EMPTY_STRING : providerUuid)
+                .apply();
+    }
+
+    /**
+     * Sets the encounter role form encounters are saved with - see {@link #getCurrentEncounterProviders()}.
+     *
+     * @param roleUuid the encounter role UUID
+     */
+    public static void setEncounterRoleUuid(String roleUuid) {
+        getOpenMRSSharedPreferences().edit()
+                .putString(ApplicationConstants.UserKeys.ENCOUNTER_ROLE_UUID, roleUuid)
+                .apply();
+    }
+
+    /**
+     * Gets the logged in user's person name (e.g. for a form's "CHW Name"), as of their last
+     * online login - kept across logout so it is still there after an offline login.
+     *
+     * @return the person name, or an empty string when not known
+     */
+    public static String getCurrentUserPersonName() {
+        return getOpenMRSSharedPreferences().getString(ApplicationConstants.UserKeys.USER_PERSON_NAME, ApplicationConstants.EMPTY_STRING);
+    }
+
+    /**
+     * Sets the logged in user's person name - see {@link #getCurrentUserPersonName()}.
+     *
+     * @param name the person name
+     */
+    public static void setCurrentUserPersonName(String name) {
+        getOpenMRSSharedPreferences().edit()
+                .putString(ApplicationConstants.UserKeys.USER_PERSON_NAME, name == null ? ApplicationConstants.EMPTY_STRING : name)
+                .apply();
+    }
+
+    /**
      * Clear current logged in user info.
      */
     public static void clearCurrentLoggedInUserInfo() {
@@ -513,7 +575,8 @@ public class OpenmrsAndroid {
                 prefs.getString(ApplicationConstants.SESSION_TOKEN, ApplicationConstants.EMPTY_STRING));
         editor.remove(ApplicationConstants.SESSION_TOKEN);
         editor.remove(ApplicationConstants.AUTHORIZATION_TOKEN);
-        OpenmrsAndroid.clearCurrentLoggedInUserInfo();
+        // The current user's info is kept: only this same user can log back in offline (anyone
+        // else has to log in online, which replaces it), and forms fill "CHW Name" from it.
         editor.remove(ApplicationConstants.UserKeys.PASSWORD);
         OpenmrsAndroid.deleteSecretKey();
         editor.apply();
