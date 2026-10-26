@@ -20,6 +20,7 @@ import android.preference.PreferenceManager;
 
 import androidx.annotation.Nullable;
 
+import com.openmrs.android_sdk.library.models.EncounterProviderCreate;
 import com.openmrs.android_sdk.library.models.Session;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
 
@@ -490,6 +491,46 @@ public class OpenmrsAndroid {
         infoMap.put(ApplicationConstants.UserKeys.USER_PERSON_NAME, prefs.getString(ApplicationConstants.UserKeys.USER_PERSON_NAME, ApplicationConstants.EMPTY_STRING));
         infoMap.put(ApplicationConstants.UserKeys.USER_UUID, prefs.getString(ApplicationConstants.UserKeys.USER_UUID, ApplicationConstants.EMPTY_STRING));
         return infoMap;
+    }
+
+    /**
+     * Gets the encounter providers a form encounter is saved with: the logged in user's provider
+     * in the encounter role chosen at login, as the web form engine does. Kept across logout like
+     * the user's name, so offline-filled forms get them too.
+     *
+     * @return the encounter providers, or an empty list when the user has no linked provider
+     */
+    public static List<EncounterProviderCreate> getCurrentEncounterProviders() {
+        SharedPreferences prefs = getOpenMRSSharedPreferences();
+        String providerUuid = prefs.getString(ApplicationConstants.UserKeys.CURRENT_PROVIDER_UUID, ApplicationConstants.EMPTY_STRING);
+        if (providerUuid.isEmpty()) return new ArrayList<>();
+        String roleUuid = prefs.getString(ApplicationConstants.UserKeys.ENCOUNTER_ROLE_UUID, ApplicationConstants.EMPTY_STRING);
+        if (roleUuid.isEmpty()) roleUuid = ApplicationConstants.UNKNOWN_ENCOUNTER_ROLE_UUID;
+        List<EncounterProviderCreate> providers = new ArrayList<>();
+        providers.add(new EncounterProviderCreate(providerUuid, roleUuid));
+        return providers;
+    }
+
+    /**
+     * Sets the logged in user's provider - see {@link #getCurrentEncounterProviders()}.
+     *
+     * @param providerUuid the provider UUID, or null when the user has no linked provider
+     */
+    public static void setCurrentProviderUuid(String providerUuid) {
+        getOpenMRSSharedPreferences().edit()
+                .putString(ApplicationConstants.UserKeys.CURRENT_PROVIDER_UUID, providerUuid == null ? ApplicationConstants.EMPTY_STRING : providerUuid)
+                .apply();
+    }
+
+    /**
+     * Sets the encounter role form encounters are saved with - see {@link #getCurrentEncounterProviders()}.
+     *
+     * @param roleUuid the encounter role UUID
+     */
+    public static void setEncounterRoleUuid(String roleUuid) {
+        getOpenMRSSharedPreferences().edit()
+                .putString(ApplicationConstants.UserKeys.ENCOUNTER_ROLE_UUID, roleUuid)
+                .apply();
     }
 
     /**

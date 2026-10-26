@@ -9,6 +9,7 @@ import com.openmrs.android_sdk.library.api.repository.LocationRepository
 import com.openmrs.android_sdk.library.api.repository.LoginRepository
 import com.openmrs.android_sdk.library.api.repository.PrivilegeRepository
 import com.openmrs.android_sdk.library.api.repository.ProgramRepository
+import com.openmrs.android_sdk.library.api.repository.ProviderRepository
 import com.openmrs.android_sdk.library.api.repository.VisitAttributeTypeRepository
 import com.openmrs.android_sdk.library.api.repository.VisitRepository
 import com.openmrs.android_sdk.library.dao.LocationDAO
@@ -39,7 +40,8 @@ class LoginViewModel @Inject constructor(
         private val userService: UserService,
         private val privilegeRepository: PrivilegeRepository,
         private val programRepository: ProgramRepository,
-        private val visitAttributeTypeRepository: VisitAttributeTypeRepository
+        private val visitAttributeTypeRepository: VisitAttributeTypeRepository,
+        private val providerRepository: ProviderRepository
 ) : BaseViewModel<ResultType>() {
 
     private val _warningDialogLiveData = MutableLiveData<Boolean>()
@@ -117,6 +119,8 @@ class LoginViewModel @Inject constructor(
                     // From /session too, not only updateUserInformation: that one reads /user,
                     // which needs "Get Users" - a privilege a CHW's role usually doesn't have.
                     OpenmrsAndroid.setCurrentUserPersonName(session.user?.person?.display)
+                    // Saved with every form encounter, as the web does (the encounter's Provider).
+                    OpenmrsAndroid.setCurrentProviderUuid(session.currentProvider?.uuid)
                     userService.updateUserInformation(username)
                     // The /session response already carries the fully-resolved effective
                     // privileges/roles for the current user and requires no privilege beyond
@@ -159,6 +163,14 @@ class LoginViewModel @Inject constructor(
             )
             addSubscription(visitAttributeTypeRepository.getFormVisitAttributeTypes()
                     .subscribe({}, { logPrefetchFailure("visit attribute types", it) })
+            )
+            // The role form encounters are saved with - picked as the O3 form engine does:
+            // "Clinician" if the server has it, otherwise the first role.
+            addSubscription(providerRepository.getEncounterRoles()
+                    .subscribe({ roles ->
+                        val role = roles.firstOrNull { it.display.equals("Clinician", ignoreCase = true) } ?: roles.firstOrNull()
+                        role?.uuid?.let { OpenmrsAndroid.setEncounterRoleUuid(it) }
+                    }, { logPrefetchFailure("encounter roles", it) })
             )
         } catch (e: Exception) {
             logPrefetchFailure("start visit form data", e)
