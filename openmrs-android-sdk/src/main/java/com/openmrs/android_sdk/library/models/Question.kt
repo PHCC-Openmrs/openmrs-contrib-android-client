@@ -47,6 +47,11 @@ class Question : Serializable {
     @Expose
     var questions: List<Question> = ArrayList()
 
+    /** Optional: hides this question while its expression is true, e.g. a topic for another category. */
+    @SerializedName("hide")
+    @Expose
+    var hide: Hide? = null
+
     /**
      * Group Entry (see [Form.groupEntryForm]): true when this question is filled in once for the
      * whole group and the same answer is saved for every selected patient (e.g. session date).

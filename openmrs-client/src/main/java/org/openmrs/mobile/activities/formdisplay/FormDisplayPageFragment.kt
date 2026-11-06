@@ -70,6 +70,11 @@ class FormDisplayPageFragment : BaseFragment() {
 
     private val viewModel: FormDisplayPageViewModel by viewModels()
 
+    /** Views of the questions that carry a `hide` rule (the question's own wrapper, or a group's container). */
+    private val hideableViews = LinkedHashMap<Question, View>()
+    private var viewsReady = false
+    private var applyingVisibility = false
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentFormDisplayBinding.inflate(inflater, container, false)
 
@@ -87,6 +92,8 @@ class FormDisplayPageFragment : BaseFragment() {
             binding.sectionsParentContainer.addView(pageHeader)
         }
         viewModel.page.sections.forEach { addSection(it) }
+        viewsReady = true
+        applyVisibility()
     }
 
     private fun addSection(section: Section) {
@@ -133,13 +140,36 @@ class FormDisplayPageFragment : BaseFragment() {
         return sectionContainer
     }
 
+    private fun hasHideRule(question: Question) = !question.hide?.hideWhenExpression.isNullOrBlank()
+
     private fun addQuestion(question: Question, sectionContainer: LinearLayout) {
+        if (question.questionOptions?.rendering == "group") {
+            val questionGroupContainer: LinearLayout = createQuestionGroupLayout(question)
+            sectionContainer.addView(questionGroupContainer)
+            if (hasHideRule(question)) hideableViews[question] = questionGroupContainer
+            question.questions.forEach { subQuestion -> addQuestion(subQuestion, questionGroupContainer) }
+            return
+        }
+        if (!hasHideRule(question)) {
+            addQuestionContent(question, sectionContainer)
+            return
+        }
+        // A question's views are added straight to its parent, so a hideable one gets its own
+        // wrapper to show/hide as a unit.
+        val wrapper = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        }
+        sectionContainer.addView(wrapper)
+        hideableViews[question] = wrapper
+        addQuestionContent(question, wrapper)
+    }
+
+    private fun addQuestionContent(question: Question, sectionContainer: LinearLayout) {
         when (question.questionOptions?.rendering) {
-            "group" -> {
-                val questionGroupContainer: LinearLayout = createQuestionGroupLayout(question)
-                sectionContainer.addView(questionGroupContainer)
-                question.questions.forEach { subQuestion -> addQuestion(subQuestion, questionGroupContainer) }
-            }
             "number" -> createAndAttachNumericQuestionEditText(question, sectionContainer)
             "select" -> createAndAttachSelectQuestionDropdown(question, sectionContainer)
             "radio" -> createAndAttachSelectQuestionRadioButton(question, sectionContainer)
@@ -409,6 +439,7 @@ class FormDisplayPageFragment : BaseFragment() {
                 isChecked = fieldToUse.isAnswerSelected(index)
                 setOnCheckedChangeListener { _, isChecked ->
                     fieldToUse.setAnswer(index, isChecked)
+                    applyVisibility()
                 }
             }
             sectionContainer.addView(checkBox)
@@ -438,6 +469,7 @@ class FormDisplayPageFragment : BaseFragment() {
                     val dateString = "$selectedDay/${selectedMonth + 1}/$selectedYear"
                     setText(dateString)
                     fieldToUse.date = dateString
+                    applyVisibility()
                 }, year, month, day).show()
             }
         }
@@ -478,6 +510,7 @@ class FormDisplayPageFragment : BaseFragment() {
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable?) {
                     fieldToUse.value = s.toString()
+                    applyVisibility()
                 }
             })
             if (viewModel.isFixedPatientField(question)) {
@@ -500,6 +533,7 @@ class FormDisplayPageFragment : BaseFragment() {
 
             override fun afterTextChanged(s: Editable?) {
                 inputField.value = if (!s.isNullOrEmpty()) s.toString().toDouble() else InputField.DEFAULT_VALUE
+                applyVisibility()
             }
 
         })
@@ -514,6 +548,7 @@ class FormDisplayPageFragment : BaseFragment() {
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(adapterView: AdapterView<*>?, view: View, i: Int, l: Long) {
                 spinnerField.setAnswer(i - 1)
+                applyVisibility()
             }
 
             override fun onNothingSelected(adapterView: AdapterView<*>?) {
@@ -527,6 +562,7 @@ class FormDisplayPageFragment : BaseFragment() {
             val radioButton = radioGroup1.findViewById<View>(i)
             val idx = radioGroup1.indexOfChild(radioButton)
             radioGroupField.setAnswer(idx)
+            applyVisibility()
         }
     }
 
@@ -601,8 +637,10 @@ class FormDisplayPageFragment : BaseFragment() {
      */
     fun findUnansweredRequiredQuestions(): List<String> {
         val unanswered = mutableListOf<String>()
+        val hidden = computeHidden()
         fun visit(questions: List<Question>) {
             questions.forEach { question ->
+                if (question in hidden) return@forEach
                 if (question.questionOptions?.rendering == "group") {
                     visit(question.questions)
                 } else if (question.isRequired && !isQuestionAnswered(question)) {
@@ -639,6 +677,101 @@ class FormDisplayPageFragment : BaseFragment() {
         }
         viewModel.page.sections.forEach { visit(it.questions) }
         return invalid
+    }
+
+    /**
+     * The questions a `hide.hideWhenExpression` currently hides - including everything inside a
+     * hidden group. A hidden question reads as unanswered to other expressions, so chains (a topic
+     * hidden by the category, an "other" box hidden by the topic) settle by repeating until stable.
+     */
+    private fun computeHidden(): Set<Question> {
+        val byId = HashMap<String, Question>()
+        fun index(questions: List<Question>) {
+            questions.forEach { q ->
+                q.id?.let { byId[it] = q }
+                index(q.questions)
+            }
+        }
+        viewModel.page.sections.forEach { index(it.questions) }
+
+        fun evaluate(questions: List<Question>, previous: Set<Question>, parentHidden: Boolean, out: MutableSet<Question>) {
+            questions.forEach { q ->
+                val expression = q.hide?.hideWhenExpression
+                val hide = parentHidden || (!expression.isNullOrBlank() &&
+                    HideExpression.evaluate(expression) { id ->
+                        byId[id]?.takeIf { it !in previous }?.let { answerOf(it) }
+                    } == true)
+                if (hide) out += q
+                evaluate(q.questions, previous, hide, out)
+            }
+        }
+
+        var hidden: Set<Question> = emptySet()
+        repeat(byId.size + 1) {
+            val next = LinkedHashSet<Question>()
+            viewModel.page.sections.forEach { evaluate(it.questions, hidden, false, next) }
+            if (next == hidden) return hidden
+            hidden = next
+        }
+        return hidden
+    }
+
+    /** [question]'s current answer as text, or null when unanswered. */
+    private fun answerOf(question: Question): String? {
+        val concept = question.questionOptions?.concept ?: return null
+        return when (question.questionOptions?.rendering) {
+            "number" -> viewModel.findInputFieldByConcept(concept)?.takeIf { it.hasValue }?.value?.toString()
+            "select", "radio", "ui-select-extended" -> viewModel.findSelectOneFieldById(concept)?.chosenAnswer?.concept
+            "checkbox" -> viewModel.findSelectMultipleFieldById(concept)?.selectedAnswers?.firstOrNull()?.concept
+            "date" -> viewModel.findDateFieldById(concept)?.date?.takeIf { it.isNotEmpty() }
+            "text", "textarea" -> viewModel.findTextFieldById(concept)?.value?.takeIf { it.isNotBlank() }
+            else -> null
+        }
+    }
+
+    /** Shows/hides the questions with a hide rule and wipes the answers of the hidden ones. */
+    private fun applyVisibility() {
+        if (!viewsReady || applyingVisibility || hideableViews.isEmpty()) return
+        applyingVisibility = true
+        try {
+            val hidden = computeHidden()
+            hideableViews.forEach { (question, view) ->
+                if (question in hidden) {
+                    if (view.visibility != View.GONE) {
+                        view.visibility = View.GONE
+                        resetViews(view)
+                    }
+                } else {
+                    view.visibility = View.VISIBLE
+                }
+            }
+            // The stored answers go too, so a hidden question is never required, nor saved.
+            hidden.forEach { clearAnswer(it) }
+        } finally {
+            applyingVisibility = false
+        }
+    }
+
+    private fun clearAnswer(question: Question) {
+        val concept = question.questionOptions?.concept ?: return
+        when (question.questionOptions?.rendering) {
+            "number" -> viewModel.findInputFieldByConcept(concept)?.value = InputField.DEFAULT_VALUE
+            "select", "radio", "ui-select-extended" -> viewModel.findSelectOneFieldById(concept)?.chosenAnswer = null
+            "checkbox" -> viewModel.findSelectMultipleFieldById(concept)?.selectedAnswers?.clear()
+            "date" -> viewModel.findDateFieldById(concept)?.date = null
+            "text", "textarea" -> viewModel.findTextFieldById(concept)?.value = null
+        }
+    }
+
+    /** Puts the input widgets under [view] back to blank. */
+    private fun resetViews(view: View) {
+        when (view) {
+            is Spinner -> view.setSelection(0)
+            is RadioGroup -> view.clearCheck()
+            is CheckBox -> view.isChecked = false
+            is EditText -> view.setText("")
+            is ViewGroup -> for (i in 0 until view.childCount) resetViews(view.getChildAt(i))
+        }
     }
 
     private fun isQuestionAnswered(question: Question): Boolean {
