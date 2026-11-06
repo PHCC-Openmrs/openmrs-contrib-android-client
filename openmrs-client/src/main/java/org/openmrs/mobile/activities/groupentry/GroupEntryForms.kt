@@ -58,6 +58,7 @@ object GroupEntryForms {
         isRequired = group.isRequired
         questionOptions = group.questionOptions
         isGroupShared = group.isGroupShared
+        hide = group.hide
         groupPatientField = group.groupPatientField
         questions = children
     }
