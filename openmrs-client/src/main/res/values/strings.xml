@@ -771,5 +771,7 @@
     <string name="group_entry_summary_offline">Saved offline, will sync later: %1$d</string>
     <string name="group_entry_summary_without_phone">Saved without a phone number (none or invalid in the patient record): %1$d</string>
     <string name="group_entry_summary_failed">Not saved (%1$d) - check they still have an active visit: %2$s</string>
+    <string name="patient_sync_failed">%1$d patient(s) could not be synced. First: %2$s - %3$s</string>
+    <string name="patient_sync_failed_generic_reason">a server or network problem. It will be retried on the next sync.</string>
     <string name="sync_completed_switched_offline">All data synced. Switched to offline mode.</string>
 </resources>
