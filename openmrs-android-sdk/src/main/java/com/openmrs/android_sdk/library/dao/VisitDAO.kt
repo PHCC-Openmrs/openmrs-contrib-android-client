@@ -144,7 +144,11 @@ class VisitDAO @Inject constructor() {
             try {
                 visitEntities = visitRoomDAO.activeVisits.blockingGet()
                 for (entity in visitEntities) {
-                    visits.add(convert(entity))
+                    // A visit whose patient is gone (e.g. mid auto-delete of a synced patient)
+                    // converts with a null patient; every caller of this list renders the patient,
+                    // so leave such a visit out rather than hand them a null to crash on.
+                    val visit = convert(entity)
+                    if (visit.patient != null) visits.add(visit)
                 }
                 return@Callable visits
             } catch (e: Exception) {

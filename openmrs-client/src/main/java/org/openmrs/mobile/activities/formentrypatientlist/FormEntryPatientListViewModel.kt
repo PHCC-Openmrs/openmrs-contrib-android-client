@@ -22,9 +22,7 @@ class FormEntryPatientListViewModel @Inject constructor(
         setLoading()
         addSubscription(visitDAO.getActiveVisits()
                 .map { visits ->
-                    val patients = mutableListOf<Patient>()
-                    visits.forEach { patients += it.patient }
-                    return@map patients
+                    return@map visits.mapNotNull { it.patient }
                 }
                 .map { patients ->
                     if (query.isNullOrEmpty()) return@map patients
