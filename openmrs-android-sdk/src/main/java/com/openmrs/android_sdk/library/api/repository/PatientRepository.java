@@ -114,6 +114,27 @@ public class PatientRepository extends BaseRepository {
                     throw new IOException("Location UUID is required for registration. Please check your login location.");
                 }
 
+                // If this National ID is already on the server, link to that patient up front. Done
+                // BEFORE generating an OpenMRS ID: idgen hands out a fresh identifier from the
+                // server's pool on every call, so generating one only to discover (from the create
+                // being rejected) that the patient already exists would burn an ID per linked
+                // patient. A failed lookup just falls through to the normal create below, whose
+                // duplicate-identifier handling remains the safety net.
+                if (patient.getUuid() == null || patient.getUuid().isEmpty()) {
+                    PatientIdentifier nationalId = patient.getIdentifierByType(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID);
+                    if (nationalId != null && nationalId.getIdentifier() != null && !nationalId.getIdentifier().trim().isEmpty()) {
+                        try {
+                            PatientDto existing = findServerPatientByIdentifier(nationalId.getIdentifier());
+                            if (existing != null) {
+                                logger.i("National ID " + nationalId.getIdentifier() + " already exists on the server - linking instead of creating");
+                                return linkToServerPatient(patient, existing);
+                            }
+                        } catch (Exception e) {
+                            logger.w("National ID lookup failed, falling back to create: " + e.getMessage());
+                        }
+                    }
+                }
+
                 if (openmrsIdIdentifier == null || openmrsIdIdentifier.getIdentifier() == null || openmrsIdIdentifier.getIdentifier().isEmpty()) {
                     logger.i("Generating new OpenMRS ID for patient...");
                     String generatedId = getIdGenPatientIdentifier();
@@ -217,38 +238,11 @@ public class PatientRepository extends BaseRepository {
                         // return multiple loosely-matching results though, so this still verifies
                         // the matched patient's OWN identifiers contain an exact match for the
                         // identifier in question - it doesn't just trust the first search result.
-                        Response<Results<PatientDto>> searchResponse = restApi.getPatientsDto(patientIdentifierStr, "full").execute();
-                        PatientDto matchedPatientDto = null;
-                        if (searchResponse.isSuccessful() && searchResponse.body() != null) {
-                            for (PatientDto candidate : searchResponse.body().getResults()) {
-                                if (candidate.getIdentifiers() == null) continue;
-                                for (PatientIdentifier candidateIdentifier : candidate.getIdentifiers()) {
-                                    if (candidateIdentifier.getIdentifier() != null
-                                            && candidateIdentifier.getIdentifier().trim().equalsIgnoreCase(patientIdentifierStr.trim())) {
-                                        matchedPatientDto = candidate;
-                                        break;
-                                    }
-                                }
-                                if (matchedPatientDto != null) break;
-                            }
-                        }
+                        PatientDto matchedPatientDto = findServerPatientByIdentifier(patientIdentifierStr);
 
                         if (matchedPatientDto != null) {
                             logger.i("Identifier match confirmed. Linking local patient to existing server record (UUID: " + matchedPatientDto.getUuid() + ")");
-                            patient.setUuid(matchedPatientDto.getUuid());
-                            if (matchedPatientDto.getIdentifiers() != null && !matchedPatientDto.getIdentifiers().isEmpty()) {
-                                patient.setIdentifiers(matchedPatientDto.getIdentifiers());
-                            }
-                            // This local row's OTHER demographic fields (name, address, phone,
-                            // patient status, etc.) are just whatever was needed to pass validation
-                            // on this registration form - not a trustworthy description of the real
-                            // patient - so flag it: the automatic dashboard sync must never push
-                            // them over the real patient's data, only pull. A deliberate edit later
-                            // clears this (see PatientRepository#updatePatient).
-                            patient.setIdentityLinkedOnly(true);
-                            patientDAO.updatePatient(patient.getId(), patient);
-                            SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
-                            return patient;
+                            return linkToServerPatient(patient, matchedPatientDto);
                         }
                         throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient. Please verify the ID and try again.");
                     } else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
@@ -263,6 +257,50 @@ public class PatientRepository extends BaseRepository {
                 throw e;
             }
         });
+    }
+
+    /**
+     * Searches the server for a patient holding exactly this identifier. The search itself
+     * (?q=&lt;identifier&gt;) can return multiple loosely-matching results, so this verifies that the
+     * matched patient's OWN identifiers contain an exact match rather than trusting the first result.
+     *
+     * @return the matching server patient, or null if there is none
+     */
+    private PatientDto findServerPatientByIdentifier(String identifier) throws IOException {
+        Response<Results<PatientDto>> searchResponse = restApi.getPatientsDto(identifier, "full").execute();
+        if (!searchResponse.isSuccessful() || searchResponse.body() == null) return null;
+        for (PatientDto candidate : searchResponse.body().getResults()) {
+            if (candidate.getIdentifiers() == null) continue;
+            for (PatientIdentifier candidateIdentifier : candidate.getIdentifiers()) {
+                if (candidateIdentifier.getIdentifier() != null
+                        && candidateIdentifier.getIdentifier().trim().equalsIgnoreCase(identifier.trim())) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Links a locally registered patient to the existing server patient that holds the same
+     * identifier, so its visits and forms upload to that patient. Linked purely by identifier, not
+     * by name: names entered on a field registration form can legitimately differ from the
+     * server's record (spelling/translation/transliteration, nicknames, missing middle names).
+     */
+    private Patient linkToServerPatient(Patient patient, PatientDto matchedPatientDto) {
+        patient.setUuid(matchedPatientDto.getUuid());
+        if (matchedPatientDto.getIdentifiers() != null && !matchedPatientDto.getIdentifiers().isEmpty()) {
+            patient.setIdentifiers(matchedPatientDto.getIdentifiers());
+        }
+        // This local row's OTHER demographic fields (name, address, phone, patient status, etc.)
+        // are just whatever was needed to pass validation on this registration form - not a
+        // trustworthy description of the real patient - so flag it: the automatic dashboard sync
+        // must never push them over the real patient's data, only pull. A deliberate edit later
+        // clears this (see PatientRepository#updatePatient).
+        patient.setIdentityLinkedOnly(true);
+        patientDAO.updatePatient(patient.getId(), patient);
+        SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
+        return patient;
     }
 
     private void uploadPatientPhoto(final Patient patient) {
