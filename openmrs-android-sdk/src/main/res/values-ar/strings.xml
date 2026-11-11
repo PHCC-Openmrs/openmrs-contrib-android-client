@@ -70,8 +70,6 @@
     <string name="patient_cannot_be_synced_due_to_request_error_message">تعذرت مزامنة المريض [%1$i] بسبب خطأ في الطلب%2$s</string>
     <string name="patient_cannot_be_synced_due_to_server_error_message">تعذرت مزامنة المريض [%1$i] بسبب خطأ في الخادم%2$s</string>
 
-    <!-- SimilarPatients dialog -->
-    <string name="similar_patients_dialog_title">تم العثور على مرضى مشابهين</string>
 
     <!-- Logout dialog -->
     <string name="logout_dialog_title">جارٍ تسجيل الخروج</string>
@@ -102,7 +100,6 @@
     <string name="dialog_button_cancel">إلغاء</string>
     <string name="dialog_button_ok">موافق</string>
     <string name="dialog_button_confirm"> تأكيد</string>
-    <string name="dialog_button_register_new">تسجيل جديد</string>
     <string name="dialog_button_merge">دمج</string>
     <string name="action_next">التالي</string>
     <string name="dialog_button_select_location">اختر الموقع</string>
@@ -228,8 +225,6 @@
     <!--Matching Patient Activity-->
     <string name="matching_patients_toolbar_title">دمج المرضى</string>
     <string name="patient_registered_locally">تم تسجيل المريض محليًا </string>
-    <string name="similar_patients_on_server">يوجد مرضى مشابهون على الخادم</string>
-    <string name="registration_core_info">لاستخدام حل مطابقة مرضى أسرع وأكثر دقة، يلزم ترقية وحدة Registration Core إلى الإصدار 1.7 أو أعلى </string>
 
     <!--ChartsView Activity-->
     <string name="charts_view_toolbar_title">عرض الرسوم البيانية</string>

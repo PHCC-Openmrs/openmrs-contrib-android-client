@@ -65,7 +65,6 @@ import org.openmrs.mobile.R;
 import org.openmrs.mobile.activities.ACBaseActivity;
 import org.openmrs.mobile.activities.addeditpatient.AddEditPatientActivity;
 import org.openmrs.mobile.activities.addeditpatient.AddEditPatientFragment;
-import org.openmrs.mobile.activities.addeditpatient.SimilarPatientsRecyclerViewAdapter;
 import org.openmrs.mobile.activities.login.LoginActivity;
 import org.openmrs.mobile.activities.login.LoginFragment;
 import org.openmrs.mobile.activities.patientdashboard.PatientDashboardActivity;
@@ -83,12 +82,11 @@ public class CustomFragmentDialog extends DialogFragment {
 
     public enum OnClickAction {
         SET_URL, SHOW_URL_DIALOG, DISMISS_URL_DIALOG, DISMISS, LOGOUT, FINISH, INTERNET, UNAUTHORIZED, END_VISIT,
-        LOGIN, REGISTER_PATIENT, CANCEL_REGISTERING, DELETE_PATIENT, MULTI_DELETE_PATIENT, SELECT_LOCATION, DELETE_PROVIDER
+        LOGIN, CANCEL_REGISTERING, DELETE_PATIENT, MULTI_DELETE_PATIENT, SELECT_LOCATION, DELETE_PROVIDER
     }
 
     protected LayoutInflater mInflater;
     protected LinearLayout mFieldsLayout;
-    protected RecyclerView mRecyclerView;
     protected ListView locationListView;
     protected TextView mTextView;
     protected TextView mTitleTextView;
@@ -114,8 +112,6 @@ public class CustomFragmentDialog extends DialogFragment {
         mCustomDialogBundle = (CustomDialogBundle) getArguments().getSerializable(ApplicationConstants.BundleKeys.CUSTOM_DIALOG_BUNDLE);
         if (mCustomDialogBundle.hasLoadingBar()) {
             this.setStyle(DialogFragment.STYLE_NO_TITLE, R.style.LoadingDialogTheme_DialogTheme);
-        } else if (mCustomDialogBundle.hasPatientList()) {
-            this.setStyle(DialogFragment.STYLE_NO_TITLE, R.style.SimilarPatients_DialogTheme);
         } else {
             this.setStyle(DialogFragment.STYLE_NORMAL, android.R.style.Theme_DeviceDefault_Light_Dialog_Alert);
         }
@@ -246,25 +242,12 @@ public class CustomFragmentDialog extends DialogFragment {
             addProgressBar(mCustomDialogBundle.getProgressViewMessage());
             this.setCancelable(false);
         }
-        if (null != mCustomDialogBundle.getPatientsList()) {
-            mRecyclerView = addRecycleView(mCustomDialogBundle.getPatientsList(), mCustomDialogBundle.getNewPatient());
-        }
         if (null != mCustomDialogBundle.getLocationList()) {
             addSingleChoiceItemsListView(mCustomDialogBundle.getLocationList());
         }
         if (null != mCustomDialogBundle.getSelectedItems()) {
             itemsToDelete = mCustomDialogBundle.getSelectedItems();
         }
-    }
-
-    private RecyclerView addRecycleView(List<Patient> patientsList, Patient newPatient) {
-        LinearLayout field = (LinearLayout) mInflater.inflate(R.layout.openmrs_recycle_view, null);
-        RecyclerView recyclerView = field.findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(new SimilarPatientsRecyclerViewAdapter((getActivity()), patientsList, newPatient));
-        mFieldsLayout.addView(field);
-        recyclerView.setHasFixedSize(false);
-        return recyclerView;
     }
 
     private void addSingleChoiceItemsListView(List<String> locationList) {
@@ -416,37 +399,6 @@ public class CustomFragmentDialog extends DialogFragment {
                     ((VisitDashboardFragment) getParentFragmentManager()
                             .findFragmentById(R.id.visitDashboardContentFrame))
                             .endVisit();
-                    dismiss();
-                    break;
-                case REGISTER_PATIENT:
-                    OpenmrsAndroid.getOpenMRSLogger().i("[Dialog] REGISTER_PATIENT action triggered");
-                    boolean fragmentFound = false;
-                    
-                    // Try to find the fragment in the Activity's fragment manager
-                    List<Fragment> fragments = getActivity().getSupportFragmentManager().getFragments();
-                    for (Fragment f : fragments) {
-                        if (f instanceof AddEditPatientFragment) {
-                            OpenmrsAndroid.getOpenMRSLogger().i("[Dialog] Found AddEditPatientFragment, calling registerPatientWithoutValidation()");
-                            ((AddEditPatientFragment) f).registerPatientWithoutValidation();
-                            fragmentFound = true;
-                            break;
-                        }
-                    }
-                    
-                    if (!fragmentFound) {
-                        // Fallback to searching by ID if the list didn't work
-                        Fragment f = getActivity().getSupportFragmentManager().findFragmentById(R.id.patientInfoContentFrame);
-                        if (f instanceof AddEditPatientFragment) {
-                            OpenmrsAndroid.getOpenMRSLogger().i("[Dialog] Found AddEditPatientFragment by ID, calling registerPatientWithoutValidation()");
-                            ((AddEditPatientFragment) f).registerPatientWithoutValidation();
-                            fragmentFound = true;
-                        }
-                    }
-                    
-                    if (!fragmentFound) {
-                        OpenmrsAndroid.getOpenMRSLogger().e("[Dialog] Could not find AddEditPatientFragment to register the patient");
-                    }
-
                     dismiss();
                     break;
                 case CANCEL_REGISTERING:

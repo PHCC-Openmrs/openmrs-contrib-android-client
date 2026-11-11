@@ -30,8 +30,6 @@ class AddEditPatientViewModel @Inject constructor(
         private val savedStateHandle: SavedStateHandle
 ) : BaseViewModel<Patient>() {
 
-    private val _similarPatientsLiveData = MutableLiveData<List<Patient>>()
-    val similarPatientsLiveData: LiveData<List<Patient>> get() = _similarPatientsLiveData
 
     private val _patientUpdateLiveData = MutableLiveData<ResultType>()
     val patientUpdateLiveData: LiveData<ResultType> get() = _patientUpdateLiveData
@@ -159,30 +157,6 @@ class AddEditPatientViewModel @Inject constructor(
                             }
                         },
                         { _duplicateNationalIdLiveData.value = null }
-                )
-        )
-    }
-
-    fun fetchSimilarPatients() {
-        val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
-        logger.i("Fetch similar patients called")
-        if (!patientValidator.validate()) {
-            logger.w("Patient validation failed in fetchSimilarPatients")
-            return
-        }
-        setLoading(OperationType.PatientSearching)
-        logger.i("Starting fetchSimilarPatients API call")
-        addSubscription(patientRepository.fetchSimilarPatients(patient)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        { 
-                            logger.i("Fetch similar patients successful, found ${it.size} matches")
-                            _similarPatientsLiveData.value = it 
-                        },
-                        { 
-                            logger.e("Fetch similar patients failed", it)
-                            setError(it, OperationType.PatientSearching) 
-                        }
                 )
         )
     }

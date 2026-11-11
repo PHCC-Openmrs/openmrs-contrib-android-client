@@ -272,7 +272,6 @@
                 <action android:name="android.intent.action.SEARCH" />
             </intent-filter>
         </activity>
-        <activity android:name=".activities.matchingpatients.MatchingPatientsActivity" />
         <activity
             android:name=".activities.patientdashboard.details.PatientPhotoActivity"
             android:parentActivityName=".activities.patientdashboard.PatientDashboardActivity"

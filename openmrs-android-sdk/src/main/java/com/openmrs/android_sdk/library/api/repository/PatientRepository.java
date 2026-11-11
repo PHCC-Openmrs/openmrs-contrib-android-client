@@ -65,9 +65,7 @@ import com.openmrs.android_sdk.library.models.ResultType;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.SystemProperty;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.ModuleUtils;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
-import com.openmrs.android_sdk.utilities.PatientComparator;
 import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
@@ -386,24 +384,6 @@ public class PatientRepository extends BaseRepository {
     }
 
     /**
-     * Update matching patient.
-     *
-     * @param patient the locally merged patient
-     */
-    public Observable<Patient> updateMatchingPatient(final Patient patient) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-
-            PatientDtoUpdate patientDto = patient.getUpdatedPatientDto();
-
-            Call<PatientDto> call = restApi.updatePatient(patientDto, patient.getUuid(), ApplicationConstants.API.FULL);
-            Response<PatientDto> response = call.execute();
-
-            if (response.isSuccessful()) return patient;
-            else throw new IOException(response.message());
-        });
-    }
-
-    /**
      * Download patient by uuid.
      *
      * @param uuid patient uuid
@@ -659,83 +639,5 @@ public class PatientRepository extends BaseRepository {
             }
             return matches;
         });
-    }
-
-    /**
-     * Fetches similar patients by different strategies:
-     * <br> 1. Fetch similar patients from server directly using an API.
-     * <br> 2. Fetch patients with similar names, then compare their other similarities locally.
-     * <br> 3. Fetch locally saved patients, then compare their similarities.
-     *
-     * @param patient to find similar patients to
-     * @return Observable list of similar patients
-     */
-    public Observable<List<Patient>> fetchSimilarPatients(final Patient patient) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            try {
-                if (!NetworkUtils.isOnline()) {
-                    List<Patient> localPatients = patientDAO.getAllPatients().toBlocking().first();
-                    return new PatientComparator().findSimilarPatient(localPatients, patient);
-                }
-
-                Call<Results<Module>> moduleCall = restApi.getModules(ApplicationConstants.API.FULL);
-                Response<Results<Module>> response = moduleCall.execute();
-
-                if (!response.isSuccessful()) return fetchSimilarPatientsAndCalculateLocally(patient);
-
-                if (ModuleUtils.isRegistrationCore1_7orAbove(response.body().getResults())) {
-                    return fetchSimilarPatientsFromServer(patient);
-                } else {
-                    return fetchSimilarPatientsAndCalculateLocally(patient);
-                }
-            } catch (Exception e) {
-                logger.e("Error fetching similar patients: " + e.getMessage());
-                try {
-                    return fetchSimilarPatientsAndCalculateLocally(patient);
-                } catch (Exception ex) {
-                    logger.e("Fallback similarity check failed: " + ex.getMessage());
-                    return new ArrayList<>();
-                }
-            }
-        });
-    }
-
-    /**
-     * Fetches similar patients directly from server.
-     *
-     * @param patient the patient to fetch similar patient to
-     * @return list of similar patients
-     */
-    private List<Patient> fetchSimilarPatientsFromServer(final Patient patient) throws Exception {
-        Map<String, String> queryMap = patient.toMap();
-        if (queryMap.isEmpty()) {
-            return new ArrayList<>();
-        }
-        Call<Results<Patient>> call = restApi.getSimilarPatients(queryMap);
-        Response<Results<Patient>> response = call.execute();
-        if (response.isSuccessful() && response.body() != null) return response.body().getResults();
-        else return fetchSimilarPatientsAndCalculateLocally(patient);
-    }
-
-    /**
-     * Fetches patients with similar names from server, then calculates other similarities locally.
-     *
-     * @param patient the patient to fetch similar patient to
-     * @return list of similar patients
-     */
-    private List<Patient> fetchSimilarPatientsAndCalculateLocally(final Patient patient) throws Exception {
-        String givenName = (patient.getName() != null) ? patient.getName().getGivenName() : null;
-        if (givenName == null || givenName.isEmpty()) {
-            return new ArrayList<>();
-        }
-        Call<Results<PatientDto>> call = restApi.getPatientsDto(givenName, ApplicationConstants.API.FULL);
-        Response<Results<PatientDto>> response = call.execute();
-        if (response.isSuccessful() && response.body() != null) {
-            List<Patient> patientList = new ArrayList<>();
-            for (PatientDto p : response.body().getResults()) patientList.add(p.getPatient());
-            return new PatientComparator().findSimilarPatient(patientList, patient);
-        } else {
-            throw new Exception("fetchSimilarPatientAndCalculateLocally error: " + response.message());
-        }
     }
 }

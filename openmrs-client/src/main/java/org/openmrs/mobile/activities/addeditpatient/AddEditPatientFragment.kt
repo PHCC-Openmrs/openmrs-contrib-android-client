@@ -189,24 +189,12 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
                 }
             }
         })
-        viewModel.similarPatientsLiveData.observe(viewLifecycleOwner, Observer { similarPatients ->
-            val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
-            logger.i("similarPatientsLiveData observed, found ${similarPatients.size} matches")
-            hideLoading()
-            if (similarPatients.isEmpty()) {
-                logger.i("No similar patients found, proceeding to registerPatient()")
-                registerPatient()
-            } else {
-                logger.i("Similar patients found, showing dialog")
-                showSimilarPatientsDialog(similarPatients, viewModel.patient)
-            }
-        })
         viewModel.duplicateNationalIdLiveData.observe(viewLifecycleOwner, Observer { duplicate ->
             hideLoading()
             if (duplicate != null) {
                 showDuplicateNationalIdDialog(duplicate)
             } else if (!viewModel.isUpdatePatient) {
-                viewModel.fetchSimilarPatients()
+                registerPatient()
             } else {
                 proceedWithUpdate()
             }
@@ -262,12 +250,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         } else {
             ToastUtil.error(getString(R.string.invalid_inputs))
         }
-    }
-
-    fun registerPatientWithoutValidation() {
-        val logger = com.openmrs.android_sdk.library.OpenmrsAndroid.getOpenMRSLogger()
-        logger.i("registerPatientWithoutValidation called")
-        viewModel.confirmPatient()
     }
 
     private fun updatePatient() {
@@ -522,21 +504,6 @@ class AddEditPatientFragment : BaseFragment(), onInputSelected {
         }
         logger.i("validateFormInputsAndUpdateViewModel returning: $isValid")
         return isValid
-    }
-
-    private fun showSimilarPatientsDialog(patients: List<Patient>, patient: Patient) {
-        CustomDialogBundle().apply {
-            titleViewMessage = getString(R.string.similar_patients_dialog_title)
-            rightButtonText = getString(R.string.dialog_button_register_new)
-            rightButtonAction = CustomFragmentDialog.OnClickAction.REGISTER_PATIENT
-            leftButtonText = getString(R.string.dialog_button_cancel)
-            leftButtonAction = CustomFragmentDialog.OnClickAction.DISMISS
-            patientsList = patients
-            newPatient = patient
-        }.let {
-            (requireActivity() as AddEditPatientActivity)
-                    .createAndShowDialog(it, ApplicationConstants.DialogTAG.SIMILAR_PATIENTS_TAG)
-        }
     }
 
     private fun setupViewsListeners() = with(binding) {
