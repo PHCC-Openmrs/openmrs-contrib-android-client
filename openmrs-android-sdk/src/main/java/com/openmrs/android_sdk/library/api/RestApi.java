@@ -291,15 +291,6 @@ public interface RestApi {
     Call<ResponseBody> downloadPatientPhoto(@Path("uuid") String uuid);
 
     /**
-     * Gets similar patients.
-     *
-     * @param patientData the patient data
-     * @return the similar patients
-     */
-    @GET("patient?matchSimilar=true&v=full")
-    Call<Results<Patient>> getSimilarPatients(@QueryMap Map<String, String> patientData);
-
-    /**
      * Gets Observation by uuid
      *
      * @param obsUuid the uuid of the observation

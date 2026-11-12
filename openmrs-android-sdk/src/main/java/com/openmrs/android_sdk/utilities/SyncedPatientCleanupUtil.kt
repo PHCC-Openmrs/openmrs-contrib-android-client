@@ -94,12 +94,19 @@ object SyncedPatientCleanupUtil {
             val uuid = patient.uuid
             logger.i("Patient $patientId is fully synced - removing local data (auto-delete enabled)")
 
-            patientDAO.deletePatient(patientId)
-            visitDAO.deleteVisitsByPatientId(patientId).execute()
-            db.encounterCreateRoomDAO().deleteEncountersByPatientId(patientId)
-            programEnrollmentDAO.deleteEnrollmentsByPatientId(patientId)
-            if (!uuid.isNullOrEmpty()) {
-                db.allergyRoomDAO().deleteAllPatientAllergy(uuid)
+            // One transaction, patient row LAST: readers (Form Entry / Active Visits lists load a
+            // visit and then look its patient up) must never see a visit whose patient is already
+            // gone, and a failure part-way must not leave half a patient behind. The Room DAOs are
+            // used directly - the DAO wrappers hop to other threads (so they'd escape the
+            // transaction) or swallow errors (so a failure wouldn't roll it back).
+            db.runInTransaction {
+                db.encounterCreateRoomDAO().deleteEncountersByPatientId(patientId)
+                db.programEnrollmentRoomDAO().deleteProgramEnrollmentsByPatientId(patientId)
+                if (!uuid.isNullOrEmpty()) {
+                    db.allergyRoomDAO().deleteAllPatientAllergy(uuid)
+                }
+                db.visitRoomDAO().deleteVisitsByPatientId(patientId)
+                db.patientRoomDAO().deletePatient(patientId)
             }
         } catch (e: Exception) {
             // Best-effort cleanup - a failure here must never disrupt the actual sync it's

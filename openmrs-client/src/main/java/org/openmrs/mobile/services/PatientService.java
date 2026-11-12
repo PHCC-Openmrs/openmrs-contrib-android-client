@@ -11,45 +11,41 @@
 package org.openmrs.mobile.services;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import dagger.hilt.android.AndroidEntryPoint;
-import retrofit2.Call;
-import retrofit2.Response;
 import android.app.IntentService;
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
-import com.openmrs.android_sdk.library.api.RestApi;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.openmrs.android_sdk.library.api.repository.PatientRepository;
 import com.openmrs.android_sdk.library.dao.PatientDAO;
-import com.openmrs.android_sdk.library.models.Module;
 import com.openmrs.android_sdk.library.models.Patient;
-import com.openmrs.android_sdk.library.models.PatientDto;
-import com.openmrs.android_sdk.library.models.Results;
-import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.ModuleUtils;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
-import com.openmrs.android_sdk.utilities.PatientAndMatchingPatients;
-import com.openmrs.android_sdk.utilities.PatientComparator;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
 import org.openmrs.mobile.R;
-import org.openmrs.mobile.activities.matchingpatients.MatchingPatientsActivity;
-import org.openmrs.mobile.utilities.PatientAndMatchesWrapper;
 
+/**
+ * Uploads patients registered offline. There is deliberately no "similar patient" check and no
+ * manual merge step: {@link PatientRepository#syncPatient} creates the patient with the details
+ * that were filled in and, when the server reports that the National ID already belongs to a
+ * patient, links this one to that existing server patient instead - so the visit and forms then
+ * sync to the existing patient. Matching is by identifier only, never by name/birth date.
+ */
 @AndroidEntryPoint
 public class PatientService extends IntentService {
     public static final String PATIENT_SERVICE_TAG = "PATIENT_SERVICE";
-    private boolean calculatedLocally = false;
 
     @Inject
     PatientRepository patientRepository;
-    @Inject
-    RestApi restApi;
     @Inject
     PatientDAO patientDAO;
 
@@ -72,41 +68,31 @@ public class PatientService extends IntentService {
                 return;
             }
 
-            Log.i(PATIENT_SERVICE_TAG, "Found " + patientList.size() + " unsynced patients. Checking server capabilities...");
+            Log.i(PATIENT_SERVICE_TAG, "Found " + patientList.size() + " unsynced patients");
 
-            boolean isRegistrationCorePresent = false;
-            try {
-                Response<Results<Module>> moduleResp = restApi.getModules(ApplicationConstants.API.FULL).execute();
-                if (moduleResp.isSuccessful() && moduleResp.body() != null) {
-                    isRegistrationCorePresent = ModuleUtils.isRegistrationCore1_7orAbove(moduleResp.body().getResults());
-                }
-            } catch (IOException e) {
-                Log.e(PATIENT_SERVICE_TAG, "Error fetching modules, defaulting to local similarity check", e);
-            }
-
-            PatientAndMatchesWrapper patientAndMatchesWrapper = new PatientAndMatchesWrapper();
+            List<String[]> failures = new ArrayList<>();
             for (Patient patient : patientList) {
                 String patientName = (patient.getName() != null) ? patient.getName().getNameString() : "ID " + patient.getId();
                 Log.i(PATIENT_SERVICE_TAG, "Processing patient: " + patientName);
 
                 try {
-                    if (isRegistrationCorePresent) {
-                        syncPatientWithServerSimilarityCheck(patient, patientAndMatchesWrapper);
-                    } else {
-                        syncPatientWithLocalSimilarityCheck(patient, patientAndMatchesWrapper);
-                    }
+                    patientRepository.syncPatient(patient).single().toBlocking().first();
                 } catch (Exception e) {
                     Log.e(PATIENT_SERVICE_TAG, "Failed to sync patient " + patientName, e);
+                    failures.add(new String[]{patientName, describeFailure(e)});
                 }
             }
 
-            if (!patientAndMatchesWrapper.getMatchingPatients().isEmpty()) {
-                Log.i(PATIENT_SERVICE_TAG, "Found potential duplicates on server, showing MatchingPatientsActivity");
-                Intent intent1 = new Intent(getApplicationContext(), MatchingPatientsActivity.class);
-                intent1.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent1.putExtra(ApplicationConstants.BundleKeys.CALCULATED_LOCALLY, calculatedLocally);
-                intent1.putExtra(ApplicationConstants.BundleKeys.PATIENTS_AND_MATCHES, patientAndMatchesWrapper);
-                startActivity(intent1);
+            // A patient that fails here stays on the device and is retried on the next sync, but
+            // without this the user would never know - the failure only reached the log.
+            if (!failures.isEmpty()) {
+                final int failedCount = failures.size();
+                final String firstName = failures.get(0)[0];
+                final String firstReason = failures.get(0)[1];
+                // Posted to the main thread: this service's worker thread ends as soon as it
+                // returns, and a toast created on it never shows ("Handler ... on a dead thread").
+                new Handler(Looper.getMainLooper()).post(() ->
+                        ToastUtil.error(R.string.patient_sync_failed, failedCount, firstName, firstReason));
             }
         } finally {
             // Chain straight into VisitService so a single reconnect/manual-sync trigger cascades
@@ -117,47 +103,53 @@ public class PatientService extends IntentService {
         }
     }
 
-    private void syncPatientWithLocalSimilarityCheck(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws Exception {
-        calculatedLocally = true;
-        String givenName = (patient.getName() != null) ? patient.getName().getGivenName() : null;
-        
-        if (givenName == null || givenName.isEmpty()) {
-            Log.i(PATIENT_SERVICE_TAG, "No given name, skipping similarity check and syncing directly");
-            patientRepository.syncPatient(patient).single().toBlocking().first();
-            return;
+    /**
+     * A reason the user can act on. The repository's own messages (e.g. an ID already registered
+     * to another patient) are readable as they are. A server validation error (HTTP 400 with
+     * fieldErrors/globalErrors) is reduced to its field messages, e.g. "birthdate: Cannot be a
+     * date in the future" - which will not fix itself on retry. Anything else is raw
+     * network/server output, replaced by a generic "will retry" note (details stay in the log).
+     */
+    private String describeFailure(Exception e) {
+        Throwable cause = e.getCause() != null ? e.getCause() : e;
+        String message = cause.getMessage();
+        if (message != null && (message.startsWith("This ID") || message.startsWith("Sync failed:"))) {
+            return message;
         }
-
-        Response<Results<PatientDto>> resp = restApi.getPatientsDto(givenName, ApplicationConstants.API.FULL).execute();
-        if (resp.isSuccessful() && resp.body() != null) {
-            List<Patient> patientList = new ArrayList<>();
-            for (PatientDto p : resp.body().getResults()) {
-                patientList.add(p.getPatient());
-            }
-            List<Patient> similarPatients = new PatientComparator().findSimilarPatient(patientList, patient);
-            if (!similarPatients.isEmpty()) {
-                patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatients));
-            } else {
-                patientRepository.syncPatient(patient).single().toBlocking().first();
-            }
-        } else {
-            Log.e(PATIENT_SERVICE_TAG, "Search failed: " + resp.message() + ". Syncing directly.");
-            patientRepository.syncPatient(patient).single().toBlocking().first();
-        }
+        String validation = validationMessages(message);
+        return validation != null ? validation : getString(R.string.patient_sync_failed_generic_reason);
     }
 
-    private void syncPatientWithServerSimilarityCheck(Patient patient, PatientAndMatchesWrapper patientAndMatchesWrapper) throws Exception {
-        calculatedLocally = false;
-        Response<Results<Patient>> resp = restApi.getSimilarPatients(patient.toMap()).execute();
-        if (resp.isSuccessful() && resp.body() != null) {
-            List<Patient> similarPatients = resp.body().getResults();
-            if (!similarPatients.isEmpty()) {
-                patientAndMatchesWrapper.addToList(new PatientAndMatchingPatients(patient, similarPatients));
-            } else {
-                patientRepository.syncPatient(patient).single().toBlocking().first();
+    /** Field/global error messages from an OpenMRS "Invalid Submission" body, or null. */
+    private static String validationMessages(String message) {
+        if (message == null) return null;
+        int start = message.indexOf('{');
+        if (start < 0) return null;
+        try {
+            JsonObject error = JsonParser.parseString(message.substring(start)).getAsJsonObject().getAsJsonObject("error");
+            if (error == null) return null;
+            java.util.Set<String> parts = new java.util.LinkedHashSet<>();
+            if (error.has("fieldErrors") && error.get("fieldErrors").isJsonObject()) {
+                for (String field : error.getAsJsonObject("fieldErrors").keySet()) {
+                    JsonElement errors = error.getAsJsonObject("fieldErrors").get(field);
+                    if (!errors.isJsonArray()) continue;
+                    for (JsonElement item : (JsonArray) errors) {
+                        if (item.isJsonObject() && item.getAsJsonObject().has("message")) {
+                            parts.add(field + ": " + item.getAsJsonObject().get("message").getAsString());
+                        }
+                    }
+                }
             }
-        } else {
-            Log.e(PATIENT_SERVICE_TAG, "Server similarity check failed: " + resp.message() + ". Falling back to local check.");
-            syncPatientWithLocalSimilarityCheck(patient, patientAndMatchesWrapper);
+            if (error.has("globalErrors") && error.get("globalErrors").isJsonArray()) {
+                for (JsonElement item : error.getAsJsonArray("globalErrors")) {
+                    if (item.isJsonObject() && item.getAsJsonObject().has("message")) {
+                        parts.add(item.getAsJsonObject().get("message").getAsString());
+                    }
+                }
+            }
+            return parts.isEmpty() ? null : String.join("; ", parts);
+        } catch (RuntimeException notJson) {
+            return null;
         }
     }
 }

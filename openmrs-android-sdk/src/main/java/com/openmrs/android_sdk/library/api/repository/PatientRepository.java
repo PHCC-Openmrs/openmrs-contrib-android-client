@@ -65,9 +65,7 @@ import com.openmrs.android_sdk.library.models.ResultType;
 import com.openmrs.android_sdk.library.models.Results;
 import com.openmrs.android_sdk.library.models.SystemProperty;
 import com.openmrs.android_sdk.utilities.ApplicationConstants;
-import com.openmrs.android_sdk.utilities.ModuleUtils;
 import com.openmrs.android_sdk.utilities.NetworkUtils;
-import com.openmrs.android_sdk.utilities.PatientComparator;
 import com.openmrs.android_sdk.utilities.SyncedPatientCleanupUtil;
 import com.openmrs.android_sdk.utilities.ToastUtil;
 
@@ -114,6 +112,27 @@ public class PatientRepository extends BaseRepository {
                 LocationEntity location = locationRepository.getLocation();
                 if (location == null || location.getUuid() == null || location.getUuid().isEmpty()) {
                     throw new IOException("Location UUID is required for registration. Please check your login location.");
+                }
+
+                // If this National ID is already on the server, link to that patient up front. Done
+                // BEFORE generating an OpenMRS ID: idgen hands out a fresh identifier from the
+                // server's pool on every call, so generating one only to discover (from the create
+                // being rejected) that the patient already exists would burn an ID per linked
+                // patient. A failed lookup just falls through to the normal create below, whose
+                // duplicate-identifier handling remains the safety net.
+                if (patient.getUuid() == null || patient.getUuid().isEmpty()) {
+                    PatientIdentifier nationalId = patient.getIdentifierByType(ApplicationConstants.IdentifierSource.NATIONAL_ID_IDENTIFIER_TYPE_UUID);
+                    if (nationalId != null && nationalId.getIdentifier() != null && !nationalId.getIdentifier().trim().isEmpty()) {
+                        try {
+                            PatientDto existing = findServerPatientByIdentifier(nationalId.getIdentifier());
+                            if (existing != null) {
+                                logger.i("National ID " + nationalId.getIdentifier() + " already exists on the server - linking instead of creating");
+                                return linkToServerPatient(patient, existing);
+                            }
+                        } catch (Exception e) {
+                            logger.w("National ID lookup failed, falling back to create: " + e.getMessage());
+                        }
+                    }
                 }
 
                 if (openmrsIdIdentifier == null || openmrsIdIdentifier.getIdentifier() == null || openmrsIdIdentifier.getIdentifier().isEmpty()) {
@@ -219,38 +238,11 @@ public class PatientRepository extends BaseRepository {
                         // return multiple loosely-matching results though, so this still verifies
                         // the matched patient's OWN identifiers contain an exact match for the
                         // identifier in question - it doesn't just trust the first search result.
-                        Response<Results<PatientDto>> searchResponse = restApi.getPatientsDto(patientIdentifierStr, "full").execute();
-                        PatientDto matchedPatientDto = null;
-                        if (searchResponse.isSuccessful() && searchResponse.body() != null) {
-                            for (PatientDto candidate : searchResponse.body().getResults()) {
-                                if (candidate.getIdentifiers() == null) continue;
-                                for (PatientIdentifier candidateIdentifier : candidate.getIdentifiers()) {
-                                    if (candidateIdentifier.getIdentifier() != null
-                                            && candidateIdentifier.getIdentifier().trim().equalsIgnoreCase(patientIdentifierStr.trim())) {
-                                        matchedPatientDto = candidate;
-                                        break;
-                                    }
-                                }
-                                if (matchedPatientDto != null) break;
-                            }
-                        }
+                        PatientDto matchedPatientDto = findServerPatientByIdentifier(patientIdentifierStr);
 
                         if (matchedPatientDto != null) {
                             logger.i("Identifier match confirmed. Linking local patient to existing server record (UUID: " + matchedPatientDto.getUuid() + ")");
-                            patient.setUuid(matchedPatientDto.getUuid());
-                            if (matchedPatientDto.getIdentifiers() != null && !matchedPatientDto.getIdentifiers().isEmpty()) {
-                                patient.setIdentifiers(matchedPatientDto.getIdentifiers());
-                            }
-                            // This local row's OTHER demographic fields (name, address, phone,
-                            // patient status, etc.) are just whatever was needed to pass validation
-                            // on this registration form - not a trustworthy description of the real
-                            // patient - so flag it: the automatic dashboard sync must never push
-                            // them over the real patient's data, only pull. A deliberate edit later
-                            // clears this (see PatientRepository#updatePatient).
-                            patient.setIdentityLinkedOnly(true);
-                            patientDAO.updatePatient(patient.getId(), patient);
-                            SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
-                            return patient;
+                            return linkToServerPatient(patient, matchedPatientDto);
                         }
                         throw new Exception("This ID (" + patientIdentifierStr + ") is already registered to another patient. Please verify the ID and try again.");
                     } else if (errorMsg.contains("PatientIdentifier.error.insufficientPrivilege")) {
@@ -265,6 +257,50 @@ public class PatientRepository extends BaseRepository {
                 throw e;
             }
         });
+    }
+
+    /**
+     * Searches the server for a patient holding exactly this identifier. The search itself
+     * (?q=&lt;identifier&gt;) can return multiple loosely-matching results, so this verifies that the
+     * matched patient's OWN identifiers contain an exact match rather than trusting the first result.
+     *
+     * @return the matching server patient, or null if there is none
+     */
+    private PatientDto findServerPatientByIdentifier(String identifier) throws IOException {
+        Response<Results<PatientDto>> searchResponse = restApi.getPatientsDto(identifier, "full").execute();
+        if (!searchResponse.isSuccessful() || searchResponse.body() == null) return null;
+        for (PatientDto candidate : searchResponse.body().getResults()) {
+            if (candidate.getIdentifiers() == null) continue;
+            for (PatientIdentifier candidateIdentifier : candidate.getIdentifiers()) {
+                if (candidateIdentifier.getIdentifier() != null
+                        && candidateIdentifier.getIdentifier().trim().equalsIgnoreCase(identifier.trim())) {
+                    return candidate;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Links a locally registered patient to the existing server patient that holds the same
+     * identifier, so its visits and forms upload to that patient. Linked purely by identifier, not
+     * by name: names entered on a field registration form can legitimately differ from the
+     * server's record (spelling/translation/transliteration, nicknames, missing middle names).
+     */
+    private Patient linkToServerPatient(Patient patient, PatientDto matchedPatientDto) {
+        patient.setUuid(matchedPatientDto.getUuid());
+        if (matchedPatientDto.getIdentifiers() != null && !matchedPatientDto.getIdentifiers().isEmpty()) {
+            patient.setIdentifiers(matchedPatientDto.getIdentifiers());
+        }
+        // This local row's OTHER demographic fields (name, address, phone, patient status, etc.)
+        // are just whatever was needed to pass validation on this registration form - not a
+        // trustworthy description of the real patient - so flag it: the automatic dashboard sync
+        // must never push them over the real patient's data, only pull. A deliberate edit later
+        // clears this (see PatientRepository#updatePatient).
+        patient.setIdentityLinkedOnly(true);
+        patientDAO.updatePatient(patient.getId(), patient);
+        SyncedPatientCleanupUtil.checkAndCleanupIfFullySynced(patient.getId());
+        return patient;
     }
 
     private void uploadPatientPhoto(final Patient patient) {
@@ -382,24 +418,6 @@ public class PatientRepository extends BaseRepository {
 
                 return ResultType.PatientUpdateLocalSuccess;
             }
-        });
-    }
-
-    /**
-     * Update matching patient.
-     *
-     * @param patient the locally merged patient
-     */
-    public Observable<Patient> updateMatchingPatient(final Patient patient) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-
-            PatientDtoUpdate patientDto = patient.getUpdatedPatientDto();
-
-            Call<PatientDto> call = restApi.updatePatient(patientDto, patient.getUuid(), ApplicationConstants.API.FULL);
-            Response<PatientDto> response = call.execute();
-
-            if (response.isSuccessful()) return patient;
-            else throw new IOException(response.message());
         });
     }
 
@@ -659,83 +677,5 @@ public class PatientRepository extends BaseRepository {
             }
             return matches;
         });
-    }
-
-    /**
-     * Fetches similar patients by different strategies:
-     * <br> 1. Fetch similar patients from server directly using an API.
-     * <br> 2. Fetch patients with similar names, then compare their other similarities locally.
-     * <br> 3. Fetch locally saved patients, then compare their similarities.
-     *
-     * @param patient to find similar patients to
-     * @return Observable list of similar patients
-     */
-    public Observable<List<Patient>> fetchSimilarPatients(final Patient patient) {
-        return AppDatabaseHelper.createObservableIO(() -> {
-            try {
-                if (!NetworkUtils.isOnline()) {
-                    List<Patient> localPatients = patientDAO.getAllPatients().toBlocking().first();
-                    return new PatientComparator().findSimilarPatient(localPatients, patient);
-                }
-
-                Call<Results<Module>> moduleCall = restApi.getModules(ApplicationConstants.API.FULL);
-                Response<Results<Module>> response = moduleCall.execute();
-
-                if (!response.isSuccessful()) return fetchSimilarPatientsAndCalculateLocally(patient);
-
-                if (ModuleUtils.isRegistrationCore1_7orAbove(response.body().getResults())) {
-                    return fetchSimilarPatientsFromServer(patient);
-                } else {
-                    return fetchSimilarPatientsAndCalculateLocally(patient);
-                }
-            } catch (Exception e) {
-                logger.e("Error fetching similar patients: " + e.getMessage());
-                try {
-                    return fetchSimilarPatientsAndCalculateLocally(patient);
-                } catch (Exception ex) {
-                    logger.e("Fallback similarity check failed: " + ex.getMessage());
-                    return new ArrayList<>();
-                }
-            }
-        });
-    }
-
-    /**
-     * Fetches similar patients directly from server.
-     *
-     * @param patient the patient to fetch similar patient to
-     * @return list of similar patients
-     */
-    private List<Patient> fetchSimilarPatientsFromServer(final Patient patient) throws Exception {
-        Map<String, String> queryMap = patient.toMap();
-        if (queryMap.isEmpty()) {
-            return new ArrayList<>();
-        }
-        Call<Results<Patient>> call = restApi.getSimilarPatients(queryMap);
-        Response<Results<Patient>> response = call.execute();
-        if (response.isSuccessful() && response.body() != null) return response.body().getResults();
-        else return fetchSimilarPatientsAndCalculateLocally(patient);
-    }
-
-    /**
-     * Fetches patients with similar names from server, then calculates other similarities locally.
-     *
-     * @param patient the patient to fetch similar patient to
-     * @return list of similar patients
-     */
-    private List<Patient> fetchSimilarPatientsAndCalculateLocally(final Patient patient) throws Exception {
-        String givenName = (patient.getName() != null) ? patient.getName().getGivenName() : null;
-        if (givenName == null || givenName.isEmpty()) {
-            return new ArrayList<>();
-        }
-        Call<Results<PatientDto>> call = restApi.getPatientsDto(givenName, ApplicationConstants.API.FULL);
-        Response<Results<PatientDto>> response = call.execute();
-        if (response.isSuccessful() && response.body() != null) {
-            List<Patient> patientList = new ArrayList<>();
-            for (PatientDto p : response.body().getResults()) patientList.add(p.getPatient());
-            return new PatientComparator().findSimilarPatient(patientList, patient);
-        } else {
-            throw new Exception("fetchSimilarPatientAndCalculateLocally error: " + response.message());
-        }
     }
 }

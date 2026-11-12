@@ -132,21 +132,6 @@ class AddEditPatientViewModelTest : ACUnitTestBaseRx() {
     }
 
     @Test
-    fun fetchSimilarPatients() {
-        viewModel = AddEditPatientViewModel(patientDAO, patientRepository, conceptRepository, savedStateHandle)
-        with(viewModel) {
-            val similarPatients = listOf(createPatient(1L), createPatient(2L), createPatient(3L))
-            patientValidator = mock(PatientValidator::class.java)
-            `when`(patientValidator.validate()).thenReturn(true)
-            `when`(patientRepository.fetchSimilarPatients(any<Patient>())).thenReturn(Observable.just(similarPatients))
-
-            fetchSimilarPatients()
-
-            assertIterableEquals(similarPatients, similarPatientsLiveData.value)
-        }
-    }
-
-    @Test
     fun fetchCausesOfDeath() {
         viewModel = AddEditPatientViewModel(patientDAO, patientRepository, conceptRepository, savedStateHandle)
         `when`(patientRepository.getCauseOfDeathGlobalConceptID()).thenReturn(Observable.just(String()))
